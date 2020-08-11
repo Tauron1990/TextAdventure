@@ -2,6 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
   </PropertyGroup>
 
   <ItemGroup>
@@ -20,6 +21,10 @@
   <ItemGroup>
     <ProjectReference Include="..\Adventure.TextProcessing\Adventure.TextProcessing.csproj" />
     <ProjectReference Include="..\Adventure.Utilities\Adventure.Utilities.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Folder Include="Systems\" />
   </ItemGroup>
 
 </Project>
