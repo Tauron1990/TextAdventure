@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.0</TargetFramework>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="DefaultEcs" Version="0.14.4" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Adventure.GameEngine\Adventure.GameEngine.csproj" />
+    <ProjectReference Include="..\Adventure.TextProcessing\Adventure.TextProcessing.csproj" />
+    <ProjectReference Include="..\Adventure.Utilities\Adventure.Utilities.csproj" />
+  </ItemGroup>
+
+</Project>
