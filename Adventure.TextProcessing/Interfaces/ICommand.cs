@@ -51,7 +51,7 @@ namespace Adventure.TextProcessing.Interfaces
         string Noun3 { get; set; }
 
         bool ProfanityDetected { get; set; }
-        
+
         string Profanity { get; set; }
     }
 }
