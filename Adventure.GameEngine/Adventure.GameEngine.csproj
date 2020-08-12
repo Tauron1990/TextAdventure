@@ -6,25 +6,23 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <PackageReference Include="BattlePlanPath" Version="2.0.0" />
     <PackageReference Include="ecsrx" Version="3.11.68" />
     <PackageReference Include="EcsRx.Infrastructure" Version="3.11.68" />
     <PackageReference Include="EcsRx.Infrastructure.Ninject" Version="3.11.68" />
     <PackageReference Include="EcsRx.Plugins.Batching" Version="3.11.68" />
     <PackageReference Include="EcsRx.Plugins.Computeds" Version="3.11.68" />
-    <PackageReference Include="EcsRx.Plugins.Persistence" Version="3.11.68" />
     <PackageReference Include="EcsRx.Plugins.ReactiveSystems" Version="3.11.68" />
     <PackageReference Include="EcsRx.Plugins.Views" Version="3.11.68" />
     <PackageReference Include="EcsRx.ReactiveData" Version="3.11.68" />
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
+    <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
   </ItemGroup>
 
   <ItemGroup>
     <ProjectReference Include="..\Adventure.TextProcessing\Adventure.TextProcessing.csproj" />
     <ProjectReference Include="..\Adventure.Utilities\Adventure.Utilities.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Systems\" />
   </ItemGroup>
 
 </Project>

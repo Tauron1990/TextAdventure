@@ -1,40 +1,45 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Adventure.GameEngine.Blueprints;
 using Adventure.GameEngine.Components;
+using Adventure.GameEngine.Events;
+using Adventure.GameEngine.Internal;
+using Adventure.GameEngine.Rooms;
 using Adventure.Utilities;
+using EcsRx.Entities;
 using EcsRx.Extensions;
 using EcsRx.Groups;
 using EcsRx.Infrastructure.Dependencies;
+using EcsRx.Infrastructure.Extensions;
 using EcsRx.Infrastructure.Ninject;
 using EcsRx.Plugins.Batching;
 using EcsRx.Plugins.Computeds;
 using EcsRx.Plugins.ReactiveSystems;
 using EcsRx.Plugins.Views;
+using Newtonsoft.Json;
 
 namespace Adventure.GameEngine
 {
-    public abstract class Game : EcsRx.Plugins.Persistence.EcsRxPersistedApplication
+    public abstract class Game : EcsRx.Infrastructure.EcsRxApplication
     {
+        private readonly string _saveGame;
         private readonly IStartUpNotify _notify;
 
         public event Action? OnStop;
         
         public override IDependencyContainer Container { get; }
 
-        public override string EntityDatabaseFile { get; }
         
         protected abstract int Version { get; }
         
         public ContentManagement Content { get; }
-
-        public override bool LoadOnStart => false;
-
+        
         protected Game(string saveGame, IStartUpNotify notify, ContentManagement content)
         {
+            _saveGame = saveGame;
             _notify = notify;
-            EntityDatabaseFile = saveGame;
             Content = content;
 
             Container = new NinjectDependencyContainer();
@@ -49,6 +54,13 @@ namespace Adventure.GameEngine
             base.LoadPlugins();
         }
 
+        protected override void BindSystems()
+        {
+            this.BindAllSystemsWithinApplicationScope();
+            this.BindAllSystemsInAssemblies(typeof(Game).Assembly);
+            this.BindAllSystemsInNamespaces("Adventure.Ui.Systems");
+        }
+
         public override void StopApplication()
         {
             OnStop?.Invoke();
@@ -59,27 +71,99 @@ namespace Adventure.GameEngine
         {
             try
             {
-                if (File.Exists(EntityDatabaseFile))
+                if (File.Exists(_saveGame))
                 {
-                    var loader = LoadEntityDatabase();
-                    if (!loader.IsCompletedSuccessfully)
-                    {
-                        _notify.Fail(new ArgumentException("Loading Failed"));
-                        return;
-                    }
+                    LoadEntityDatabase();
 
                     var info = EntityDatabase.GetEntitiesFor(new Group(typeof(GameInfo))).Single().GetComponent<GameInfo>();
                     if(info.Version != Version)
                         throw new InvalidOperationException("Invalid Versions");
+
+                    var roomConfig = new RoomConfiguration();
+                    ConfigurateRooms(roomConfig);
+                    roomConfig.Validate();
+
+                    var entities = EntityDatabase.GetEntitiesFor(new Group(typeof(Room), typeof(RoomData)))
+                        .ToDictionary(e => e.GetComponent<Room>().Name);
+
+                    foreach (var room in roomConfig.Rooms)
+                    {
+                        if (entities.TryGetValue(room.Name, out var entity)) 
+                            entity.ApplyBlueprints(room.Blueprints.OfType<RoomCommandSetup>());
+                    }
+
+                    EventSystem.Publish(new MapBuild());
                 }
                 else
                 {
-                    EntityDatabase.GetCollection().CreateEntity(new BaseGameInfo(Version));
+                    EntityDatabase.GetCollection(GameConsts.CoreSystem).CreateEntity(new BaseGameInfo(Version));
+
+                    var roomConfiguration = new RoomConfiguration();
+                    var start = ConfigurateRooms(roomConfiguration);
+                    roomConfiguration.Validate();
+                    start.WithBluePrint(new StartRoom());
+
+                    var map = EntityDatabase.GetCollection(GameConsts.RoomMap);
+                    foreach (var room in roomConfiguration.Rooms)
+                    {
+                        room.WithBluePrint(new DoorWayConfiguration(room.DoorWays, room.Connections));
+
+                        map.CreateEntity(room.Blueprints);
+                    }
+
+                    EntityDatabase.GetCollection(GameConsts.CoreSystem).CreateEntity(new PlayerSetup(start.Name));
+
+                    EventSystem.Publish(new MapBuild());
                 }
             }
             catch (Exception e)
             {
                 _notify.Fail(e);
+            }
+
+            _notify.Succed(this);
+        }
+
+        protected abstract RoomBuilder ConfigurateRooms(RoomConfiguration configuration);
+
+        protected override void StopAndUnbindAllSystems()
+        {
+            SaveEntityDatabase();
+            base.StopAndUnbindAllSystems();
+        }
+
+        public void SaveEntityDatabase()
+        {
+            var save = new SaveStade();
+
+            foreach (var entityDatabaseCollection in EntityDatabase.Collections)
+            {
+                var collData = new EntityCollectionData(entityDatabaseCollection.Id);
+                foreach (var ent in entityDatabaseCollection)
+                {
+                    var entData = new EntityData();
+                    entData.Components.AddRange(ent.Components.Where(c => !(c is RoomCommands)));
+                    collData.Entitys.Add(entData);
+                }
+                save.Collections.Add(collData);
+            }
+
+            File.WriteAllText(_saveGame, JsonConvert.SerializeObject(save, Formatting.Indented));
+        }
+
+        private void LoadEntityDatabase()
+        {
+            var saveDate = JsonConvert.DeserializeObject<SaveStade>(File.ReadAllText(_saveGame));
+
+            foreach (var collection in saveDate.Collections)
+            {
+                var coll = EntityDatabase.GetCollection(collection.Id);
+
+                foreach (var entity in collection.Entitys)
+                {
+                    var ent = coll.CreateEntity();
+                    ent.AddComponents(entity.Components);
+                }
             }
         }
     }

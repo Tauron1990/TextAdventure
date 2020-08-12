@@ -20,8 +20,8 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <DockPanel LastChildFill="True">
-        <controls:AutoCompleteTextBox DockPanel.Dock="Bottom" Margin="10"/>
-        <RichTextBox DockPanel.Dock="Top" Margin="10" IsReadOnly="True" Name="TextContent">
+        <controls:AutoCompleteTextBox DockPanel.Dock="Bottom" Margin="10,0,10,10"/>
+        <RichTextBox DockPanel.Dock="Top" Margin="10,10,10,0" IsReadOnly="True" Name="TextContent">
             <RichTextBox.Document>
                 <FlowDocument>
                     <Paragraph>

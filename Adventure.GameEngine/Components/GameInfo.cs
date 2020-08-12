@@ -1,23 +1,27 @@
 ﻿using System;
 using EcsRx.Components;
+using Newtonsoft.Json;
 
 namespace Adventure.GameEngine.Components
 {
     public sealed class GameInfo : IComponent
     {
-        public int Version { get; set; }
+        public int Version { get; }
 
-        public DateTimeOffset SinceStart { get; set; }
+        public DateTimeOffset SinceStart { get; }
+
+        public string LastDisplay { get; set; }
 
         public GameInfo()
         {
-            
         }
 
-        public GameInfo(int version, DateTimeOffset sinceStart)
+        [JsonConstructor]
+        public GameInfo(int version, DateTimeOffset sinceStart, string lastDisplay)
         {
             Version = version;
             SinceStart = sinceStart;
+            LastDisplay = lastDisplay;
         }
     }
 }

@@ -13,7 +13,12 @@ namespace Adventure.Ui
             InitializeComponent();
         }
 
-        public void Attach(Game game)
+        public void Load(Game game)
+        {
+
+        }
+
+        public void Unload()
         {
 
         }

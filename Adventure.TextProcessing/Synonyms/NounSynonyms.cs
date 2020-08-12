@@ -71,8 +71,33 @@ namespace Adventure.TextProcessing.Synonyms
             Add("b", "south");
             Add("right", "east");                        
             Add("left", "west");            
-            Add("r", "east");
+            //Add("r", "east");
             Add("l", "west");
+
+
+            Add("o", "east");
+
+            Add("no", "northeast");
+            Add("so", "southeast");
+
+            Add("nordosten", "northeast");
+            Add("südosten", "southeast");
+            Add("südwesten", "southwest");
+            Add("nordwesten", "northwest");
+
+            Add("nord", "north");
+            Add("süd", "south");
+            Add("ost", "east");
+
+            Add("vorwärts", "north");
+            Add("rückwärts", "south");
+            Add("vorn", "north");
+            Add("hinten", "south");
+
+            Add("v", "north");
+            Add("r", "south");
+            Add("rechts", "east");
+            Add("links", "west");
         }
 
         /// <summary>

@@ -1,7 +1,7 @@
-﻿/*
+/*
 MIT License
 
-Copyright(c) 2019 
+Copyright (c) 2019 
 
 Permission is hereby granted, free of charge, to any person obtaining a copy
 of this software and associated documentation files (the "Software"), to deal
@@ -21,26 +21,26 @@ LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
+using TextualRealityExperienceEngine.GameEngine;
+using TextualRealityExperienceEngine.GameEngine.Interfaces;
+using TextualRealityExperienceEngine.GameEngine.TextProcessing.Interfaces;
 
-using JetBrains.Annotations;
-
-namespace Adventure.GameEngine
+namespace TextualRealityExperienceEngine.Tests.SimpleGame.Library.Crypt
 {
-    /// <summary>
-    /// Enumeration representing the supported directions in the game engine.
-    /// </summary>
-    [PublicAPI]
-    public enum Direction
+    public class Garage : Room
     {
-        North = 0,
-        East = 1,
-        South = 2,
-        West = 3,
-        NorthEast = 4,
-        SouthEast = 5,
-        SouthWest = 6,
-        NorthWest = 7,
-        Up = 8,
-        Down = 9
+        public Garage(IGame game) : base(game)
+        {
+            game.ContentManagement.AddContentItem("GarageName", "Garage");
+            game.ContentManagement.AddContentItem("GarageDescription", "You are standing in a garage, surrounded by pots of pain, an old bicycle and a lawn mower.");
+
+            Name = game.ContentManagement.RetrieveContentItem("GarageName");
+            Description = game.ContentManagement.RetrieveContentItem("GarageDescription");
+        }
+
+        public override string ProcessCommand(ICommand command)
+        {
+            return command.ProfanityDetected ? Game.ContentManagement.RetrieveContentItem("NoNeedToBeRude") : base.ProcessCommand(command);
+        }
     }
 }

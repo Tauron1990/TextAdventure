@@ -6,6 +6,6 @@ namespace Adventure.GameEngine
     {
         void Fail(Exception e);
 
-        void Succed();
+        void Succed(Game game);
     }
 }

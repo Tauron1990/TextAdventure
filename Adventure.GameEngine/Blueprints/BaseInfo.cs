@@ -13,7 +13,9 @@ namespace Adventure.GameEngine.Blueprints
         public BaseGameInfo(int version) 
             => _version = version;
 
-        public void Apply(IEntity entity) 
-            => entity.AddComponent(new GameInfo(_version, DateTimeOffset.UtcNow));
+        public void Apply(IEntity entity)
+        {
+            entity.AddComponents(new GameInfo(_version, DateTimeOffset.UtcNow), new ReplayInfo());
+        }
     }
 }

@@ -40,13 +40,6 @@ namespace Adventure.TextProcessing
     public class Parser : ParserBase, IParser
     {
         /// <summary>
-        /// Default constructor that sets the default initial state of the parser.
-        /// </summary>
-        public Parser() 
-        {
-        }
-
-        /// <summary>
         /// Constructor that allows you to custom set the verb, noun and preposition synonyms used by the parser. This
         /// constructor is mostly used by the unit tests.
         /// </summary>

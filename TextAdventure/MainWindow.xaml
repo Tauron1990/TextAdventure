@@ -5,7 +5,7 @@
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
         xmlns:local="clr-namespace:TextAdventure"
         xmlns:ui="clr-namespace:Adventure.Ui;assembly=Adventure.Ui"
-        WindowState="Maximized" WindowStyle="None"
+        WindowState="Maximized" WindowStyle="None" Loaded="MainWindow_OnLoaded"
         mc:Ignorable="d" KeyDown="MainWindow_OnKeyDown"
         Title="Text Adventure" Height="450" Width="800">
     <Window.Resources>
@@ -28,6 +28,9 @@
         </Style>
     </Window.Style>
     <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
+            <ui:SaveLoad Name="Saves"/>
+        </Menu>
         <ui:MainContent/>
     </DockPanel>
 </Window>

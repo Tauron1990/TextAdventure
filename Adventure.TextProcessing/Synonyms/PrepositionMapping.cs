@@ -42,7 +42,7 @@ namespace Adventure.TextProcessing.Synonyms
         Through = 6,
         Over = 7,
         Under = 8,
-        Across = 9,
+        //Across = 9,
         Behind = 10,
         At = 11,
         Up = 12,
@@ -71,12 +71,27 @@ namespace Adventure.TextProcessing.Synonyms
             Add("through", PropositionEnum.Through);
             Add("over", PropositionEnum.Over);
             Add("under", PropositionEnum.Under);
-            Add("across", PropositionEnum.Across);
+            //Add("across", PropositionEnum.Across);
             Add("behind", PropositionEnum.Behind);
             Add("at", PropositionEnum.At);
             Add("up", PropositionEnum.Up);
             Add("from", PropositionEnum.From);
             Add("with", PropositionEnum.With);
+
+            Add("hinein", PropositionEnum.Into);
+            Add("gegen", PropositionEnum.Against);
+            Add("zu", PropositionEnum.To);
+            Add("in", PropositionEnum.In);
+            Add("an", PropositionEnum.On);
+
+            Add("durch", PropositionEnum.Through);
+            Add("über", PropositionEnum.Over);
+            Add("unter", PropositionEnum.Under);
+            Add("dahinter", PropositionEnum.Behind);
+            Add("bei", PropositionEnum.At);
+            Add("hoch", PropositionEnum.Up);
+            Add("von", PropositionEnum.From);
+            Add("mit", PropositionEnum.With);
         }
 
         /// <summary>
