@@ -25,6 +25,7 @@ namespace Adventure.GameEngine.Systems
 
         public virtual void StartSystem(IObservableGroup observableGroup)
         {
+            ObservableGroup = observableGroup;
             Init();
             _disposable = new CompositeDisposable();
         }

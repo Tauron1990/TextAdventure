@@ -124,14 +124,7 @@ namespace Adventure.TextProcessing.Synonyms
                 return PropositionEnum.NotRecognised;
             }
 
-            if (_prepositionMappings.ContainsKey(preposition))
-            {
-                return _prepositionMappings[preposition];
-            }
-            else
-            {
-                return PropositionEnum.NotRecognised;
-            }                   
+            return _prepositionMappings.ContainsKey(preposition) ? _prepositionMappings[preposition] : PropositionEnum.NotRecognised;
         }
     }
 }

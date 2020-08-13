@@ -7,7 +7,12 @@ namespace Adventure.GameEngine.Blueprints
 {
     public sealed class StartRoom : IBlueprint
     {
-        public void Apply(IEntity entity) 
-            => entity.GetComponent<RoomData>().IsPlayerIn.Value = true;
+        public void Apply(IEntity entity)
+        {
+            var comp = entity.GetComponent<RoomData>();
+
+            comp.IsPlayerIn.Value = true;
+            comp.IsVisited.Value = true;
+        }
     }
 }

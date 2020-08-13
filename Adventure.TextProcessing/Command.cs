@@ -44,6 +44,8 @@ namespace Adventure.TextProcessing
         /// </summary>
         public VerbCodes Verb { get; set; }
 
+        public string VerbText { get; set; }
+
         /// <summary>
         /// The first adjective that was specified by the player.
         /// </summary>

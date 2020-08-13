@@ -60,7 +60,7 @@ namespace Adventure.GameEngine.Systems
                 _connections[entity.GetComponent<Room>().Name] 
                     = new HashSet<string>(entity.GetComponent<RoomData>()
                         .DoorWays.Select(d => d.TargetRoom)
-                        .Concat(entity.GetComponent<RoomData>().Connections.Select(c => c.To)));
+                        .Concat(entity.GetComponent<RoomData>().Connections.Select(c => c.TargetRoom)));
             }
         }
 

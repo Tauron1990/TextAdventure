@@ -41,6 +41,7 @@ namespace Adventure.TextProcessing.Synonyms
         /// </summary>
         public VerbSynonyms()
         {
+            Add("gehe", VerbCodes.Go);
             Add("gehen", VerbCodes.Go);
             Add("fahren", VerbCodes.Go);
             Add("springen", VerbCodes.Go);
@@ -293,7 +294,7 @@ namespace Adventure.TextProcessing.Synonyms
             if (string.IsNullOrEmpty(synonym))
                 throw new ArgumentNullException(nameof(synonym));
 
-            _synonymMappings.Add(synonym, verb);
+            _synonymMappings[synonym] = verb;
         }
 
         /// <summary>

@@ -14,15 +14,18 @@ namespace Adventure.GameEngine.Rooms
         private readonly Func<string, RoomBuilder?> _roomLookup;
         private readonly HashSet<Direction> _locked = new HashSet<Direction>();
 
+        public CommonCommands CommonCommands { get; }
+
         internal List<IBlueprint> Blueprints { get; } = new List<IBlueprint>();
         internal List<DoorWay> DoorWays { get; } = new List<DoorWay>();
 
         internal List<DoorWayConnection> Connections { get; } = new List<DoorWayConnection>();
 
-        internal RoomBuilder(string name, RoomConfiguration root, Func<string, RoomBuilder?> roomLookup)
+        internal RoomBuilder(string name, RoomConfiguration root, Func<string, RoomBuilder?> roomLookup, CommonCommands commonCommands)
         {
             Blueprints.Add(new RoomCore(name));
             Name = name;
+            CommonCommands = commonCommands;
             _root = root;
             _roomLookup = roomLookup;
         }

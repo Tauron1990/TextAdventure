@@ -2,24 +2,39 @@
 
 namespace Adventure.GameEngine
 {
-    public sealed class DoorWayConnection
+    public interface IDoorway
+    {
+        public string TargetRoom { get; }
+
+        public string? UnlockEvent { get; set; }
+
+        public Direction Direction { get; }
+    }
+
+    public sealed class DoorWayConnection : IDoorway
     {
         public DoorWay Original { get; }
 
         public Direction Direction { get; }
 
-        public string To { get; }
+        public string TargetRoom { get; }
 
-        public DoorWayConnection(DoorWay original, Direction direction, string to)
+        string? IDoorway.UnlockEvent
+        {
+            get => Original.UnlockEvent;
+            set => Original.UnlockEvent = value;
+        }
+
+        public DoorWayConnection(DoorWay original, Direction direction, string targetRoom)
         {
             Original = original;
             Direction = direction;
-            To = to;
+            TargetRoom = targetRoom;
         }
     }
 
     [PublicAPI]
-    public sealed class DoorWay
+    public sealed class DoorWay : IDoorway
     {
         public string TargetRoom { get; }
 

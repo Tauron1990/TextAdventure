@@ -39,6 +39,11 @@ namespace Adventure.TextProcessing
     [PublicAPI]
     public class Parser : ParserBase, IParser
     {
+        public Parser()
+        {
+            
+        }
+
         /// <summary>
         /// Constructor that allows you to custom set the verb, noun and preposition synonyms used by the parser. This
         /// constructor is mostly used by the unit tests.
@@ -127,6 +132,7 @@ namespace Adventure.TextProcessing
 
                         if (verb == VerbCodes.NoCommand) { continue; }
 
+                        Command.VerbText = word;
                         Command.Verb = verb;
                         break;
                     case ParserStatesEnum.Noun:

@@ -1,14 +1,10 @@
-﻿using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 using Adventure.GameEngine.Components;
 using Adventure.GameEngine.Events;
 using Adventure.TextProcessing.Interfaces;
-using EcsRx.Collections.Entity;
-using EcsRx.Entities;
 using EcsRx.Events;
 using EcsRx.Extensions;
 using EcsRx.Groups;
-using EcsRx.Groups.Observable;
 using EcsRx.Plugins.ReactiveSystems.Custom;
 
 namespace Adventure.GameEngine.Systems
@@ -28,7 +24,7 @@ namespace Adventure.GameEngine.Systems
             string? result = null;
             if (target == null)
             {
-                foreach (var func in target.GetComponent<RoomCommands>().Handler)
+                foreach (var func in target.GetComponent<RoomCommands>().Handler.Reverse())
                 {
                     result = func(eventData);
                     if (result != null)

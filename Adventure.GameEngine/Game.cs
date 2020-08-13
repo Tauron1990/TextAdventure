@@ -3,10 +3,12 @@ using System.IO;
 using System.Linq;
 using Adventure.GameEngine.Blueprints;
 using Adventure.GameEngine.Components;
+using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Events;
 using Adventure.GameEngine.Internal;
 using Adventure.GameEngine.Rooms;
 using Adventure.Utilities;
+using Adventure.Utilities.Interfaces;
 using EcsRx.Extensions;
 using EcsRx.Groups;
 using EcsRx.Infrastructure.Dependencies;
@@ -15,6 +17,7 @@ using EcsRx.Infrastructure.Ninject;
 using EcsRx.Plugins.Batching;
 using EcsRx.Plugins.Computeds;
 using EcsRx.Plugins.ReactiveSystems;
+using JetBrains.Annotations;
 using Newtonsoft.Json;
 
 namespace Adventure.GameEngine
@@ -31,9 +34,10 @@ namespace Adventure.GameEngine
         
         protected abstract int Version { get; }
         
-        public ContentManagement Content { get; }
+        [PublicAPI]
+        public IContentManagement Content { get; }
         
-        protected Game(string saveGame, IStartUpNotify notify, ContentManagement content)
+        protected Game(string saveGame, IStartUpNotify notify, IContentManagement content)
         {
             _saveGame = saveGame;
             _notify = notify;
@@ -57,6 +61,12 @@ namespace Adventure.GameEngine
             this.BindAllSystemsInNamespaces("Adventure.Ui.Systems");
         }
 
+        protected override void LoadModules()
+        {
+            Container.LoadModule(new GameModule(this));
+            base.LoadModules();
+        }
+
         public override void StopApplication()
         {
             OnStop?.Invoke();
@@ -68,6 +78,8 @@ namespace Adventure.GameEngine
         {
             try
             {
+                LoadResiources();
+
                 if (File.Exists(_saveGame))
                 {
                     LoadEntityDatabase();
@@ -76,7 +88,7 @@ namespace Adventure.GameEngine
                     if(info.Version != Version)
                         throw new InvalidOperationException("Invalid Versions");
 
-                    var roomConfig = new RoomConfiguration();
+                    var roomConfig = new RoomConfiguration(new CommonCommands(Content, EventSystem));
                     ConfigurateRooms(roomConfig);
                     roomConfig.Validate();
 
@@ -89,13 +101,15 @@ namespace Adventure.GameEngine
                             entity.ApplyBlueprints(room.Blueprints.OfType<RoomCommandSetup>());
                     }
 
+                    PostLoad();
+
                     EventSystem.Publish(new MapBuild());
                 }
                 else
                 {
                     EntityDatabase.GetCollection().CreateEntity(new BaseGameInfo(Version));
 
-                    var roomConfiguration = new RoomConfiguration();
+                    var roomConfiguration = new RoomConfiguration(new CommonCommands(Content, EventSystem));
                     var start = ConfigurateRooms(roomConfiguration);
                     roomConfiguration.Validate();
                     start.WithBluePrint(new StartRoom());
@@ -110,6 +124,8 @@ namespace Adventure.GameEngine
 
                     EntityDatabase.GetCollection().CreateEntity(new PlayerSetup(start.Name));
 
+                    PostNew();
+
                     EventSystem.Publish(new MapBuild());
                 }
             }
@@ -119,6 +135,21 @@ namespace Adventure.GameEngine
             }
 
             _notify.Succed(this);
+        }
+
+        protected virtual void LoadResiources()
+        {
+
+        }
+
+        protected virtual void PostLoad()
+        {
+
+        }
+
+        protected virtual void PostNew()
+        {
+
         }
 
         protected abstract RoomBuilder ConfigurateRooms(RoomConfiguration configuration);
@@ -133,7 +164,7 @@ namespace Adventure.GameEngine
                 foreach (var ent in entityDatabaseCollection)
                 {
                     var entData = new EntityData();
-                    entData.Components.AddRange(ent.Components.Where(c => !(c is RoomCommands)));
+                    entData.Components.AddRange(ent.Components.Where(c => !(c is INotSerialized)));
                     collData.Entitys.Add(entData);
                 }
                 save.Collections.Add(collData);

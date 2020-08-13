@@ -1,23 +1,27 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using Adventure.TextProcessing.Interfaces;
 using EcsRx.Components;
 
 namespace Adventure.GameEngine.Components
 {
-    public sealed class RoomCommands : IComponent
+    public delegate string? CommandHandler(ICommand command);
+
+
+    public sealed class RoomCommands : IComponent, INotSerialized
     {
-        public ImmutableList<Func<ICommand, string?>> Handler { get; private set; }
+        public ImmutableList<CommandHandler> Handler { get; private set; }
 
-        public RoomCommands(Func<ICommand, string?> handler) => Handler = ImmutableList<Func<ICommand, string?>>.Empty.Add(handler);
+        public HashSet<string> ProcessedCommands { get; } = new HashSet<string>();
 
-        public RoomCommands()
+        public RoomCommands() 
+            => Handler = ImmutableList<CommandHandler>.Empty;
+
+        public void Add(CommandHandler handler, IEnumerable<string> processedCommands)
         {
-            Handler = ImmutableList<Func<ICommand, string?>>.Empty;
-        }
-
-        public void Add(Func<ICommand, string?> handler)
-        {
+            foreach (var command in processedCommands) 
+                ProcessedCommands.Add(command);
             Handler = Handler.Add(handler);
         }
     }

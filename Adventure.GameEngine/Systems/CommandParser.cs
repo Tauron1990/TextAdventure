@@ -1,8 +1,8 @@
 ﻿using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading.Tasks;
 using Adventure.GameEngine.Components;
 using Adventure.TextProcessing;
-using Adventure.TextProcessing.Synonyms;
 using EcsRx.Events;
 using EcsRx.Groups;
 using EcsRx.Extensions;
@@ -17,10 +17,10 @@ namespace Adventure.GameEngine.Systems
 
         private readonly BlockingCollection<string> _commands = new BlockingCollection<string>();
 
-        public CommandParser(IEventSystem eventSystem) 
+        public CommandParser(IEventSystem eventSystem, Parser parser) 
             : base(eventSystem)
         {
-            _parser = new Parser(new VerbSynonyms(), new NounSynonyms(), new PrepositionMapping());
+            _parser = parser;
 
             Task.Run(() =>
             {
@@ -35,13 +35,15 @@ namespace Adventure.GameEngine.Systems
 
         public void IncomingCommand(string eventData)
         {
+            var gameTime = ObservableGroup.Where(e => e.HasComponent(typeof(GameInfo))).Select(e => e.GetComponent<GameInfo>()).Single();
+
             foreach (var ent in ObservableGroup) 
                 ent.GetComponent<ReplayInfo>().Add(eventData);
             
             if(eventData != GameConsts.UpdateCommand)
                 EventSystem.Publish(_parser.ParseCommand(eventData));
 
-            //TODO Generic Update for All
+            EventSystem.Publish(gameTime.CreateGameTime());
         }
 
         protected override void Init() => Receive<string>(s => _commands.Add(s));

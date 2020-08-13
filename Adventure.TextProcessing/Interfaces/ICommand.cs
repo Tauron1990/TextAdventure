@@ -34,6 +34,8 @@ namespace Adventure.TextProcessing.Interfaces
         
         VerbCodes Verb { get; set; }
 
+        string VerbText { get; set; }
+
         string Adjective { get; set; }
 
         string Noun { get; set; }
