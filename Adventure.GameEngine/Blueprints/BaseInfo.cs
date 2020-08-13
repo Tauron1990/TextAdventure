@@ -15,7 +15,7 @@ namespace Adventure.GameEngine.Blueprints
 
         public void Apply(IEntity entity)
         {
-            entity.AddComponents(new GameInfo(_version, DateTimeOffset.UtcNow, string.Empty), new ReplayInfo());
+            entity.AddComponents(new GameInfo(_version, DateTimeOffset.UtcNow, string.Empty, string.Empty), new ReplayInfo());
         }
     }
 }

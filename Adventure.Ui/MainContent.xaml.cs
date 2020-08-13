@@ -59,9 +59,8 @@ namespace Adventure.Ui
 
         public void UnloadGame() => _disposable?.Dispose();
 
-        private void UpdateComands(IEnumerable<string> data)
-        {
-        }
+        private void UpdateComands(IEnumerable<string> data) 
+            => CommandBox.ItemsSource = data.ToArray();
 
         private void UpdateContent(UpdateTextContent update, bool ignoreGameInfo = false)
         {
