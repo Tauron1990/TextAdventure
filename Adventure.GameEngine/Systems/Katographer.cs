@@ -32,7 +32,7 @@ namespace Adventure.GameEngine.Systems
         }
 
         private IDisposable _mapBuildRegistration = Disposable.Empty;
-        private Dictionary<string, HashSet<string>> _connections;
+        private readonly Dictionary<string, HashSet<string>> _connections = new Dictionary<string, HashSet<string>>();
 
         public Katographer(IEventSystem eventSystem) 
             : base(eventSystem)

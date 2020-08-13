@@ -1,7 +1,7 @@
 ﻿using Adventure.GameEngine.Components;
 using EcsRx.Blueprints;
+using EcsRx.Components;
 using EcsRx.Entities;
-using EcsRx.Extensions;
 
 namespace Adventure.GameEngine.Blueprints
 {
@@ -12,6 +12,6 @@ namespace Adventure.GameEngine.Blueprints
         public RoomCore(string name) => _name = name;
 
         public void Apply(IEntity entity) 
-            => entity.AddComponent(new Room(_name), new RoomData());
+            => entity.AddComponents(new IComponent[] { new Room(_name), new RoomData() });
     }
 }

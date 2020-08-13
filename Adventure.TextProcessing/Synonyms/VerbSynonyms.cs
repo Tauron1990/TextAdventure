@@ -104,7 +104,7 @@ namespace Adventure.TextProcessing.Synonyms
             Add("nutzen", VerbCodes.Use);
             Add("ausüben", VerbCodes.Use);
             Add("führen", VerbCodes.Use);
-            Add("ziehen", VerbCodes.Use);
+            //Add("ziehen", VerbCodes.Use);
             Add("schieben", VerbCodes.Use);
             //Add("flick", VerbCodes.Use);
             //Add("flip", VerbCodes.Use);
@@ -137,7 +137,6 @@ namespace Adventure.TextProcessing.Synonyms
             Add("tipps", VerbCodes.Hint);
             Add("hinweis", VerbCodes.Hint);
             Add("hinweise", VerbCodes.Hint);
-            Add("sos", VerbCodes.Hint);
 
             Add("angriff", VerbCodes.Attack);
             Add("treffer", VerbCodes.Attack);

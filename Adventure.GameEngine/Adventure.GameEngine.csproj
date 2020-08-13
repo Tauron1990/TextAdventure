@@ -13,7 +13,6 @@
     <PackageReference Include="EcsRx.Plugins.Batching" Version="3.11.68" />
     <PackageReference Include="EcsRx.Plugins.Computeds" Version="3.11.68" />
     <PackageReference Include="EcsRx.Plugins.ReactiveSystems" Version="3.11.68" />
-    <PackageReference Include="EcsRx.Plugins.Views" Version="3.11.68" />
     <PackageReference Include="EcsRx.ReactiveData" Version="3.11.68" />
     <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="12.0.3" />

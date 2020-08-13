@@ -1,16 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Windows;
-using System.Windows.Controls;
-using System.Windows.Data;
-using System.Windows.Documents;
+using System.IO;
 using System.Windows.Input;
-using System.Windows.Media;
-using System.Windows.Media.Imaging;
-using System.Windows.Navigation;
-using System.Windows.Shapes;
-using Adventure.GameEngine;
+using JetBrains.Annotations;
 
 namespace Adventure.Ui
 {
@@ -44,25 +35,38 @@ namespace Adventure.Ui
                 NewGame = new MiniCommand(o => newGame((string)o));
             }
 
+            [UsedImplicitly]
             public ICommand LoadGame { get; }
 
+            [UsedImplicitly]
             public ICommand NewGame { get; }
         }
+
+        private string _loaction = string.Empty;
+
+        public event Action<string>? LoadGameEvent; 
 
         public SaveLoad() => InitializeComponent();
 
         public void Init(string saveGameLocation)
         {
+            _loaction = saveGameLocation;
             DataContext = new InternalModel(LoadGame, NewGame);
         }
 
         private void NewGame(string obj)
         {
-            
+            var fullPath = Path.GetFullPath(Path.Combine(_loaction, obj + ".sav"));
+            if(File.Exists(fullPath))
+                File.Delete(fullPath);
+
+            LoadGameEvent?.Invoke(fullPath);
         }
 
         private void LoadGame(string obj)
         {
+            var fullPath = Path.GetFullPath(Path.Combine(_loaction, obj + ".sav"));
+            LoadGameEvent?.Invoke(fullPath);
         }
     }
 }

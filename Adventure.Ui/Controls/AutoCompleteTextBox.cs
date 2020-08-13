@@ -11,6 +11,8 @@ using System.Windows.Media;
 namespace Adventure.Ui.Controls
 {
     /// <summary>
+    ///https://www.codeproject.com/Articles/44920/A-Reusable-WPF-Autocomplete-TextBox
+    /// 
     /// Follow steps 1a or 1b and then 2 to use this custom control in a XAML file.
     ///
     /// Step 1a) Using this custom control in a XAML file that exists in the current project.

@@ -7,8 +7,10 @@ namespace Adventure.GameEngine.Internal
 {
     public sealed class TypeAwareConverter : JsonConverter<List<IComponent>>
     {
-        public override void WriteJson(JsonWriter writer, List<IComponent> value, JsonSerializer serializer)
+        public override void WriteJson(JsonWriter writer, List<IComponent>? value, JsonSerializer serializer)
         {
+            value ??= new List<IComponent>();
+
             writer.WriteStartObject();
 
             var count = value.Count;
@@ -31,9 +33,9 @@ namespace Adventure.GameEngine.Internal
             writer.WriteEndObject();
         }
 
-        public override List<IComponent> ReadJson(JsonReader reader, Type objectType, List<IComponent> existingValue, bool hasExistingValue, JsonSerializer serializer)
+        public override List<IComponent> ReadJson(JsonReader reader, Type objectType, List<IComponent>? existingValue, bool hasExistingValue, JsonSerializer serializer)
         {
-            List<IComponent> components = new List<IComponent>();
+            List<IComponent> components = existingValue ?? new List<IComponent>();
 
             ReadProperty(reader, "DataCount");
 
@@ -63,21 +65,18 @@ namespace Adventure.GameEngine.Internal
             return components;
         }
 
-        private void ReadProperty(JsonReader reader, string expected)
+        private static void ReadProperty(JsonReader reader, string expected)
         {
             Read(reader);
             if (reader.TokenType != JsonToken.PropertyName || reader.Value?.ToString() != expected)
                 ThrowException();
         }
 
-        private void Read(JsonReader reader)
+        private static void Read(JsonReader reader)
         {
             if (!reader.Read()) ThrowException();
         }
 
-        private void ThrowException()
-        {
-            throw new InvalidOperationException("TypeAwareConverter Invalid Structure");
-        }
+        private static void ThrowException() => throw new InvalidOperationException("TypeAwareConverter Invalid Structure");
     }
 }

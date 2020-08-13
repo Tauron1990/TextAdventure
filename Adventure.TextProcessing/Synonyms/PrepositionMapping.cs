@@ -81,7 +81,6 @@ namespace Adventure.TextProcessing.Synonyms
             Add("hinein", PropositionEnum.Into);
             Add("gegen", PropositionEnum.Against);
             Add("zu", PropositionEnum.To);
-            Add("in", PropositionEnum.In);
             Add("an", PropositionEnum.On);
 
             Add("durch", PropositionEnum.Through);

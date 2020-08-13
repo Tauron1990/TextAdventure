@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Adventure.GameEngine.Blueprints;
@@ -8,7 +7,6 @@ using Adventure.GameEngine.Events;
 using Adventure.GameEngine.Internal;
 using Adventure.GameEngine.Rooms;
 using Adventure.Utilities;
-using EcsRx.Entities;
 using EcsRx.Extensions;
 using EcsRx.Groups;
 using EcsRx.Infrastructure.Dependencies;
@@ -17,7 +15,6 @@ using EcsRx.Infrastructure.Ninject;
 using EcsRx.Plugins.Batching;
 using EcsRx.Plugins.Computeds;
 using EcsRx.Plugins.ReactiveSystems;
-using EcsRx.Plugins.Views;
 using Newtonsoft.Json;
 
 namespace Adventure.GameEngine
@@ -47,7 +44,6 @@ namespace Adventure.GameEngine
 
         protected override void LoadPlugins()
         {
-            RegisterPlugin(new ViewsPlugin());
             RegisterPlugin(new ReactiveSystemsPlugin());
             RegisterPlugin(new ComputedsPlugin());
             RegisterPlugin(new BatchPlugin());
@@ -64,6 +60,7 @@ namespace Adventure.GameEngine
         public override void StopApplication()
         {
             OnStop?.Invoke();
+            SaveEntityDatabase();
             base.StopApplication();
         }
 
@@ -96,14 +93,14 @@ namespace Adventure.GameEngine
                 }
                 else
                 {
-                    EntityDatabase.GetCollection(GameConsts.CoreSystem).CreateEntity(new BaseGameInfo(Version));
+                    EntityDatabase.GetCollection().CreateEntity(new BaseGameInfo(Version));
 
                     var roomConfiguration = new RoomConfiguration();
                     var start = ConfigurateRooms(roomConfiguration);
                     roomConfiguration.Validate();
                     start.WithBluePrint(new StartRoom());
 
-                    var map = EntityDatabase.GetCollection(GameConsts.RoomMap);
+                    var map = EntityDatabase.GetCollection();
                     foreach (var room in roomConfiguration.Rooms)
                     {
                         room.WithBluePrint(new DoorWayConfiguration(room.DoorWays, room.Connections));
@@ -111,7 +108,7 @@ namespace Adventure.GameEngine
                         map.CreateEntity(room.Blueprints);
                     }
 
-                    EntityDatabase.GetCollection(GameConsts.CoreSystem).CreateEntity(new PlayerSetup(start.Name));
+                    EntityDatabase.GetCollection().CreateEntity(new PlayerSetup(start.Name));
 
                     EventSystem.Publish(new MapBuild());
                 }
@@ -126,13 +123,7 @@ namespace Adventure.GameEngine
 
         protected abstract RoomBuilder ConfigurateRooms(RoomConfiguration configuration);
 
-        protected override void StopAndUnbindAllSystems()
-        {
-            SaveEntityDatabase();
-            base.StopAndUnbindAllSystems();
-        }
-
-        public void SaveEntityDatabase()
+        private void SaveEntityDatabase()
         {
             var save = new SaveStade();
 
@@ -148,6 +139,9 @@ namespace Adventure.GameEngine
                 save.Collections.Add(collData);
             }
 
+            if (!Directory.Exists(Path.GetDirectoryName(_saveGame)))
+                Directory.CreateDirectory(Path.GetDirectoryName(_saveGame));
+
             File.WriteAllText(_saveGame, JsonConvert.SerializeObject(save, Formatting.Indented));
         }
 
@@ -157,7 +151,8 @@ namespace Adventure.GameEngine
 
             foreach (var collection in saveDate.Collections)
             {
-                var coll = EntityDatabase.GetCollection(collection.Id);
+
+                var coll = collection.Id == 0 ? EntityDatabase.GetCollection(collection.Id) : EntityDatabase.CreateCollection(collection.Id);
 
                 foreach (var entity in collection.Entitys)
                 {

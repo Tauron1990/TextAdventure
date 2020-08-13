@@ -20,15 +20,7 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <DockPanel LastChildFill="True">
-        <controls:AutoCompleteTextBox DockPanel.Dock="Bottom" Margin="10,0,10,10"/>
-        <RichTextBox DockPanel.Dock="Top" Margin="10,10,10,0" IsReadOnly="True" Name="TextContent">
-            <RichTextBox.Document>
-                <FlowDocument>
-                    <Paragraph>
-                        <TextBlock Text="Hallo Welt"/>
-                    </Paragraph>
-                </FlowDocument>
-            </RichTextBox.Document>
-        </RichTextBox>
+        <controls:AutoCompleteTextBox x:Name="CommandBox" DockPanel.Dock="Bottom" Margin="10,0,10,10" FontSize="25" KeyUp="Input_OnKeyUp"/>
+        <FlowDocumentScrollViewer DockPanel.Dock="Top" Margin="10,10,10,0" Name="TextContent" FontSize="25"/>
     </DockPanel>
 </UserControl>

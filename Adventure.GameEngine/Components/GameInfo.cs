@@ -10,18 +10,21 @@ namespace Adventure.GameEngine.Components
 
         public DateTimeOffset SinceStart { get; }
 
-        public string LastDisplay { get; set; }
+        public string LastDescription { get; set; }
+
+        public string LastContent { get; set; }
 
         public GameInfo()
         {
         }
 
         [JsonConstructor]
-        public GameInfo(int version, DateTimeOffset sinceStart, string lastDisplay)
+        public GameInfo(int version, DateTimeOffset sinceStart, string lastDescription, string lastContent)
         {
             Version = version;
             SinceStart = sinceStart;
-            LastDisplay = lastDisplay;
+            LastDescription = lastDescription;
+            LastContent = lastContent;
         }
     }
 }
