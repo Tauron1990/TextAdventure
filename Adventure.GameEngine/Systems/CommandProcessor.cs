@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Adventure.GameEngine.Components;
+using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Events;
 using Adventure.TextProcessing.Interfaces;
 using EcsRx.Events;
@@ -21,7 +22,7 @@ namespace Adventure.GameEngine.Systems
         public override void EventTriggered(ICommand eventData)
         {
             var target = ObservableGroup.FirstOrDefault(e => e.GetComponent<RoomData>().IsPlayerIn.Value);
-            string? result = null;
+            LazyString? result = null;
             if (target == null)
             {
                 foreach (var func in target.GetComponent<RoomCommands>().Handler.Reverse())

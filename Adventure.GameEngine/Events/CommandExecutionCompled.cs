@@ -1,9 +1,11 @@
-﻿namespace Adventure.GameEngine.Events
+﻿using Adventure.GameEngine.Core;
+
+namespace Adventure.GameEngine.Events
 {
     public sealed class CommandExecutionCompled
     {
-        public string? Result { get; }
+        public LazyString? Result { get; }
 
-        public CommandExecutionCompled(string? result) => Result = result;
+        public CommandExecutionCompled(LazyString? result) => Result = result;
     }
 }

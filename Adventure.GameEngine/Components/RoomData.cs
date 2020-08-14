@@ -17,6 +17,8 @@ namespace Adventure.GameEngine.Components
 
         public DoorWayConnection[] Connections { get; internal set; } = Array.Empty<DoorWayConnection>();
 
+        public List<PointOfInterst> Pois { get; } = new List<PointOfInterst>();
+
         [JsonIgnore]
         public Dictionary<Direction, IDoorway> TransitionMap 
             => Connections.Cast<IDoorway>()
@@ -26,13 +28,14 @@ namespace Adventure.GameEngine.Components
         public ReactiveProperty<string> Description { get; }
 
         [JsonConstructor]
-        public RoomData(ReactiveProperty<bool> isPlayerIn, DoorWayConnection[] connections, DoorWay[] doorWays, ReactiveProperty<bool> isVisited, ReactiveProperty<string> description)
+        public RoomData(ReactiveProperty<bool> isPlayerIn, DoorWayConnection[] connections, DoorWay[] doorWays, ReactiveProperty<bool> isVisited, ReactiveProperty<string> description, List<PointOfInterst> pois)
         {
             IsPlayerIn = isPlayerIn;
             Connections = connections;
             DoorWays = doorWays;
             IsVisited = isVisited;
             Description = description;
+            Pois = pois;
         }
 
         public RoomData()

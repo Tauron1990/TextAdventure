@@ -1,62 +1,72 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using Adventure.GameEngine.Components;
+using Adventure.GameEngine.Core;
+using Adventure.GameEngine.Events;
 using EcsRx.Entities;
 using EcsRx.Events;
+using EcsRx.Extensions;
 using EcsRx.Groups;
 using EcsRx.Groups.Observable;
 using EcsRx.Plugins.ReactiveSystems.Systems;
+using EcsRx.ReactiveData;
 using EcsRx.Systems;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Systems
 {
     [PublicAPI]
-    public sealed class TravelManager : IManualSystem, ISetupSystem, ITeardownSystem
+    public sealed class TravelManager : MultiEventReactionSystem, IReactToEntitySystem
     {
-        private readonly IEventSystem _system;
-        private readonly Dictionary<IEntity, IDisposable> _subscriptions;
+        private IEntity? _currentRoom;
 
-        private readonly CompositeDisposable _compositeDisposable;
+        public TravelManager([NotNull] IEventSystem eventSystem) : base(eventSystem)
+        { }
 
-        public IGroup Group { get; } = new Group(typeof(RoomData), typeof(Room));
+        public override IGroup Group { get; } = new Group(typeof(Room), typeof(RoomData));
 
-        public void Teardown(IEntity entity)
+        protected override void Init()
         {
+            Receive<GotoDirection>(HandleMovement);
         }
 
-        public void Setup(IEntity entity)
+        private void HandleMovement(GotoDirection move)
         {
-        }
+            if(_currentRoom == null) return;
 
-        public TravelManager(IEventSystem system)
-        {
-            _system = system;
+            var data = _currentRoom.GetComponent<RoomData>();
 
-            _compositeDisposable = new CompositeDisposable
+            var potenalDoor = data.Connections.Cast<IDoorway>().Concat(data.DoorWays).FirstOrDefault(dw => dw.Direction == move.Direction);
+            if (potenalDoor != null)
             {
-                
-            };
-
-            
-        }
-
-        public void StartSystem(IObservableGroup observableGroup)
-        {
-            
-        }
-
-        public void StopSystem(IObservableGroup observableGroup)
-        {
-
-        }
-
-        private sealed class ActionDispose : IDisposable
-        {
-            public void Dispose()
-            {
+                if (string.IsNullOrWhiteSpace(potenalDoor.UnlockEvent))
+                {
+                    MoveToRoom(potenalDoor.TargetRoom, data);
+                    move.Result = new LazyString(GameConsts.NewRoomEntered).AddParameters(StringParameter.Resolved(potenalDoor.TargetRoom));
+                }
+                else
+                    move.Result = new LazyString(GameConsts.DoorwayLooked);
             }
+            else
+                move.Result = new LazyString(GameConsts.NoDoorwayFound).AddParameters(move.Original);
         }
+
+        private void MoveToRoom(string name, RoomData from)
+        {
+            var to = ObservableGroup.First(e => e.GetComponent<Room>().Name == name).GetComponent<RoomData>();
+
+            from.IsPlayerIn.Value = false;
+            to.IsPlayerIn.Value = true;
+            to.IsVisited.Value = true;
+        }
+
+        public IObservable<IEntity> ReactToEntity(IEntity entity) 
+            => entity.GetComponent<RoomData>().IsPlayerIn.Where(b => b).Select(b => entity);
+
+        public void Process(IEntity entity)
+            => _currentRoom = entity;
     }
 }

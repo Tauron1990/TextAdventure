@@ -1,11 +1,19 @@
-﻿namespace Adventure.GameEngine.Events
+﻿using Adventure.GameEngine.Core;
+
+namespace Adventure.GameEngine.Events
 {
     public sealed class GotoDirection
     {
         public Direction Direction { get; }
 
-        public string? Result { get; set; }
+        public string Original { get; }
 
-        public GotoDirection(Direction target) => Direction = target;
+        public LazyString? Result { get; set; }
+
+        public GotoDirection(Direction target, string original)
+        {
+            Direction = target;
+            Original = original;
+        }
     }
 }

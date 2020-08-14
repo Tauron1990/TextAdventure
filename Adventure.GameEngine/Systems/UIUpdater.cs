@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reactive.Linq;
 using Adventure.GameEngine.Components;
 using Adventure.GameEngine.Events;
@@ -15,16 +16,29 @@ namespace Adventure.GameEngine.Systems
     public sealed class UIUpdater : MultiEventReactionSystem, IReactToEntitySystem
     {
         private readonly Game _game;
+        private readonly Lazy<GameInfo> _gameInfo;
+
         public override IGroup Group { get; } = new Group(typeof(Room), typeof(RoomData));
 
         public UIUpdater(IEventSystem eventSystem, Game game)
-            : base(eventSystem) => _game = game;
+            : base(eventSystem)
+        {
+            _game = game;
+            _gameInfo = new Lazy<GameInfo>(() => _game.ObservableGroupManager.GetObservableGroup(new Group(typeof(GameInfo))).Single().GetComponent<GameInfo>());
+        }
 
-        protected override void Init() 
-            => Receive<CommandExecutionCompled>(CommandExecuted);
+        protected override void Init()
+        {
+            Receive<QueryLastEntry>(c =>
+            {
+                var data = _gameInfo.Value;
+                EventSystem.Publish(new UpdateTextContent(data.LastContent, data.LastDescription));
+            });
+            Receive<CommandExecutionCompled>(CommandExecuted);
+        }
 
         private void CommandExecuted(CommandExecutionCompled result) 
-            => EventSystem.Publish(new UpdateTextContent(GetText(result.Result), null));
+            => SendUpdate(result.Result?.Format(_game.Content), null);
 
         public IObservable<IEntity> ReactToEntity(IEntity entity)
         {
@@ -37,7 +51,18 @@ namespace Adventure.GameEngine.Systems
         }
 
         public void Process(IEntity entity) 
-            => EventSystem.Publish(new UpdateTextContent(null, GetText(entity.GetComponent<RoomData>().Description.Value)));
+            => SendUpdate(null, GetText(entity.GetComponent<RoomData>().Description.Value));
+
+        private void SendUpdate(string? content, string? description)
+        {
+            var data = _gameInfo.Value;
+            if (content != null)
+                data.LastContent = content;
+            if (description != null)
+                data.LastDescription = description;
+
+            EventSystem.Publish(new UpdateTextContent(content, description));
+        }
 
         private string? GetText(string? data)
         {

@@ -1,4 +1,6 @@
-﻿using Adventure.TextProcessing.Interfaces;
+﻿using System;
+using Adventure.GameEngine.Core;
+using Adventure.TextProcessing.Interfaces;
 
 namespace Adventure.GameEngine.Events
 {
@@ -6,7 +8,7 @@ namespace Adventure.GameEngine.Events
     {
         public ICommand Command { get; }
 
-        public string? Result { get; set; }
+        public LazyString? Result { get; set; }
 
         public GenericCommand(ICommand command)
         {

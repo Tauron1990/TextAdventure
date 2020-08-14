@@ -15,6 +15,10 @@ namespace TextAdventure
 
         protected override void LoadResiources()
         {
+            Content.AddContentItem(GameConsts.NoDoorwayFound, "Kein weg in der Richtung \"{0}\" gefunden.");
+            Content.AddContentItem(GameConsts.DoorwayLooked, "De weg ist verspeert.");
+            Content.AddContentItem(GameConsts.NewRoomEntered, "Du bist jetch in \"{0}\"");
+            Content.AddContentItem("Start", "Einwohner melde Amt");
         }
 
         protected override RoomBuilder ConfigurateRooms(RoomConfiguration configuration)

@@ -27,30 +27,67 @@ using JetBrains.Annotations;
 
 namespace Adventure.TextProcessing.Interfaces
 {
+    public sealed class Verb
+    {
+        public VerbCodes VerbCode { get; }
+
+        public string Text { get; }
+
+        public Verb(VerbCodes verbCode, string text)
+        {
+            VerbCode = verbCode;
+            Text = text;
+        }
+    }
+
+    public sealed class Noun
+    {
+        public string Replace { get; }
+
+        public string Original { get; }
+
+        public Noun(string replace, string original)
+        {
+            Replace = replace;
+            Original = original;
+        }
+    }
+
+    public sealed class Adjective
+    {
+        public string Replace { get; }
+
+        public string Original { get; }
+
+        public Adjective(string replace, string original)
+        {
+            Replace = replace;
+            Original = original;
+        }
+    }
+
     [PublicAPI]
     public interface ICommand
     {
         string FullTextCommand { get; set; }
         
-        VerbCodes Verb { get; set; }
+        Verb Verb { get; set; }
 
-        string VerbText { get; set; }
+        Adjective? Adjective { get; set; }
 
-        string Adjective { get; set; }
+        Noun Noun { get; set; }
 
-        string Noun { get; set; }
-        
         PropositionEnum Preposition { get; set; }
 
-        string Adjective2 { get; set; }
+        Adjective? Adjective2 { get; set; }
 
-        string Noun2 { get; set; }
+        Noun Noun2 { get; set; }
 
         PropositionEnum Preposition2 { get; set; }
 
-        string Adjective3 { get; set; }
+        Adjective? Adjective3 { get; set; }
 
-        string Noun3 { get; set; }
+        Noun Noun3 { get; set; }
 
         bool ProfanityDetected { get; set; }
 

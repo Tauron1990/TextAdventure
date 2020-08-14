@@ -19,10 +19,7 @@ namespace TextAdventure
 
         private readonly ContentManagement _management = new ContentManagement();
 
-        public MainWindow()
-        {
-            InitializeComponent();
-        }
+        public MainWindow() => InitializeComponent();
 
         protected override void OnClosing(CancelEventArgs e)
         {
@@ -51,7 +48,7 @@ namespace TextAdventure
                 _game?.StopApplication();
 
                 _game = new AdventureGame(s, this, _management);
-                MainContent.LoadGame(_game);
+
                 Task.Run(() =>
                 {
                     _game.StartApplication();
@@ -66,13 +63,11 @@ namespace TextAdventure
             builder.AppendLine();
             builder.AppendLine(e.ToString());
 
-            MainContent.UnloadGame();
             MainContent.Display(builder.ToString());
             _game?.StopApplication();
         }
 
-        public void Succed(Game game)
-        { 
-        }
+        public void Succed(Game game) 
+            => MainContent.LoadGame(game);
     }
 }

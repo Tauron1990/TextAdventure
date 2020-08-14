@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using Adventure.GameEngine.Core;
 using Adventure.TextProcessing.Interfaces;
 using EcsRx.Components;
 
 namespace Adventure.GameEngine.Components
 {
-    public delegate string? CommandHandler(ICommand command);
+    public delegate LazyString? CommandHandler(ICommand command);
 
 
     public sealed class RoomCommands : IComponent, INotSerialized
