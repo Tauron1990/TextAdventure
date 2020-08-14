@@ -14,9 +14,9 @@ namespace Adventure.GameEngine.Components
 
         public DateTimeOffset SinceStart { get; }
 
-        public string LastDescription { get; set; }
+        public string? LastDescription { get; set; }
 
-        public string LastContent { get; set; }
+        public string? LastContent { get; set; }
 
         public GameInfo()
         {

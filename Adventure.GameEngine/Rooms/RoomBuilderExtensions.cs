@@ -1,7 +1,15 @@
-﻿namespace Adventure.GameEngine.Rooms
+﻿using Adventure.GameEngine.Blueprints;
+using JetBrains.Annotations;
+
+namespace Adventure.GameEngine.Rooms
 {
-    public sealed class RoomBuilderExtensions
+    [PublicAPI]
+    public static class RoomBuilderExtensions
     {
-        
+        public static RoomBuilder WithCommonCommandSet(this RoomBuilder builder)
+            => builder.WithBluePrint(builder.CommonCommands.CreateCommonCommandBlueprint());
+
+        public static RoomBuilder WithDescription(this RoomBuilder builder, string description) 
+            => builder.WithBluePrint(new RoomDescription(description));
     }
 }

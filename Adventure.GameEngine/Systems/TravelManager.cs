@@ -2,16 +2,17 @@
 using System.Collections.Generic;
 using System.Reactive.Disposables;
 using Adventure.GameEngine.Components;
-using Adventure.GameEngine.Events;
 using EcsRx.Entities;
 using EcsRx.Events;
 using EcsRx.Groups;
 using EcsRx.Groups.Observable;
 using EcsRx.Plugins.ReactiveSystems.Systems;
 using EcsRx.Systems;
+using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Systems
 {
+    [PublicAPI]
     public sealed class TravelManager : IManualSystem, ISetupSystem, ITeardownSystem
     {
         private readonly IEventSystem _system;

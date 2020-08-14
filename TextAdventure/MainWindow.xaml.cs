@@ -51,6 +51,7 @@ namespace TextAdventure
                 _game?.StopApplication();
 
                 _game = new AdventureGame(s, this, _management);
+                MainContent.LoadGame(_game);
                 Task.Run(() =>
                 {
                     _game.StartApplication();
@@ -65,11 +66,13 @@ namespace TextAdventure
             builder.AppendLine();
             builder.AppendLine(e.ToString());
 
+            MainContent.UnloadGame();
             MainContent.Display(builder.ToString());
             _game?.StopApplication();
         }
 
-        public void Succed(Game game) 
-            => MainContent.LoadGame(game);
+        public void Succed(Game game)
+        { 
+        }
     }
 }

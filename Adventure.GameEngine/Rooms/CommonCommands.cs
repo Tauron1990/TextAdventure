@@ -47,18 +47,13 @@ namespace Adventure.GameEngine.Rooms
         {
 
             var arr = new[]
-            {
-                GoHandler
-            };
+                      {
+                          GoHandler
+                      };
 
             return new RoomCommandSetup(
-                (CommandHandler)Delegate.Combine(arr.Select(c => c.Handler).Cast<Delegate>().ToArray()), 
+                (CommandHandler) Delegate.Combine(arr.Select(c => c.Handler).Cast<Delegate>().ToArray()),
                 arr.Select(c => c.Name));
         }
     }
-
-    public static class CommonCommandsExtensions
-    {
-        public static RoomBuilder WithCommonCommandSet(this RoomBuilder builder)
-            => builder.WithBluePrint(builder.CommonCommands.CreateCommonCommandBlueprint());
-    }
+}

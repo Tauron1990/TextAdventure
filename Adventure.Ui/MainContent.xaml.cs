@@ -54,6 +54,10 @@ namespace Adventure.Ui
                 document.Blocks.Add(_content);
 
                 TextContent.Document = document;
+
+                var data = _gameInfo.SingleOrDefault()?.GetComponent<GameInfo>();
+                if(data != null)
+                    UpdateContent(new UpdateTextContent(data.LastContent, data.LastDescription), true);
             });
         }
 

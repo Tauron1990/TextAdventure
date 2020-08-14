@@ -8,7 +8,7 @@ namespace Adventure.GameEngine.Core
     [PublicAPI]
     public sealed class DiceRoll : IDiceRoll
     {
-        readonly RNGCryptoServiceProvider _rng = new RNGCryptoServiceProvider();
+        private readonly RandomNumberGenerator _rng = RandomNumberGenerator.Create();
 
         public int Roll(int numberSides)
         {

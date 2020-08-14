@@ -37,24 +37,24 @@ namespace Adventure.TextProcessing
     /// verb - noun - preposition - noun
     /// </summary>
     [PublicAPI]
-    public class Parser : ParserBase, IParser
+    public sealed class Parser : ParserBase, IParser
     {
         public Parser()
         {
             
         }
 
-        /// <summary>
-        /// Constructor that allows you to custom set the verb, noun and preposition synonyms used by the parser. This
-        /// constructor is mostly used by the unit tests.
-        /// </summary>
-        /// <param name="verbSynonyms">Verb synonyms to be used by the parser.</param>
-        /// <param name="nounSynonyms">Noun synonyms to be used by the parser.</param>
-        /// <param name="prepositionMapping">Prepositions being used by the parser.</param>
-        public Parser(IVerbSynonyms verbSynonyms, INounSynonyms nounSynonyms, IPrepositionMapping prepositionMapping) 
-            : base(verbSynonyms,nounSynonyms,prepositionMapping)
-        {
-        }
+        ///// <summary>
+        ///// Constructor that allows you to custom set the verb, noun and preposition synonyms used by the parser. This
+        ///// constructor is mostly used by the unit tests.
+        ///// </summary>
+        ///// <param name="verbSynonyms">Verb synonyms to be used by the parser.</param>
+        ///// <param name="nounSynonyms">Noun synonyms to be used by the parser.</param>
+        ///// <param name="prepositionMapping">Prepositions being used by the parser.</param>
+        //public Parser(IVerbSynonyms verbSynonyms, INounSynonyms nounSynonyms, IPrepositionMapping prepositionMapping) 
+        //    : base(verbSynonyms,nounSynonyms,prepositionMapping)
+        //{
+        //}
 
         /// <summary>
         /// This is the method that will take a users input and parse it into a game command.

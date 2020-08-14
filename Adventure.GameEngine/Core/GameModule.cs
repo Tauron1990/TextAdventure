@@ -1,6 +1,8 @@
 ﻿using Adventure.GameEngine.Interfaces;
 using Adventure.TextProcessing;
+using EcsRx.Executor.Handlers;
 using EcsRx.Infrastructure.Dependencies;
+using EcsRx.Infrastructure.Extensions;
 
 namespace Adventure.GameEngine.Core
 {
@@ -13,9 +15,10 @@ namespace Adventure.GameEngine.Core
 
         public void Setup(IDependencyContainer container)
         {
-            container.Bind(typeof(Parser), typeof(Parser), new BindingConfiguration{ AsSingleton = true });
-            container.Bind(typeof(IDiceRoll), typeof(DiceRoll), new BindingConfiguration { AsSingleton = true });
-            container.Bind(typeof(Game), typeof(Game), new BindingConfiguration { AsSingleton = true, ToInstance = _game });
+            container.Bind<IConventionalSystemHandler, DisposibleSystemHandler>();
+            container.Bind<Game>(b => b.ToInstance(_game));
+            container.Bind<IDiceRoll, DiceRoll>(b => b.AsSingleton());
+            container.Bind<Parser>(b => b.ToInstance(new Parser()));
         }
     }
 }

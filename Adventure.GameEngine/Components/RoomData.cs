@@ -23,17 +23,21 @@ namespace Adventure.GameEngine.Components
                 .Concat(DoorWays)
                 .ToDictionary(dw => dw.Direction);
 
+        public ReactiveProperty<string> Description { get; }
+
         [JsonConstructor]
-        public RoomData(ReactiveProperty<bool> isPlayerIn, DoorWayConnection[] connections, DoorWay[] doorWays, ReactiveProperty<bool> isVisited)
+        public RoomData(ReactiveProperty<bool> isPlayerIn, DoorWayConnection[] connections, DoorWay[] doorWays, ReactiveProperty<bool> isVisited, ReactiveProperty<string> description)
         {
             IsPlayerIn = isPlayerIn;
             Connections = connections;
             DoorWays = doorWays;
             IsVisited = isVisited;
+            Description = description;
         }
 
         public RoomData()
         {
+            Description = new ReactiveProperty<string>();
             IsVisited = new ReactiveProperty<bool>();
             IsPlayerIn = new ReactiveProperty<bool>();
         }
