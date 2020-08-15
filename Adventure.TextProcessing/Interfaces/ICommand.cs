@@ -53,18 +53,6 @@ namespace Adventure.TextProcessing.Interfaces
         }
     }
 
-    public sealed class Adjective
-    {
-        public string Replace { get; }
-
-        public string Original { get; }
-
-        public Adjective(string replace, string original)
-        {
-            Replace = replace;
-            Original = original;
-        }
-    }
 
     [PublicAPI]
     public interface ICommand
@@ -73,21 +61,21 @@ namespace Adventure.TextProcessing.Interfaces
         
         Verb Verb { get; set; }
 
-        Adjective? Adjective { get; set; }
+        string? Adjective { get; set; }
 
         Noun Noun { get; set; }
 
         PropositionEnum Preposition { get; set; }
 
-        Adjective? Adjective2 { get; set; }
+        string? Adjective2 { get; set; }
 
-        Noun Noun2 { get; set; }
+        Noun? Noun2 { get; set; }
 
         PropositionEnum Preposition2 { get; set; }
 
-        Adjective? Adjective3 { get; set; }
+        string? Adjective3 { get; set; }
 
-        Noun Noun3 { get; set; }
+        Noun? Noun3 { get; set; }
 
         bool ProfanityDetected { get; set; }
 

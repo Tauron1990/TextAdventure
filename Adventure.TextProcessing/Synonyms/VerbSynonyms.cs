@@ -56,6 +56,7 @@ namespace Adventure.TextProcessing.Synonyms
             Add("tanzen", VerbCodes.Go);
 
             Add("wählen", VerbCodes.Take);
+            Add("nimm", VerbCodes.Take);
             Add("nehmen", VerbCodes.Take);
             Add("sammeln", VerbCodes.Take);
             Add("stehlen", VerbCodes.Take);

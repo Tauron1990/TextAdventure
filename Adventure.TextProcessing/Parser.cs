@@ -39,11 +39,6 @@ namespace Adventure.TextProcessing
     [PublicAPI]
     public sealed class Parser : ParserBase, IParser
     {
-        public Parser()
-        {
-            
-        }
-
         ///// <summary>
         ///// Constructor that allows you to custom set the verb, noun and preposition synonyms used by the parser. This
         ///// constructor is mostly used by the unit tests.
@@ -98,10 +93,10 @@ namespace Adventure.TextProcessing
             {
                 case 0:
                     return new Command();
-                case 1:
-                    SingleWordCommand(wordList[0]);
-                    Command.FullTextCommand = lowerCase;
-                    return Command;
+                //case 1:
+                //    SingleWordCommand(wordList[0]);
+                //    Command.FullTextCommand = lowerCase;
+                //    return Command;
                 default:
                     MultiWordCommand(wordList);
                     Command.FullTextCommand = lowerCase;
@@ -109,17 +104,17 @@ namespace Adventure.TextProcessing
             }
         }
 
-        private void SingleWordCommand(string command)
-        {
-            var direction = DirectionsHelper.GetDirectionCommand(command);
+        //private void SingleWordCommand(string command)
+        //{
+        //    //var direction = DirectionsHelper.GetDirectionCommand(command);
 
-            Command.Verb = direction.Verb;
-            Command.Noun = direction.Noun;
-            Command.FullTextCommand = direction.FullTextCommand;
+        //    //Command.Verb = direction.Verb;
+        //    //Command.Noun = direction.Noun;
+        //    //Command.FullTextCommand = direction.FullTextCommand;
 
-            if (Command.Verb == VerbCodes.NoCommand) 
-                Command.Verb = Verbs.GetVerbForSynonym(command);
-        }
+        //    //if (Command.Verb == VerbCodes.NoCommand) 
+        //    //    Command.Verb = Verbs.GetVerbForSynonym(command);
+        //}
 
         private void MultiWordCommand(string[] commandList)
         {
@@ -132,8 +127,7 @@ namespace Adventure.TextProcessing
 
                         if (verb == VerbCodes.NoCommand) { continue; }
 
-                        Command.VerbText = word;
-                        Command.Verb = verb;
+                        Command.Verb = new Verb(verb, word);
                         break;
                     case ParserStatesEnum.Noun:
                         if (Adjectives.CheckAdjectiveExists(word))
@@ -145,7 +139,7 @@ namespace Adventure.TextProcessing
                         var noun = ProcessNoun(word, ParserStatesEnum.Preposition);
 
                         if (noun == string.Empty) continue;
-                        Command.Noun = noun;
+                        Command.Noun = new Noun(noun, word);
                         break;
                     case ParserStatesEnum.Preposition:
                         var preposition = ProcessPreposition(word, ParserStatesEnum.Noun2);
@@ -163,7 +157,7 @@ namespace Adventure.TextProcessing
                         var noun2 = ProcessNoun(word, ParserStatesEnum.Preposition2);
 
                         if (noun2 == string.Empty) continue;
-                        Command.Noun2 = noun2;
+                        Command.Noun2 = new Noun(noun2, word);
                         break;
                     case ParserStatesEnum.Preposition2:
                         var preposition2 = ProcessPreposition(word, ParserStatesEnum.Noun3);
@@ -180,7 +174,7 @@ namespace Adventure.TextProcessing
                         var noun3 = ProcessNoun(word, ParserStatesEnum.None);
 
                         if (noun3 == string.Empty) continue;
-                        Command.Noun3 = noun3;
+                        Command.Noun3 = new Noun(noun3, word);
                         break;
                 }
             }

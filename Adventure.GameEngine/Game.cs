@@ -7,7 +7,6 @@ using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Events;
 using Adventure.GameEngine.Internal;
 using Adventure.GameEngine.Rooms;
-using Adventure.Utilities;
 using Adventure.Utilities.Interfaces;
 using EcsRx.Extensions;
 using EcsRx.Groups;
@@ -22,6 +21,7 @@ using Newtonsoft.Json;
 
 namespace Adventure.GameEngine
 {
+    [PublicAPI]
     public abstract class Game : EcsRx.Infrastructure.EcsRxApplication
     {
         private readonly string _saveGame;
@@ -88,7 +88,7 @@ namespace Adventure.GameEngine
                     if(info.Version != Version)
                         throw new InvalidOperationException("Invalid Versions");
 
-                    var roomConfig = new RoomConfiguration(new CommonCommands(Content, EventSystem));
+                    var roomConfig = new RoomConfiguration(new CommonCommands(EventSystem, this));
                     ConfigurateRooms(roomConfig);
                     roomConfig.Validate();
 
@@ -109,17 +109,20 @@ namespace Adventure.GameEngine
                 {
                     EntityDatabase.GetCollection().CreateEntity(new BaseGameInfo(Version));
 
-                    var roomConfiguration = new RoomConfiguration(new CommonCommands(Content, EventSystem));
+                    var roomConfiguration = new RoomConfiguration(new CommonCommands(EventSystem, this));
                     var start = ConfigurateRooms(roomConfiguration);
                     roomConfiguration.Validate();
                     start.WithBluePrint(new StartRoom());
 
-                    var map = EntityDatabase.GetCollection();
+                    var entityCollection = EntityDatabase.GetCollection();
                     foreach (var room in roomConfiguration.Rooms)
                     {
+                        foreach (var entity in room.NewEntities) 
+                            entityCollection.CreateEntity(entity.Blueprints);
+
                         room.WithBluePrint(new DoorWayConfiguration(room.DoorWays, room.Connections));
 
-                        map.CreateEntity(room.Blueprints);
+                        entityCollection.CreateEntity(room.Blueprints);
                     }
 
                     EntityDatabase.GetCollection().CreateEntity(new PlayerSetup(start.Name));
@@ -171,7 +174,7 @@ namespace Adventure.GameEngine
             }
 
             if (!Directory.Exists(Path.GetDirectoryName(_saveGame)))
-                Directory.CreateDirectory(Path.GetDirectoryName(_saveGame));
+                Directory.CreateDirectory(Path.GetDirectoryName(_saveGame) ?? string.Empty);
 
             File.WriteAllText(_saveGame, JsonConvert.SerializeObject(save, Formatting.Indented));
         }

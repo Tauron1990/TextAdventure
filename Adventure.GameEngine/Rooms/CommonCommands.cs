@@ -3,15 +3,18 @@ using System.Collections.Generic;
 using System.Linq;
 using Adventure.GameEngine.Blueprints;
 using Adventure.GameEngine.Components;
+using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Events;
 using Adventure.TextProcessing.Synonyms;
 using Adventure.Utilities.Interfaces;
+using CodeProject.ObjectPool.Specialized;
 using EcsRx.Blueprints;
 using EcsRx.Entities;
 using EcsRx.Events;
 using EcsRx.Groups.Observable;
 using EcsRx.Extensions;
 using EcsRx.Groups;
+using EcsRx.Infrastructure.Extensions;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Rooms
@@ -21,28 +24,54 @@ namespace Adventure.GameEngine.Rooms
     {
         private readonly IEventSystem _eventSystem;
         private readonly IObservableGroup _rooms;
+        private readonly IStringBuilderPool _stringBuilderPool;
+        private readonly IContentManagement _management;
 
         public CommonCommands(IEventSystem eventSystem, Game game)
         {
             _eventSystem = eventSystem;
+            _management = game.Content;
+
+            _stringBuilderPool = game.Container.Resolve<IStringBuilderPool>();
             _rooms = game.ObservableGroupManager.GetObservableGroup(new Group(typeof(Room), typeof(RoomData)));
 
             GoHandler = CreateGoHandler();
             LookHandler = CreateLookHandler();
+            TakeHandler = CreateTakeHandler();
         }
 
-        public (CommandHandler Handler, string Name) LookHandler { get; }
+        public (CommandHandler Handler, string Name) TakeHandler { get; }
+        private (CommandHandler, string) CreateTakeHandler()
+        {
+            return (c =>
+            {
 
+            }, "nimm");
+        }
+
+
+        public (CommandHandler Handler, string Name) LookHandler { get; }
         private (CommandHandler, string) CreateLookHandler()
         {
             return (c =>
             {
-                var currwentRoom = _rooms.Query(new QuerryCurrentRoom()).Single();
+                var currentRoom = _rooms.Query(new QuerryCurrentRoom()).Single();
+                if(currentRoom == null)
+                    return null;
+
+                using var pooled = _stringBuilderPool.GetObject();
+                var builder = pooled.StringBuilder;
+
+                foreach (var interst in currentRoom.GetComponent<RoomData>().Pois.Where(interst => interst.Show)) 
+                    builder.AppendLine(interst.Text.Format(_management));
+
+                return builder.Length == 0 ? null : new LazyString(builder.ToString());
             }, "prüfen");
         }
 
-        public (CommandHandler Handler, string Name) GoHandler { get; }
 
+
+        public (CommandHandler Handler, string Name) GoHandler { get; }
         private (CommandHandler, string) CreateGoHandler()
         {
             return (c =>
@@ -56,13 +85,16 @@ namespace Adventure.GameEngine.Rooms
             }, "gehe");
         }
 
+
+
         public IBlueprint CreateCommonCommandBlueprint()
         {
 
             var arr = new[]
                       {
                           GoHandler,
-                          LookHandler
+                          LookHandler,
+                          TakeHandler
                       };
 
             return new RoomCommandSetup(

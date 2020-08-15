@@ -7,6 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="BattlePlanPath" Version="2.0.0" />
+    <PackageReference Include="CodeProject.ObjectPool" Version="4.0.2" />
     <PackageReference Include="ecsrx" Version="3.11.68" />
     <PackageReference Include="EcsRx.Infrastructure" Version="3.11.68" />
     <PackageReference Include="EcsRx.Infrastructure.Ninject" Version="3.11.68" />

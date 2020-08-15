@@ -10,13 +10,16 @@ namespace Adventure.GameEngine.Rooms
     public sealed class RoomBuilder
     {
         internal string Name { get; }
-        private readonly RoomConfiguration _root;
+        public RoomConfiguration Root { get; }
         private readonly Func<string, RoomBuilder?> _roomLookup;
         private readonly HashSet<Direction> _locked = new HashSet<Direction>();
 
         public CommonCommands CommonCommands { get; }
 
         internal List<IBlueprint> Blueprints { get; } = new List<IBlueprint>();
+
+        internal List<IBluePrintProvider> NewEntities { get; } = new List<IBluePrintProvider>();
+
         internal List<DoorWay> DoorWays { get; } = new List<DoorWay>();
 
         internal List<DoorWayConnection> Connections { get; } = new List<DoorWayConnection>();
@@ -26,7 +29,7 @@ namespace Adventure.GameEngine.Rooms
             Blueprints.Add(new RoomCore(name));
             Name = name;
             CommonCommands = commonCommands;
-            _root = root;
+            Root = root;
             _roomLookup = roomLookup;
         }
 
@@ -47,7 +50,7 @@ namespace Adventure.GameEngine.Rooms
         }
 
         public RoomConfiguration And()
-            => _root;
+            => Root;
 
         internal bool Connect(string from, DoorWay original)
         {

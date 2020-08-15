@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Rooms
@@ -10,6 +11,8 @@ namespace Adventure.GameEngine.Rooms
         private readonly CommonCommands _commonCommands;
         private readonly Dictionary<string, RoomBuilder> _rooms = new Dictionary<string, RoomBuilder>();
         
+        public Dictionary<string, object> CustomData = new Dictionary<string, object>();
+
         internal IEnumerable<RoomBuilder> Rooms => _rooms.Values;
 
         internal RoomConfiguration(CommonCommands commonCommands)
@@ -32,6 +35,9 @@ namespace Adventure.GameEngine.Rooms
                 if (result != null) 
                     throw new InvalidOperationException($"Room Validation Faild {key} Error {result}");
             }
+
+            foreach (var prov in _rooms.SelectMany(r => r.Value.NewEntities)) 
+                prov.Validate();
         }
     }
 }

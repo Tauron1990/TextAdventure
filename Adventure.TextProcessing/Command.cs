@@ -42,19 +42,17 @@ namespace Adventure.TextProcessing
         /// <summary>
         /// The verb that was specified by the player.
         /// </summary>
-        public VerbCodes Verb { get; set; }
-
-        public string VerbText { get; set; }
+        public Verb Verb { get; set; }
 
         /// <summary>
         /// The first adjective that was specified by the player.
         /// </summary>
-        public string Adjective { get; set; }
+        public string? Adjective { get; set; }
 
         /// <summary>
         /// The first noun that was specified by the player.
         /// </summary>
-        public string Noun { get; set; }
+        public Noun Noun { get; set; }
         
         /// <summary>
         /// The first preposition that was specified by the player after the first verb and noun combination.
@@ -64,12 +62,12 @@ namespace Adventure.TextProcessing
         /// <summary>
         /// The second adjective that was specified by the player.
         /// </summary>
-        public string Adjective2 { get; set; }
+        public string? Adjective2 { get; set; }
 
         /// <summary>
         /// The second noun that was specified by the player.
         /// </summary>
-        public string Noun2 { get; set; }
+        public Noun? Noun2 { get; set; }
 
         /// <summary>
         /// The second preposition that was specified by the player after the first verb and noun combination.
@@ -79,12 +77,12 @@ namespace Adventure.TextProcessing
         /// <summary>
         /// The third adjective that was specified by the player.
         /// </summary>
-        public string Adjective3 { get; set; }
+        public string? Adjective3 { get; set; }
 
         /// <summary>
         /// The third noun that was specified by the player.
         /// </summary>
-        public string Noun3 { get; set; }
+        public Noun? Noun3 { get; set; }
 
         /// <summary>
         /// If the profanity filter detects any profane language, then this flag is set to true. It is not the purpose
@@ -103,15 +101,11 @@ namespace Adventure.TextProcessing
         /// </summary>
         public Command()
         {
-            Verb = VerbCodes.NoCommand;
-            Adjective = string.Empty;
-            Noun = string.Empty;
+            FullTextCommand = string.Empty;
+            Verb = new Verb(VerbCodes.NoCommand, string.Empty);
+            Noun = new Noun(string.Empty, string.Empty);
             Preposition = PropositionEnum.NotRecognised;
-            Adjective2 = string.Empty;
-            Noun2 = string.Empty;
             Preposition2 = PropositionEnum.NotRecognised;
-            Adjective3 = string.Empty;
-            Noun3 = string.Empty;
             ProfanityDetected = false;
             Profanity = string.Empty;
         }

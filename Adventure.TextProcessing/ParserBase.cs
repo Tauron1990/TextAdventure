@@ -39,6 +39,7 @@ namespace Adventure.TextProcessing
             Prepositions = new PrepositionMapping();
             Adjectives = new AdjectiveMapping();
             EnableProfanityFilter = true;
+            Command = new Command();
         }
 
         /// <summary>
@@ -55,6 +56,7 @@ namespace Adventure.TextProcessing
             Prepositions = prepositionMapping;
             Adjectives = new AdjectiveMapping();
             EnableProfanityFilter = true;
+            Command = new Command();
         }
 
         /// <summary>
