@@ -8,15 +8,18 @@ namespace Adventure.GameEngine.Components
     {
         public string Id { get; }
 
-        public ReactiveProperty<string> Locarion { get; }
+        public ReactiveProperty<string> Location { get; }
 
         public LazyString Description { get; set; }
 
-        public IngameObject(string id, LazyString description, ReactiveProperty<string> locarion)
+        public string DisplayName { get; }
+
+        public IngameObject(string id, LazyString description, ReactiveProperty<string> location, string displayName)
         {
             Id = id;
             Description = description;
-            Locarion = locarion;
+            Location = location;
+            DisplayName = displayName;
         }
     }
 }

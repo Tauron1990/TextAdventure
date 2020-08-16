@@ -20,11 +20,13 @@ namespace Adventure.GameEngine.Blueprints
 
         public string Id { get; }
 
+        public string DisplayName { get; set; }
+
         public DropItemBluePrint(string id) => Id = id;
 
         public void Apply(IEntity entity)
         {
-            entity.AddComponents(new IngameObject(Id, Description, new ReactiveProperty<string>(Location)), new InteractiveObject(Action, TriggerEvent));
+            entity.AddComponents(new IngameObject(Id, Description, new ReactiveProperty<string>(Location), DisplayName), new InteractiveObject(Action, TriggerEvent));
         }
     }
 }

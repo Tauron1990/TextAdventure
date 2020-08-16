@@ -160,7 +160,7 @@ namespace Adventure.TextProcessing.Synonyms
                              "zynisch"
                          };
 
-            foreach (var adj in german) Add(adj);
+            foreach (var adj in german) _adjectiveMapping[adj] = adj;
         }
 
         public void Add(string adjective)

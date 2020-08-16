@@ -50,5 +50,11 @@ namespace Adventure.GameEngine.Rooms
             BluePrint.TriggerEvent = @event;
             return (TReturn) this;
         }
+
+        public TReturn WithDisplayName(string name)
+        {
+            BluePrint.DisplayName = name;
+            return (TReturn)this;
+        }
     }
 }
