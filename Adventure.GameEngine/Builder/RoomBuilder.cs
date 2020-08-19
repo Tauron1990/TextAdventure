@@ -1,18 +1,35 @@
 ﻿using System;
 using System.Collections.Generic;
 using Adventure.GameEngine.Blueprints;
+using Adventure.GameEngine.Persistence;
+using Adventure.TextProcessing;
 using EcsRx.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Rooms
+namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
     public sealed class RoomBuilder
     {
-        internal string Name { get; }
-        public RoomConfiguration Root { get; }
-        private readonly Func<string, RoomBuilder?> _roomLookup;
         private readonly HashSet<Direction> _locked = new HashSet<Direction>();
+        private readonly Func<string, RoomBuilder?> _roomLookup;
+
+        internal RoomBuilder(string name, RoomConfiguration root, Func<string, RoomBuilder?> roomLookup,
+            CommonCommands commonCommands, Parser parser)
+        {
+            Blueprints.Add(new PersitBlueprint(name));
+            Blueprints.Add(new RoomCore(name));
+            Name = name;
+            CommonCommands = commonCommands;
+            Parser = parser;
+            Root = root;
+            _roomLookup = roomLookup;
+        }
+
+        internal string Name { get; }
+
+        public Parser Parser { get; }
+        public RoomConfiguration Root { get; }
 
         public CommonCommands CommonCommands { get; }
 
@@ -23,15 +40,6 @@ namespace Adventure.GameEngine.Rooms
         internal List<DoorWay> DoorWays { get; } = new List<DoorWay>();
 
         internal List<DoorWayConnection> Connections { get; } = new List<DoorWayConnection>();
-
-        internal RoomBuilder(string name, RoomConfiguration root, Func<string, RoomBuilder?> roomLookup, CommonCommands commonCommands)
-        {
-            Blueprints.Add(new RoomCore(name));
-            Name = name;
-            CommonCommands = commonCommands;
-            Root = root;
-            _roomLookup = roomLookup;
-        }
 
         public RoomBuilder WithBluePrint(IBlueprint print)
         {
@@ -54,42 +62,21 @@ namespace Adventure.GameEngine.Rooms
 
         internal bool Connect(string from, DoorWay original)
         {
-            var realDirection = Direction.Custom;
-
             // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
-            switch (original.Direction)
+            var realDirection = original.Direction switch
             {
-                case Direction.North:
-                    realDirection = Direction.South;
-                    break;
-                case Direction.East:
-                    realDirection = Direction.West;
-                    break;
-                case Direction.South:
-                    realDirection = Direction.North;
-                    break;
-                case Direction.West:
-                    realDirection = Direction.East;
-                    break;
-                case Direction.NorthEast:
-                    realDirection = Direction.SouthWest;
-                    break;
-                case Direction.SouthEast:
-                    realDirection = Direction.NorthWest;
-                    break;
-                case Direction.SouthWest:
-                    realDirection = Direction.NorthEast;
-                    break;
-                case Direction.NorthWest:
-                    realDirection = Direction.SouthEast;
-                    break;
-                case Direction.Up:
-                    realDirection = Direction.Down;
-                    break;
-                case Direction.Down:
-                    realDirection = Direction.Up;
-                    break;
-            }
+                Direction.North => Direction.South,
+                Direction.East => Direction.West,
+                Direction.South => Direction.North,
+                Direction.West => Direction.East,
+                Direction.NorthEast => Direction.SouthWest,
+                Direction.SouthEast => Direction.NorthWest,
+                Direction.SouthWest => Direction.NorthEast,
+                Direction.NorthWest => Direction.SouthEast,
+                Direction.Up => Direction.Down,
+                Direction.Down => Direction.Up,
+                _ => Direction.Custom
+            };
 
             if (realDirection == Direction.Custom)
                 return false;

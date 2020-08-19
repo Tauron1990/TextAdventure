@@ -10,7 +10,7 @@ namespace Adventure.GameEngine.Components
     public delegate LazyString? CommandHandler(ICommand command);
 
 
-    public sealed class RoomCommands : IComponent, INotSerialized
+    public sealed class RoomCommands : IComponent
     {
         public ImmutableList<CommandHandler> Handler { get; private set; }
 

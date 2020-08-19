@@ -1,19 +1,16 @@
 ﻿using System.Collections.Immutable;
+using System.IO;
+using Adventure.GameEngine.Persistence;
 using EcsRx.Components;
 using JetBrains.Annotations;
-using Newtonsoft.Json;
 
 namespace Adventure.GameEngine.Components
 {
     [PublicAPI]
-    public sealed class HasInvertory : IComponent
+    public sealed class HasInvertory : IComponent, IPersistComponent
     {
         public ImmutableDictionary<string, int> Items { get; private set; }
-
-        [JsonConstructor]
-        public HasInvertory(ImmutableDictionary<string, int> items) => Items = items;
-
-
+        
         public HasInvertory() => Items = ImmutableDictionary<string, int>.Empty;
 
 
@@ -26,5 +23,17 @@ namespace Adventure.GameEngine.Components
             
             Items = amount == 1 ? Items.Remove(item) : Items.SetItem(item, amount - 1);
         }
+
+        void IPersitable.WriteTo(BinaryWriter writer)
+        {
+            BinaryHelper.WriteDic(Items);
+        }
+
+        void IPersitable.ReadFrom(BinaryReader reader)
+        {
+            throw new System.NotImplementedException();
+        }
+
+        string IPersistComponent.Id => throw new System.NotImplementedException();
     }
 }

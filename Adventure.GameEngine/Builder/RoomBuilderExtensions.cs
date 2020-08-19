@@ -1,7 +1,7 @@
 ﻿using Adventure.GameEngine.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Rooms
+namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
     public static class RoomBuilderExtensions
@@ -9,7 +9,7 @@ namespace Adventure.GameEngine.Rooms
         public static RoomBuilder WithCommonCommandSet(this RoomBuilder builder)
             => builder.WithBluePrint(builder.CommonCommands.CreateCommonCommandBlueprint());
 
-        public static RoomBuilder WithDescription(this RoomBuilder builder, string description) 
+        public static RoomBuilder WithDescription(this RoomBuilder builder, string description)
             => builder.WithBluePrint(new RoomDescription(description));
 
         public static DropItemBuilder WithDropItem(this RoomBuilder builder, string id)
@@ -17,5 +17,8 @@ namespace Adventure.GameEngine.Rooms
 
         public static DropItemBuilder WithDropItem(this RoomBuilder builder, ItemBuilder item)
             => new DropItemBuilder(builder, item);
+
+        public static CommandBuilder WithCustomCommands(this RoomBuilder builder)
+            => new CommandBuilder(builder, builder.Parser);
     }
 }

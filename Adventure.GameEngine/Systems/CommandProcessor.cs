@@ -12,7 +12,7 @@ namespace Adventure.GameEngine.Systems
 {
     public sealed class CommandProcessor : EventReactionSystem<ICommand>
     {
-        public CommandProcessor(IEventSystem eventSystem) 
+        public CommandProcessor(IEventSystem eventSystem)
             : base(eventSystem)
         {
         }
@@ -24,14 +24,12 @@ namespace Adventure.GameEngine.Systems
             var target = ObservableGroup.FirstOrDefault(e => e.GetComponent<RoomData>().IsPlayerIn.Value);
             LazyString? result = null;
             if (target == null)
-            {
                 foreach (var func in target.GetComponent<RoomCommands>().Handler.Reverse())
                 {
                     result = func(eventData);
                     if (result != null)
                         break;
                 }
-            }
 
             if (result != null)
             {

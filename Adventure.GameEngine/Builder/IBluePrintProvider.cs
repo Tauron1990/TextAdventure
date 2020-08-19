@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using EcsRx.Blueprints;
 
-namespace Adventure.GameEngine.Rooms
+namespace Adventure.GameEngine.Builder
 {
     public interface IBluePrintProvider
     {

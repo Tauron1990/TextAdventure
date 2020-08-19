@@ -1,13 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using Adventure.GameEngine.Persistence;
 using EcsRx.Components;
 using EcsRx.ReactiveData;
-using Newtonsoft.Json;
+using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Components
 {
-    public sealed class RoomData : IComponent
+    public sealed class RoomData : IComponent, IPersistComponent
     {
         public ReactiveProperty<bool> IsPlayerIn { get; }
 
@@ -19,7 +21,7 @@ namespace Adventure.GameEngine.Components
 
         public List<PointOfInterst> Pois { get; } = new List<PointOfInterst>();
 
-        [JsonIgnore]
+        [PublicAPI]
         public Dictionary<Direction, IDoorway> TransitionMap 
             => Connections.Cast<IDoorway>()
                 .Concat(DoorWays)
@@ -27,22 +29,27 @@ namespace Adventure.GameEngine.Components
 
         public ReactiveProperty<string> Description { get; }
 
-        [JsonConstructor]
-        public RoomData(ReactiveProperty<bool> isPlayerIn, DoorWayConnection[] connections, DoorWay[] doorWays, ReactiveProperty<bool> isVisited, ReactiveProperty<string> description, List<PointOfInterst> pois)
-        {
-            IsPlayerIn = isPlayerIn;
-            Connections = connections;
-            DoorWays = doorWays;
-            IsVisited = isVisited;
-            Description = description;
-            Pois = pois;
-        }
-
         public RoomData()
         {
             Description = new ReactiveProperty<string>();
             IsVisited = new ReactiveProperty<bool>();
             IsPlayerIn = new ReactiveProperty<bool>();
+        }
+
+        string IPersistComponent.Id => "RoomData";
+
+        void IPersitable.WriteTo(BinaryWriter writer)
+        {
+            writer.Write(IsPlayerIn.Value);
+            writer.Write(IsVisited.Value);
+            writer.Write(Description.Value);
+        }
+
+        void IPersitable.ReadFrom(BinaryReader reader)
+        {
+            IsPlayerIn.Value = reader.ReadBoolean();
+            IsVisited.Value = reader.ReadBoolean();
+            Description.Value = reader.ReadString();
         }
     }
 }

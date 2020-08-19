@@ -19,7 +19,7 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Temp", "Temp", "{3E7D5166-0
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Temp1", "Temp1\Temp1.csproj", "{D5AB388D-AFE6-4278-8D1F-EE5E53F59BB2}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adventure.Ui", "Adventure.Ui\Adventure.Ui.csproj", "{211031B6-6E73-468F-880B-44D675E62052}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adventure.Ui", "Adventure.Ui\Adventure.Ui.csproj", "{211031B6-6E73-468F-880B-44D675E62052}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

@@ -1,10 +1,12 @@
-﻿using Adventure.GameEngine.Core;
+﻿using System.IO;
+using Adventure.GameEngine.Core;
+using Adventure.GameEngine.Persistence;
 using EcsRx.Components;
 using EcsRx.ReactiveData;
 
 namespace Adventure.GameEngine.Components
 {
-    public sealed class IngameObject : IComponent
+    public sealed class IngameObject : IComponent, IPersistComponent
     {
         public string Id { get; }
 
@@ -20,6 +22,20 @@ namespace Adventure.GameEngine.Components
             Description = description;
             Location = location;
             DisplayName = displayName;
+        }
+
+        string IPersistComponent.Id => "InGameObject";
+
+        void IPersitable.WriteTo(BinaryWriter writer)
+        {
+            writer.Write(Location.Value);
+            BinaryHelper.Write(writer, Description);
+        }
+
+        void IPersitable.ReadFrom(BinaryReader reader)
+        {
+            Location.Value = reader.ReadString();
+            Description = BinaryHelper.Read<LazyString>(reader);
         }
     }
 }

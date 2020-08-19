@@ -1,10 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using Adventure.GameEngine.Blueprints;
+using Adventure.GameEngine.Persistence;
 using EcsRx.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Rooms
+namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
     public sealed class DropItemBuilder : ItemBuilder<DropItemBuilder>, IBluePrintProvider
@@ -36,14 +37,18 @@ namespace Adventure.GameEngine.Rooms
         public RoomBuilder InRoom() 
             => _builder;
 
-        IEnumerable<IBlueprint> IBluePrintProvider.Blueprints => new []{ BluePrint };
+        IEnumerable<IBlueprint> IBluePrintProvider.Blueprints => new IBlueprint[]
+        { 
+            BluePrint, 
+            new PersitBlueprint(DropItemPrefix + _id),
+        };
 
         void IBluePrintProvider.Validate()
         {
             if(string.IsNullOrWhiteSpace(BluePrint.Location))
                 throw new InvalidOperationException("No Location for item");
 
-            if(_builder.Root.CustomData.ContainsKey(DropItemPrefix + _id + BluePrint.Location))
+            if(_builder.Root.CustomData.ContainsKey(DropItemPrefix + _id))
                 throw new InvalidOperationException("Duplicate Item");
 
             _builder.Root.CustomData[DropItemPrefix + _id + BluePrint.Location] = this;

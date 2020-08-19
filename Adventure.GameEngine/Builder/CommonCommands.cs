@@ -16,7 +16,7 @@ using EcsRx.Groups.Observable;
 using EcsRx.Infrastructure.Extensions;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Rooms
+namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
     public sealed class CommonCommands
