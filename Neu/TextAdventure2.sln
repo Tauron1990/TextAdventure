@@ -1,0 +1,30 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 12.00
+# Visual Studio Version 16
+VisualStudioVersion = 16.0.30404.54
+MinimumVisualStudioVersion = 10.0.40219.1
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engine", "Engine", "{E54E25CC-AA7E-4DE7-82F9-FE5585E2E432}"
+EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adventure.GameEngine", "Adventure.GameEngine\Adventure.GameEngine.csproj", "{AA8FD255-E26C-4EEF-B29D-66178C766286}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Any CPU = Debug|Any CPU
+		Release|Any CPU = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Release|Any CPU.Build.0 = Release|Any CPU
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+	GlobalSection(NestedProjects) = preSolution
+		{AA8FD255-E26C-4EEF-B29D-66178C766286} = {E54E25CC-AA7E-4DE7-82F9-FE5585E2E432}
+	EndGlobalSection
+	GlobalSection(ExtensibilityGlobals) = postSolution
+		SolutionGuid = {77F22F45-1679-443A-A14E-FBBF6C779DCC}
+	EndGlobalSection
+EndGlobal

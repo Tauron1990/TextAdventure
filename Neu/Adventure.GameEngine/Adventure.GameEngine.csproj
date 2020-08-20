@@ -1,0 +1,19 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CodeProject.ObjectPool" Version="4.0.2" />
+    <PackageReference Include="EcsRx.Infrastructure.Ninject" Version="3.11.68" />
+    <PackageReference Include="EcsRx.Plugins.Batching" Version="3.11.68" />
+    <PackageReference Include="EcsRx.Plugins.Computeds" Version="3.11.68" />
+    <PackageReference Include="EcsRx.Plugins.ReactiveSystems" Version="3.11.68" />
+    <PackageReference Include="EcsRx.ReactiveData" Version="3.11.68" />
+    <PackageReference Include="JetBrains.Annotations" Version="2020.1.0" />
+    <PackageReference Include="System.Collections.Immutable" Version="1.7.1" />
+  </ItemGroup>
+
+</Project>
