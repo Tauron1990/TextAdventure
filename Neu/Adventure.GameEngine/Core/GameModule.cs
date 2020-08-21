@@ -1,9 +1,7 @@
-﻿using Adventure.GameEngine.Systems;
-using CodeProject.ObjectPool.Specialized;
+﻿using CodeProject.ObjectPool.Specialized;
 using EcsRx.Executor.Handlers;
 using EcsRx.Infrastructure.Dependencies;
 using EcsRx.Infrastructure.Extensions;
-using EcsRx.Systems;
 
 namespace Adventure.GameEngine.Core
 {
@@ -18,9 +16,6 @@ namespace Adventure.GameEngine.Core
 
         public void Setup(IDependencyContainer container)
         {
-            container.Bind<ISystem, CommandDispatcher>();
-            container.Bind<ISystem, DelegateCommandProcessor>();
-
             container.Bind<IConventionalSystemHandler, DisposibleSystemHandler>();
 
             container.Bind<Game>(b => b.ToInstance(_game));

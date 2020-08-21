@@ -2,7 +2,12 @@
 using System.IO;
 using Adventure.GameEngine.Builder;
 using Adventure.GameEngine.Core;
+using Adventure.GameEngine.Core.Blueprints;
 using Adventure.GameEngine.Core.Persistence;
+using Adventure.GameEngine.Systems.Events;
+using EcsRx.Collections.Entity;
+using EcsRx.Entities;
+using EcsRx.Extensions;
 using EcsRx.Infrastructure;
 using EcsRx.Infrastructure.Dependencies;
 using EcsRx.Infrastructure.Extensions;
@@ -31,7 +36,7 @@ namespace Adventure.GameEngine
 
         public override IDependencyContainer Container { get; }
 
-        protected Persister Persister { get; private set; } = null!
+        protected Persister Persister { get; private set; } = null!;
 
         protected abstract int Version { get; }
 
@@ -77,13 +82,13 @@ namespace Adventure.GameEngine
 
                 EntityDatabase.GetCollection().CreateEntity(new BaseGameInfo(Version));
 
-                var roomConfiguration = new RoomConfiguration(new CommonCommands(EventSystem, this), Parser);
-                var start = ConfigurateRooms(roomConfiguration);
+                var roomConfiguration = new GameConfiguration(Container);
+                var start = ConfigurateGame(roomConfiguration);
                 roomConfiguration.Validate();
                 start.WithBluePrint(new StartRoom());
 
                 var entityCollection = EntityDatabase.GetCollection();
-                foreach (var room in roomConfiguration.Rooms)
+                foreach (var room in roomConfiguration.Rooms.Rooms)
                 {
                     foreach (var entity in room.NewEntities)
                         entityCollection.CreateEntity(entity.Blueprints);
@@ -98,7 +103,7 @@ namespace Adventure.GameEngine
                 if (File.Exists(_saveGame))
                     LoadEntityDatabase();
 
-                EventSystem.Publish(new MapBuild());
+                EventSystem.Publish(new GameBuild());
             }
             catch (Exception e)
             {
@@ -112,12 +117,17 @@ namespace Adventure.GameEngine
         {
         }
 
-        protected abstract RoomBuilder ConfigurateRooms(GameConfiguration configuration);
+        protected virtual IEntity LoadEntity(string name, IEntityCollection collection)
+        {
+            throw new InvalidOperationException("No Entity Found");
+        }
+
+        protected abstract RoomBuilder ConfigurateGame(GameConfiguration configuration);
 
         private void SaveEntityDatabase()
             => Persister.Save(_saveGame);
 
         private void LoadEntityDatabase()
-            => Persister.Load(_saveGame, (s, collection) => throw new NotImplementedException("Currently not implemented"));
+            => Persister.Load(_saveGame, LoadEntity);
     }
 }

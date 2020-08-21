@@ -11,7 +11,12 @@ namespace Adventure.GameEngine.Builder.CommandData
         private ICommandProperties? _commandProperties;
 
         public DelegateCommand(object? parameter, CommandHandler actualHandler) 
-            : base(nameof(DelegateCommand))
+            : this(nameof(DelegateCommand), parameter, actualHandler)
+        {
+        }
+
+        public DelegateCommand(string id, object? parameter, CommandHandler actualHandler)
+            : base(id)
         {
             _parameter = parameter;
             ActualHandler = actualHandler;

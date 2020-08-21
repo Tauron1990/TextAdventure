@@ -8,20 +8,41 @@ using EcsRx.Entities;
 using EcsRx.Events.Collections;
 using EcsRx.Groups;
 using EcsRx.MicroRx.Disposables;
+using EcsRx.Plugins.Computeds;
 using EcsRx.Plugins.Computeds.Collections;
+using EcsRx.ReactiveData;
 using EcsRx.ReactiveData.Dictionaries;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Core
 {
+    public abstract class DynamicValue<TValue> : IComputed<TValue>, IReactiveProperty<TValue>
+    {
+        private IReactiveProperty<TValue> _value = new ReactiveProperty<TValue>();
+
+        public IDisposable Subscribe(IObserver<TValue> observer) =>
+            _value.Subscribe(observer);
+
+        public TValue Value
+        {
+            get => _value.Value;
+            set => _value.Value = value;
+        }
+
+        public bool HasValue => _value.HasValue;
+
+        public void Dispose() =>
+            _value.Dispose();
+    }
+
     [PublicAPI]
-    public abstract class DatabasedCollection<TData> : IComputedCollection<TData>, IDisposable
+    public abstract class DataBasedCollection<TData> : IComputedCollection<TData>, IDisposable
     {
         private readonly ReactiveDictionary<IEntity, TData> _entrys = new ReactiveDictionary<IEntity, TData>();
         private readonly CompositeDisposable _subscriptions;
         private readonly Dictionary<IEntity, IDisposable> _trackedEntitys = new Dictionary<IEntity, IDisposable>();
 
-        protected DatabasedCollection(IObservableGroupManager collection, IGroup groupInfo)
+        protected DataBasedCollection(IObservableGroupManager collection, IGroup groupInfo)
         {
             var group = collection.GetObservableGroup(groupInfo);
             _subscriptions = new CompositeDisposable

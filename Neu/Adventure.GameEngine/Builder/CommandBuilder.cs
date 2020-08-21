@@ -41,5 +41,11 @@ namespace Adventure.GameEngine.Builder
 
         public CommandId With(CommandHandler handler, IParameterFactory? parameter = null)
             => _internalGameConfiguration.RegisterCommand(new DelegateCommand(parameter, handler));
+
+        public CommandId With(string id, CommandHandler handler, object? parameter = null)
+            => _internalGameConfiguration.RegisterCommand(new DelegateCommand(id, parameter, handler));
+
+        public CommandId With(string id, CommandHandler handler, IParameterFactory? parameter = null)
+            => _internalGameConfiguration.RegisterCommand(new DelegateCommand(id, parameter, handler));
     }
 }

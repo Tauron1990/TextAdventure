@@ -2,25 +2,53 @@
 using Adventure.GameEngine.Builder.CommandData;
 using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Commands;
+using EcsRx.Infrastructure.Dependencies;
 using EcsRx.Pools;
+using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Builder
 {
-    public sealed class GameConfiguration
+    [PublicAPI]
+    public sealed class GameConfiguration : IInternalGameConfiguration
     {
-        public CommandBuilder NewCommand { get; }
+        private readonly IInternalGameConfiguration _internalGameConfigurationImplementation = new InternalConfiguration();
 
-        private sealed class InternalComandiguration : IInternalGameConfiguration
+        private readonly IDependencyContainer _container;
+
+        public CommandBuilder NewCommand => new CommandBuilder(_container, this);
+
+        public RoomConfiguration Rooms { get; }
+
+        public GameConfiguration(IDependencyContainer container)
+        {
+            _container = container;
+            Rooms = new RoomConfiguration(this);
+        }
+
+        CommandId IInternalGameConfiguration.RegisterCommand(Command command) =>
+            _internalGameConfigurationImplementation.RegisterCommand(command);
+
+        Command IInternalGameConfiguration.GetCommand(CommandId id) =>
+            _internalGameConfigurationImplementation.GetCommand(id);
+
+        private sealed class InternalConfiguration : IInternalGameConfiguration
         {
             private readonly IIdPool _ids = new IdPool(5, 50);
 
             private readonly Dictionary<CommandId, Command> _commands = new Dictionary<CommandId, Command>();
 
             public CommandId RegisterCommand(Command command)
-                => throw new System.NotImplementedException();
+            {
+                var id = new CommandId(_ids.AllocateInstance());
+                _commands[id] = command;
+                return id;
+            }
 
             public Command GetCommand(CommandId id)
-                => throw new System.NotImplementedException();
+                => _commands[id];
         }
+
+        internal void Validate() =>
+            Rooms.Validate();
     }
 }
