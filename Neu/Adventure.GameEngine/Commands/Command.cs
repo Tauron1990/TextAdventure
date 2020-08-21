@@ -4,8 +4,7 @@ using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Commands
 {
-    public abstract class Command<TThis> : IEquatable<Command<TThis>>
-        where TThis : Command<TThis>
+    public abstract class Command : IEquatable<Command>
     {
         [PublicAPI]
         public string Id { get; }
@@ -13,10 +12,9 @@ namespace Adventure.GameEngine.Commands
         protected Command(string id)
             => Id = id;
 
-        internal void Dispatch(IEventSystem eventSystem)
-            => eventSystem.Publish((TThis)this);
+        protected internal abstract void Dispatch(IEventSystem system);
 
-        public bool Equals(Command<TThis>? other)
+        public bool Equals(Command? other)
         {
             if (ReferenceEquals(null, other))
                 return false;
@@ -33,16 +31,32 @@ namespace Adventure.GameEngine.Commands
                 return true;
             if (obj.GetType() != this.GetType())
                 return false;
-            return Equals((Command<TThis>) obj);
+            return Equals((Command)obj);
         }
 
         public override int GetHashCode()
             => Id.GetHashCode();
 
-        public static bool operator ==(Command<TThis>? left, Command<TThis>? right)
+        public static bool operator ==(Command? left, Command? right)
             => Equals(left, right);
 
-        public static bool operator !=(Command<TThis>? left, Command<TThis>? right)
+        public static bool operator !=(Command? left, Command? right)
             => !Equals(left, right);
+    }
+
+    public abstract class Command<TThis> : Command
+        where TThis : Command<TThis>
+    {
+
+
+        protected internal override void Dispatch(IEventSystem eventSystem)
+            => eventSystem.Publish((TThis)this);
+
+
+
+        protected Command(string id)
+            : base(id)
+        {
+        }
     }
 }

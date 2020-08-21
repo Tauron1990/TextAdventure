@@ -19,8 +19,12 @@ namespace Adventure.GameEngine.Core
         public void Setup(IDependencyContainer container)
         {
             container.Bind<ISystem, CommandDispatcher>();
+            container.Bind<ISystem, DelegateCommandProcessor>();
+
             container.Bind<IConventionalSystemHandler, DisposibleSystemHandler>();
+
             container.Bind<Game>(b => b.ToInstance(_game));
+
             container.Bind<IDiceRoll, DiceRoll>(b => b.AsSingleton());
             container.Bind<IStringBuilderPool>(b => b.ToInstance(new StringBuilderPool()));
         }
