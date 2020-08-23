@@ -12,15 +12,15 @@ namespace Adventure.GameEngine.Systems.Components
 
         public ReactiveProperty<string> Location { get; }
 
-        public LazyString Description { get; set; }
+        public ReactiveProperty<LazyString> Description { get; }
 
         public string DisplayName { get; }
 
-        public IngameObject(string id, LazyString description, ReactiveProperty<string> location, string displayName)
+        public IngameObject(string id, LazyString description, string location, string displayName)
         {
             Id = id;
-            Description = description;
-            Location = location;
+            Description = new ReactiveProperty<LazyString>(description);
+            Location = new ReactiveProperty<string>(location);
             DisplayName = displayName;
         }
 
@@ -29,13 +29,13 @@ namespace Adventure.GameEngine.Systems.Components
         void IPersitable.WriteTo(BinaryWriter writer)
         {
             writer.Write(Location.Value);
-            BinaryHelper.Write(writer, Description);
+            BinaryHelper.Write(writer, Description.Value);
         }
 
         void IPersitable.ReadFrom(BinaryReader reader)
         {
             Location.Value = reader.ReadString();
-            Description = BinaryHelper.Read<LazyString>(reader);
+            Description.Value = BinaryHelper.Read(reader, LazyString.New);
         }
     }
 }

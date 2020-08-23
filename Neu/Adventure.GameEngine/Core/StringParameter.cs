@@ -1,11 +1,12 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
 using Adventure.GameEngine.Core.Persistence;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Core
 {
     [PublicAPI]
-    public sealed class StringParameter : IPersitable
+    public sealed class StringParameter : IPersitable, IEquatable<StringParameter>
     {
         public bool Resolve { get; private set; }
 
@@ -43,5 +44,26 @@ namespace Adventure.GameEngine.Core
             Resolve = reader.ReadBoolean();
             Text = reader.ReadString();
         }
+
+        public bool Equals(StringParameter? other)
+        {
+            if (ReferenceEquals(null, other))
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+            return Resolve == other.Resolve && Text == other.Text;
+        }
+
+        public override bool Equals(object? obj)
+            => ReferenceEquals(this, obj) || obj is StringParameter other && Equals(other);
+
+        public override int GetHashCode()
+            => HashCode.Combine(Resolve, Text);
+
+        public static bool operator ==(StringParameter? left, StringParameter? right)
+            => Equals(left, right);
+
+        public static bool operator !=(StringParameter? left, StringParameter? right)
+            => !Equals(left, right);
     }
 }

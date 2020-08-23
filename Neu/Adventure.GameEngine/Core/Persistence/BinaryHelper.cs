@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
 using System.IO;
 using JetBrains.Annotations;
@@ -68,6 +69,22 @@ namespace Adventure.GameEngine.Core.Persistence
             return builder;
         }
 
+        public static ImmutableList<TType> ReadImmutableList<TType>(BinaryReader reader)
+            where TType : IPersitable, new()
+        {
+            var builder = ImmutableList<TType>.Empty.ToBuilder();
+            var count = reader.ReadInt32();
+
+            for (var i = 0; i < count; i++)
+            {
+                var n = new TType();
+                n.ReadFrom(reader);
+                builder.Add(n);
+            }
+
+            return builder.ToImmutable();
+        }
+
         public static List<TType> ReadList<TType>(BinaryReader reader, Func<BinaryReader, TType> converter)
         {
             var builder = new List<TType>();
@@ -85,6 +102,15 @@ namespace Adventure.GameEngine.Core.Persistence
             where TType : IPersitable, new()
         {
             var result = new TType();
+            result.ReadFrom(reader);
+
+            return result;
+        }
+
+        public static TType Read<TType>(BinaryReader reader, Func<TType> factory)
+            where TType : IPersitable
+        {
+            var result = factory();
             result.ReadFrom(reader);
 
             return result;
@@ -120,6 +146,20 @@ namespace Adventure.GameEngine.Core.Persistence
         [return: MaybeNull]
         public static TType ReadNull<TType>(BinaryReader reader, Func<BinaryReader, TType> builder)
             => reader.ReadBoolean() ? builder(reader) : default;
+
+        public static void WriteNull(string? value, BinaryWriter writer)
+        {
+            if (Equals(value, null))
+                writer.Write(false);
+            else
+            {
+                writer.Write(true);
+                writer.Write(value);
+            }
+        }
+
+        public static string? ReadNull(BinaryReader reader)
+            => reader.ReadBoolean() ? reader.ReadString() : default;
 
         public static void Write(BinaryWriter writer, IPersitable persitable)
             => persitable.WriteTo(writer);

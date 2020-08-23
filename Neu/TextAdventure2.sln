@@ -5,7 +5,11 @@ VisualStudioVersion = 16.0.30404.54
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Engine", "Engine", "{E54E25CC-AA7E-4DE7-82F9-FE5585E2E432}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Adventure.GameEngine", "Adventure.GameEngine\Adventure.GameEngine.csproj", "{AA8FD255-E26C-4EEF-B29D-66178C766286}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adventure.GameEngine", "Adventure.GameEngine\Adventure.GameEngine.csproj", "{AA8FD255-E26C-4EEF-B29D-66178C766286}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adventure.Ui", "Adventure.Ui\Adventure.Ui.csproj", "{99AA5261-FFED-417B-9450-D374110BBC27}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextAdventure", "TextAdventure\TextAdventure.csproj", "{1586A313-BB19-4671-9487-57144DDB2B8B}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -17,12 +21,21 @@ Global
 		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{AA8FD255-E26C-4EEF-B29D-66178C766286}.Release|Any CPU.Build.0 = Release|Any CPU
+		{99AA5261-FFED-417B-9450-D374110BBC27}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{99AA5261-FFED-417B-9450-D374110BBC27}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{99AA5261-FFED-417B-9450-D374110BBC27}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{99AA5261-FFED-417B-9450-D374110BBC27}.Release|Any CPU.Build.0 = Release|Any CPU
+		{1586A313-BB19-4671-9487-57144DDB2B8B}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{1586A313-BB19-4671-9487-57144DDB2B8B}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{1586A313-BB19-4671-9487-57144DDB2B8B}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{1586A313-BB19-4671-9487-57144DDB2B8B}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{AA8FD255-E26C-4EEF-B29D-66178C766286} = {E54E25CC-AA7E-4DE7-82F9-FE5585E2E432}
+		{99AA5261-FFED-417B-9450-D374110BBC27} = {E54E25CC-AA7E-4DE7-82F9-FE5585E2E432}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {77F22F45-1679-443A-A14E-FBBF6C779DCC}

@@ -1,4 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
 using Adventure.GameEngine.Core.Persistence;
@@ -7,34 +9,38 @@ using JetBrains.Annotations;
 namespace Adventure.GameEngine.Core
 {
     [PublicAPI]
-    public sealed class LazyString : IPersitable
+    public sealed class LazyString : IPersitable, IEquatable<LazyString>
     {
-        public List<StringParameter> Parameter { get; private set; }
+        public ImmutableList<StringParameter> Parameter { get; private set; } = ImmutableList<StringParameter>.Empty;
 
         public string Text { get; private set; }
 
-        public LazyString(string text)
+        private LazyString(string text, ImmutableList<StringParameter> parameter)
         {
-            Parameter = new List<StringParameter>();
             Text = text;
+            Parameter = parameter;
         }
 
-        public LazyString()
-        {
-            Parameter = new List<StringParameter>();
-            Text = string.Empty;
-        }
+        private LazyString(string text)
+            => Text = text;
+
+        private LazyString()
+            => Text = string.Empty;
+
+        public static LazyString New()
+            => new LazyString();
+
+        public static LazyString New(string text)
+            => new LazyString(text);
 
         public LazyString AddParameters(params string[] data)
         {
-            Parameter.AddRange(data.Select(StringParameter.FromText));
-            return this;
+            return new LazyString(Text, Parameter.AddRange(data.Select(StringParameter.FromText)));
         }
 
         public LazyString AddParameters(params StringParameter[] data)
         {
-            Parameter.AddRange(data);
-            return this;
+            return new LazyString(Text, Parameter.AddRange(data));
         }
 
         public string Format(IContentManagement management)
@@ -53,7 +59,45 @@ namespace Adventure.GameEngine.Core
         void IPersitable.ReadFrom(BinaryReader reader)
         {
             Text = reader.ReadString();
-            Parameter = BinaryHelper.ReadList<StringParameter>(reader);
+            Parameter = BinaryHelper.ReadImmutableList<StringParameter>(reader);
         }
+
+        public bool Equals(LazyString? other)
+        {
+            if (ReferenceEquals(null, other))
+                return false;
+            if (ReferenceEquals(this, other))
+                return true;
+
+            if (other.Parameter.Count != Parameter.Count)
+                return false;
+
+            for (int i = 0; i < Parameter.Count; i++)
+            {
+                if (!Parameter[i].Equals(other.Parameter[i]))
+                    return false;
+            }
+
+            return Text == other.Text;
+        }
+
+        public override bool Equals(object? obj)
+            => ReferenceEquals(this, obj) || obj is LazyString other && Equals(other);
+
+        public override int GetHashCode()
+        {
+            var current = Text.GetHashCode();
+
+            return Parameter.Aggregate(current, (current1, parameter) => HashCode.Combine(current1, parameter.GetHashCode()));
+        }
+
+        public static bool operator ==(LazyString? left, LazyString? right)
+            => Equals(left, right);
+
+        public static bool operator !=(LazyString? left, LazyString? right)
+            => !Equals(left, right);
+
+        public static implicit operator LazyString(string text)
+            => New(text);
     }
 }

@@ -1,16 +1,42 @@
 ﻿using System;
+using System.IO;
+using Adventure.GameEngine.Core.Persistence;
 using EcsRx.Events;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Commands
 {
-    public abstract class Command : IEquatable<Command>
+    public abstract class Command : IEquatable<Command>, IPersitable
     {
         [PublicAPI]
         public string Id { get; }
 
+        public string? Category { get; set; }
+
+        public string? TriggersEvent { get; set; }
+
+        public bool Hidden { get; set; }
+
+        public bool HideOnExecute { get; set; }
+
         protected Command(string id)
             => Id = id;
+
+        void IPersitable.WriteTo(BinaryWriter writer)
+        {
+            BinaryHelper.WriteNull(Category, writer);
+            BinaryHelper.WriteNull(TriggersEvent, writer);
+            writer.Write(Hidden);
+            writer.Write(HideOnExecute);
+        }
+
+        void IPersitable.ReadFrom(BinaryReader reader)
+        {
+            Category = BinaryHelper.ReadNull(reader);
+            TriggersEvent = BinaryHelper.ReadNull(reader);
+            Hidden = reader.ReadBoolean();
+            HideOnExecute = reader.ReadBoolean();
+        }
 
         protected internal abstract void Dispatch(IEventSystem system);
 

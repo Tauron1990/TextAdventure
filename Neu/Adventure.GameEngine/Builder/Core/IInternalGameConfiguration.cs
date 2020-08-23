@@ -1,4 +1,5 @@
 ﻿using Adventure.GameEngine.Builder.CommandData;
+using Adventure.GameEngine.Builder.ItemData;
 using Adventure.GameEngine.Commands;
 
 namespace Adventure.GameEngine.Builder.Core
@@ -8,5 +9,7 @@ namespace Adventure.GameEngine.Builder.Core
         CommandId RegisterCommand(Command command);
 
         Command GetCommand(CommandId id);
+
+        ItemId RegisterItem(ItemBuilder item);
     }
 }

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using EcsRx.Collections.Database;
@@ -32,16 +33,27 @@ namespace Adventure.GameEngine.Core.Persistence
                 writer.Write(collection.Id);
                 writer.Write(entities.Length);
 
+                var entChack = new HashSet<string>();
+
                 foreach (var entity in entities)
                 {
-                    writer.Write(entity.GetComponent<Persist>().Name);
+                    var entName = entity.GetComponent<Persist>().Name;
+                    if(!entChack.Add(entName))
+                        throw new InvalidOperationException($"Duplicate Entity {entName}");
+
+                    writer.Write(entName);
 
                     var components = entity.Components
                         .OfType<IPersistComponent>().ToArray();
 
+                    var compCheck = new HashSet<string>();
+
                     writer.Write(components.Length);
                     foreach (var component in components)
                     {
+                        if(!compCheck.Add(component.Id))
+                            throw new InvalidOperationException($"Duplicate Component {entName} -- {component.Id}");
+
                         writer.Write(component.Id);
                         component.WriteTo(writer);
                     }

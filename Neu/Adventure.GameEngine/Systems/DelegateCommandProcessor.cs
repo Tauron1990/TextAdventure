@@ -11,7 +11,8 @@ namespace Adventure.GameEngine.Systems
     {
         private readonly Game _game;
 
-        public DelegateCommandProcessor(IEventSystem eventSystem, Game game) : base(eventSystem)
+        public DelegateCommandProcessor(Game game) 
+            : base(game)
             => _game = game;
 
         protected override void ProcessCommand(DelegateCommand command)

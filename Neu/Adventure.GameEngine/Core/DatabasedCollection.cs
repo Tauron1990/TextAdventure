@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Linq;
 using System.Reactive.Linq;
 using EcsRx.Collections;
@@ -16,23 +17,73 @@ using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Core
 {
-    public abstract class DynamicValue<TValue> : IComputed<TValue>, IReactiveProperty<TValue>
+    [PublicAPI]
+    public abstract class DynamicValue<TValue> : IComputed<TValue>, IReadOnlyReactiveProperty<TValue>, INotifyPropertyChanged
     {
-        private IReactiveProperty<TValue> _value = new ReactiveProperty<TValue>();
+        private readonly IReactiveProperty<TValue> _value = new ReactiveProperty<TValue>();
+        private readonly CompositeDisposable _subscriptions;
+        private readonly Dictionary<IEntity, IDisposable> _trackedEntitys = new Dictionary<IEntity, IDisposable>();
+
+        protected DynamicValue(IObservableGroupManager collection, IGroup groupInfo)
+        {
+            var group = collection.GetObservableGroup(groupInfo);
+            _subscriptions = new CompositeDisposable
+            {
+                group.OnEntityAdded.Subscribe(RunAdd),
+                group.OnEntityRemoving.Subscribe(RunRemove),
+                this.Subscribe(_ => OnPropertyChanged(nameof(Value)))
+            };
+        }
+
+        protected virtual void UpdateData(IEntity entity)
+            => _value.Value = Transform(entity);
+
+        protected void RunRemove(IEntity entity)
+        {
+            if (_trackedEntitys.Remove(entity, out var subscription))
+                subscription.Dispose();
+        }
+
+        protected void RunAdd(IEntity entity)
+        {
+            if (_trackedEntitys.ContainsKey(entity)) return;
+
+            _trackedEntitys.Add(entity,
+                UpdateWhen(entity).Subscribe(b => HandleUpdate(b, entity)));
+        }
+
+        private void HandleUpdate(bool when, IEntity entity)
+        {
+            if(when)
+                UpdateData(entity);
+        }
+
+        protected abstract TValue Transform(IEntity entity);
+
+        protected abstract IObservable<bool> UpdateWhen(IEntity entity);
 
         public IDisposable Subscribe(IObserver<TValue> observer) =>
             _value.Subscribe(observer);
 
-        public TValue Value
-        {
-            get => _value.Value;
-            set => _value.Value = value;
-        }
+        public TValue Value => _value.Value;
 
         public bool HasValue => _value.HasValue;
 
-        public void Dispose() =>
+        public void Dispose()
+        {
             _value.Dispose();
+            _subscriptions.Dispose();
+            foreach (var trackedEntity in _trackedEntitys)
+                trackedEntity.Value.Dispose();
+            _trackedEntitys.Clear();
+
+        }
+
+        public event PropertyChangedEventHandler? PropertyChanged;
+
+        [NotifyPropertyChangedInvocator]
+        protected virtual void OnPropertyChanged(string propertyName)
+            => PropertyChanged?.Invoke(this, new PropertyChangedEventArgs(propertyName));
     }
 
     [PublicAPI]

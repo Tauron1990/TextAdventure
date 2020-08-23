@@ -1,5 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using Adventure.GameEngine.Builder.Core;
+using Adventure.GameEngine.Commands;
+using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
 using Adventure.GameEngine.Core.Persistence;
 using EcsRx.Blueprints;
@@ -13,18 +16,26 @@ namespace Adventure.GameEngine.Builder
         private readonly HashSet<Direction> _locked = new HashSet<Direction>();
         private readonly Func<string, RoomBuilder?> _roomLookup;
 
-        internal RoomBuilder(string name, RoomConfiguration root, Func<string, RoomBuilder?> roomLookup)
+        internal RoomBuilder(string name, RoomConfiguration root, Func<string, RoomBuilder?> roomLookup, IInternalGameConfiguration config, IContentManagement contentManagement)
         {
             Blueprints.Add(new PersitBlueprint(name));
             Blueprints.Add(new RoomCore(name));
+            Blueprints.Add(new RoomCommand(new LookCommand(null), LazyString.New(GameConsts.LookCommand)));
+
             Name = name;
             Root = root;
+            Config = config;
+            ContentManagement = contentManagement;
             _roomLookup = roomLookup;
         }
 
         internal string Name { get; }
 
+        public IContentManagement ContentManagement { get; }
+
         public RoomConfiguration Root { get; }
+        
+        public IInternalGameConfiguration Config { get; }
 
         internal List<IBlueprint> Blueprints { get; } = new List<IBlueprint>();
 
@@ -33,6 +44,12 @@ namespace Adventure.GameEngine.Builder
         internal List<DoorWay> DoorWays { get; } = new List<DoorWay>();
 
         internal List<DoorWayConnection> Connections { get; } = new List<DoorWayConnection>();
+
+        public RoomBuilder ReactOnEvent<TData>(string name, TData data)
+        {
+            Blueprints.Add(new RoomEvent<TData>(data, name));
+            return this;
+        }
 
         public RoomBuilder WithBluePrint(IBlueprint print)
         {

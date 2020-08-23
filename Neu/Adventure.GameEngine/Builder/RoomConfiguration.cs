@@ -9,19 +9,25 @@ namespace Adventure.GameEngine.Builder
     [PublicAPI]
     public sealed class RoomConfiguration
     {
+        private readonly IContentManagement _contentManagement;
+        public IInternalGameConfiguration Config { get; }
+
         private readonly Dictionary<string, RoomBuilder> _rooms = new Dictionary<string, RoomBuilder>();
-
-        public Dictionary<string, object> CustomData = new Dictionary<string, object>();
-
-        internal RoomConfiguration(IInternalGameConfiguration config)
+        
+        internal RoomConfiguration(IInternalGameConfiguration config, IContentManagement contentManagement)
         {
+            _contentManagement = contentManagement;
+            Config = config;
         }
         
         internal IEnumerable<RoomBuilder> Rooms => _rooms.Values;
 
+        public RoomBuilder FindRoom(string name)
+            => _rooms[name];
+
         public RoomBuilder NewRoom(string name)
         {
-            var builder = new RoomBuilder(name, this, s => _rooms.ContainsKey(s) ? _rooms[s] : null);
+            var builder = new RoomBuilder(name, this, s => _rooms.ContainsKey(s) ? _rooms[s] : null, Config, _contentManagement);
             _rooms.Add(name, builder);
             return builder;
         }
