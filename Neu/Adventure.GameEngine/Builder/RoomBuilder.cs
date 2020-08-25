@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq.Expressions;
 using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Builder.Events;
 using Adventure.GameEngine.BuilderAlt;
@@ -12,7 +13,7 @@ using JetBrains.Annotations;
 namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
-    public sealed class RoomBuilder : SubEntityConfiguration, IEventable<RoomBuilder, RoomBuilder>, IHasRoot
+    public sealed class RoomBuilder : SubEntityConfiguration, IEventable<RoomBuilder, object>, IHasRoot
     {
         private readonly HashSet<Direction> _locked = new HashSet<Direction>();
         private readonly Func<string, BuilderAlt.RoomBuilder?> _roomLookup;
@@ -74,8 +75,8 @@ namespace Adventure.GameEngine.Builder
             base.ValidateImpl();
         }
 
-        RoomBuilder IEventable<RoomBuilder, RoomBuilder>.EventSource => this;
-        RoomBuilder IEventable<RoomBuilder, RoomBuilder>.EventData => this;
+        RoomBuilder IEventable<RoomBuilder, object>.EventSource => this;
+        object IEventable<RoomBuilder, object>.EventData => new object();
         IEntityConfiguration IHasRoot.Root => this;
     }
 }
