@@ -7,11 +7,11 @@ using EcsRx.Extensions;
 
 namespace Adventure.GameEngine.Builder.Core
 {
-    public sealed class SubEntityConfiguration : EntityConfiguration, IWithSubEntity
+    public abstract class SubEntityConfiguration : EntityConfiguration, IWithSubEntity
     {
         private ImmutableDictionary<string, IBluePrintProvider> _subEntities = ImmutableDictionary<string, IBluePrintProvider>.Empty;
 
-        public SubEntityConfiguration(Dictionary<string, object> metadata)
+        protected SubEntityConfiguration(Dictionary<string, object> metadata)
             => Metadata = metadata;
 
         protected override Dictionary<string, object> Metadata { get; }

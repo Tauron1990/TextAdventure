@@ -8,7 +8,7 @@ namespace Adventure.GameEngine.Systems.Components
     [PublicAPI]
     public sealed class PointOfInterst : IPersitable
     {
-        public string? ItemId { get; set; }
+        //public string? ItemId { get; set; }
 
         public bool Show { get; set; }
 
@@ -29,14 +29,14 @@ namespace Adventure.GameEngine.Systems.Components
 
         void IPersitable.WriteTo(BinaryWriter writer)
         {
-            BinaryHelper.WriteNull(ItemId, writer);
+            //BinaryHelper.WriteNull(ItemId, writer);
             writer.Write(Show);
             BinaryHelper.Write(writer, Text);
         }
 
         void IPersitable.ReadFrom(BinaryReader reader)
         {
-            ItemId = BinaryHelper.ReadNull(reader);
+            //ItemId = BinaryHelper.ReadNull(reader);
             Show = reader.ReadBoolean();
             Text = BinaryHelper.Read(reader, LazyString.New);
         }

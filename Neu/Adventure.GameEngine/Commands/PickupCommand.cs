@@ -16,5 +16,7 @@ namespace Adventure.GameEngine.Commands
             RoomName = roomName;
             ItemId = itemId;
         }
+
+        internal string GetId => Id + RoomName + ItemId;
     }
 }

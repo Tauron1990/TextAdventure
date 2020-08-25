@@ -1,12 +1,11 @@
-﻿using Adventure.GameEngine.Builder;
-using Adventure.GameEngine.Builder.CommandData;
+﻿using Adventure.GameEngine.Builder.CommandData;
 using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core.Blueprints;
 using EcsRx.Infrastructure.Dependencies;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.BuilderAlt
+namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
     public sealed class CommandBuilder

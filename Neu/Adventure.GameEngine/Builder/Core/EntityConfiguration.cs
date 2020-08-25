@@ -17,6 +17,11 @@ namespace Adventure.GameEngine.Builder.Core
             _blueprints = _blueprints.Add(blueprint);
         }
 
+        protected internal void AddBlueprint(IBlueprint blueprint)
+        {
+            _blueprints = _blueprints.Add(blueprint);
+        }
+
         void IEntityConfiguration.Create(IEntityDatabase database)
         {
             database.GetCollection().CreateEntity(_blueprints);

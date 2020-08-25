@@ -1,5 +1,7 @@
 ﻿using System;
+using Adventure.GameEngine.Builder;
 using Adventure.GameEngine.Builder.CommandData;
+using Adventure.GameEngine.Builder.ItemData;
 using Adventure.GameEngine.BuilderAlt.ItemData;
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
