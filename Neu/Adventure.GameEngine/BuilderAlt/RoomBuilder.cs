@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
@@ -8,7 +7,7 @@ using Adventure.GameEngine.Core.Persistence;
 using EcsRx.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder
+namespace Adventure.GameEngine.BuilderAlt
 {
     [PublicAPI]
     public sealed class RoomBuilder
@@ -47,7 +46,7 @@ namespace Adventure.GameEngine.Builder
 
         public RoomBuilder ReactOnEvent<TData>(string name, TData data)
         {
-            Blueprints.Add(new RoomEvent<TData>(data, name));
+            Blueprints.Add(new EntityEvent<TData>(data, name));
             return this;
         }
 

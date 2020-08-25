@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Adventure.GameEngine.Builder.ItemData
+namespace Adventure.GameEngine.BuilderAlt.ItemData
 {
     public sealed class ItemId : IEquatable<ItemId>
     {

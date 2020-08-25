@@ -1,8 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using Adventure.GameEngine.Builder.CommandData;
-using Adventure.GameEngine.Builder.Core;
-using Adventure.GameEngine.Builder.ItemData;
+using Adventure.GameEngine.BuilderAlt.ItemData;
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
@@ -11,7 +10,7 @@ using Adventure.GameEngine.Systems.Components;
 using EcsRx.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder
+namespace Adventure.GameEngine.BuilderAlt
 {
     [PublicAPI]
     public sealed class DropItemBuilder : ItemBuilder<DropItemBuilder>, IBluePrintProvider, IRoomItemBuilder<DropItemBuilder>
@@ -24,9 +23,10 @@ namespace Adventure.GameEngine.Builder
 
 
         public DropItemBuilder(RoomBuilder builder, string id, IInternalGameConfiguration gameConfiguration)  
-            : base(new ItemBluePrint(id) { CanDrop = true })
+            : base(id)
         {
             builder.NewEntities.Add(this);
+            BluePrint.CanDrop = true;
 
             BluePrint.Location = builder.Name;
             _builder = builder;

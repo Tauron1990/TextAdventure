@@ -1,7 +1,8 @@
 ﻿using System;
+using Adventure.GameEngine.Builder;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder.RoomData
+namespace Adventure.GameEngine.BuilderAlt.RoomData
 {
     [PublicAPI]
     public static class RoomFactory

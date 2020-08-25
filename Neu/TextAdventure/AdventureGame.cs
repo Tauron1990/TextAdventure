@@ -1,6 +1,6 @@
 ﻿using Adventure.GameEngine;
-using Adventure.GameEngine.Builder;
-using Adventure.GameEngine.Builder.RoomData;
+using Adventure.GameEngine.BuilderAlt;
+using Adventure.GameEngine.BuilderAlt.RoomData;
 
 namespace TextAdventure
 {

@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Adventure.GameEngine.Builder.Core;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder
+namespace Adventure.GameEngine.BuilderAlt
 {
     [PublicAPI]
     public sealed class RoomConfiguration

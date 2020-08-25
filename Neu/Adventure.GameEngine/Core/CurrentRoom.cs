@@ -21,7 +21,7 @@ namespace Adventure.GameEngine.Core
 
         public Room Name => Value.GetComponent<Room>();
 
-        public RoomEvents Events => Value.GetComponent<RoomEvents>();
+        public EntityEvents Events => Value.GetComponent<EntityEvents>();
 
         public RoomCommands Commands => Value.GetComponent<RoomCommands>();
 

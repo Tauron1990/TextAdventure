@@ -3,7 +3,7 @@ using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder
+namespace Adventure.GameEngine.BuilderAlt
 {
     [PublicAPI]
     public static class CommandModifactionExtensions

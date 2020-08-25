@@ -9,16 +9,8 @@ namespace Adventure.GameEngine.Builder.CommandData
     {
         private readonly GenericCommandBlueprint _blueprint;
 
-        public GenericCommandBuilder(CommandId id, GenericCommandBlueprint blueprint)
-        {
-            Id = id;
-            _blueprint = blueprint;
-        }
-
-        public CommandId Id { get; }
-
-        public GenericCommandBuilder WithDescription(string descriprion)
-            => WithDescription(LazyString.New(descriprion));
+        public GenericCommandBuilder(GenericCommandBlueprint blueprint)
+            => _blueprint = blueprint;
 
         public GenericCommandBuilder WithDescription(LazyString descriprion)
         {

@@ -12,6 +12,6 @@ namespace Adventure.GameEngine.Core.Blueprints
         public RoomCore(string name) => _name = name;
 
         public void Apply(IEntity entity) 
-            => entity.AddComponents(new IComponent[] { new Room(_name), new RoomData(), new RoomEvents() });
+            => entity.AddComponents(new IComponent[] { new Room(_name), new RoomData(), new EntityEvents() });
     }
 }

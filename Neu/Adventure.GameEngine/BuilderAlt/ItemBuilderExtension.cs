@@ -1,10 +1,10 @@
-﻿using Adventure.GameEngine.Builder.ItemData;
+﻿using Adventure.GameEngine.BuilderAlt.ItemData;
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder
+namespace Adventure.GameEngine.BuilderAlt
 {
     [PublicAPI]
     public static class ItemBuilderExtension

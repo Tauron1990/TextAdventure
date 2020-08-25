@@ -1,4 +1,4 @@
-﻿namespace Adventure.GameEngine.Builder.ItemData
+﻿namespace Adventure.GameEngine.BuilderAlt.ItemData
 {
     public interface IRoomItemBuilder<out TImpl>
     {

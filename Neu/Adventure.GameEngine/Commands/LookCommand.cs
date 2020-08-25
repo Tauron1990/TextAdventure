@@ -1,4 +1,4 @@
-﻿using Adventure.GameEngine.Builder;
+﻿using Adventure.GameEngine.BuilderAlt;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
 using JetBrains.Annotations;

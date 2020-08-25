@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using Adventure.GameEngine.Builder.Core;
-using Adventure.GameEngine.Builder.ItemData;
+using Adventure.GameEngine.BuilderAlt.ItemData;
 using Adventure.GameEngine.Core.Blueprints;
 using Adventure.GameEngine.Core.Persistence;
 using Adventure.GameEngine.Systems.Components;
 using EcsRx.Blueprints;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder
+namespace Adventure.GameEngine.BuilderAlt
 {
     [PublicAPI]
     public sealed class SimpleItemBuilder : ItemBuilder<SimpleItemBuilder>, IBluePrintProvider, IRoomItemBuilder<SimpleItemBuilder>
@@ -22,7 +21,7 @@ namespace Adventure.GameEngine.Builder
         private PointOfInterst? _poi = null;
 
         public SimpleItemBuilder(RoomBuilder builder, string id, IInternalGameConfiguration gameConfiguration)
-            : base(new ItemBluePrint(id))
+            : base(id)
         {
             builder.NewEntities.Add(this);
 

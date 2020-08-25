@@ -5,7 +5,7 @@ using JetBrains.Annotations;
 namespace Adventure.GameEngine.Systems.Components
 {
     [PublicAPI]
-    public sealed class RoomEvents : IComponent
+    public sealed class EntityEvents : IComponent
     {
         public ImmutableDictionary<string, EventData> Events { get; private set; } = ImmutableDictionary<string, EventData>.Empty;
 

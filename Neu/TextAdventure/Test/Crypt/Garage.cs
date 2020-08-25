@@ -22,8 +22,8 @@ OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
 */
 
-using Adventure.GameEngine.Builder;
-using Adventure.GameEngine.Builder.RoomData;
+using Adventure.GameEngine.BuilderAlt;
+using Adventure.GameEngine.BuilderAlt.RoomData;
 
 namespace TextAdventure.Test.Crypt
 {

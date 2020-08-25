@@ -1,6 +1,7 @@
-﻿using JetBrains.Annotations;
+﻿using Adventure.GameEngine.Builder;
+using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.Builder.RoomData
+namespace Adventure.GameEngine.BuilderAlt.RoomData
 {
     [PublicAPI]
     public sealed class PrologBuilder : IRoomFactory

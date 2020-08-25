@@ -5,19 +5,19 @@ using EcsRx.Extensions;
 
 namespace Adventure.GameEngine.Core.Blueprints
 {
-    public sealed class RoomEvent<TData> : IBlueprint
+    public sealed class EntityEvent<TData> : IBlueprint
     {
         private readonly TData _data;
 
         private readonly string _name;
 
-        public RoomEvent(TData data, string name)
+        public EntityEvent(TData data, string name)
         {
             _data = data;
             _name = name;
         }
 
         public void Apply(IEntity entity)
-            => entity.GetComponent<RoomEvents>().AddEvent(_name, _data);
+            => entity.GetComponent<EntityEvents>().AddEvent(_name, _data);
     }
 }
