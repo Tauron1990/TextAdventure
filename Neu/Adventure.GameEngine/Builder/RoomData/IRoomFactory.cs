@@ -1,6 +1,4 @@
-﻿using Adventure.GameEngine.BuilderAlt;
-
-namespace Adventure.GameEngine.Builder.RoomData
+﻿namespace Adventure.GameEngine.Builder.RoomData
 {
     public interface IRoomFactory
     {

@@ -2,7 +2,6 @@
 using EcsRx.Blueprints;
 using EcsRx.Entities;
 using EcsRx.Extensions;
-using EcsRx.ReactiveData;
 
 namespace Adventure.GameEngine.Core.Blueprints
 {
@@ -26,7 +25,7 @@ namespace Adventure.GameEngine.Core.Blueprints
 
         public void Apply(IEntity entity)
         {
-            entity.AddComponents(new IngameObject(Id, Description, new ReactiveProperty<string>(Location), DisplayName));
+            entity.AddComponents(new IngameObject(Id, Description, Location, DisplayName));
             if (CanDrop)
                 entity.AddComponents(new InteractiveObject(Action, TriggerEvent));
         }

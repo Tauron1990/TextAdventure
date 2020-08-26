@@ -1,16 +1,13 @@
 ﻿using System.Collections.Generic;
-using Adventure.GameEngine.BuilderAlt;
-using Adventure.GameEngine.BuilderAlt.ItemData;
-using Adventure.GameEngine.Commands;
+using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Core.Blueprints;
 using EcsRx.Infrastructure.Dependencies;
-using EcsRx.Pools;
 using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
-    public sealed class GameConfiguration
+    public sealed class GameConfiguration : IWithMetadata
     {
         private readonly IDependencyContainer _container;
         private readonly Game _game;
@@ -34,5 +31,7 @@ namespace Adventure.GameEngine.Builder
                 entity.Validate();
             Rooms.Validate();
         }
+
+        public Dictionary<string, object> Metadata { get; } = new Dictionary<string, object>();
     }
 }

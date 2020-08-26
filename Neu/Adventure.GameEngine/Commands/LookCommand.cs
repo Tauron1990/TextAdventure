@@ -1,4 +1,4 @@
-﻿using Adventure.GameEngine.BuilderAlt;
+﻿using Adventure.GameEngine.Builder;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
 using JetBrains.Annotations;
@@ -20,7 +20,7 @@ namespace Adventure.GameEngine.Commands
     {
         public static RoomBuilder AddlookCommand(this RoomBuilder builder, string target, LazyString name)
         {
-            builder.Blueprints.Add(new RoomCommand(new LookCommand(target), name));
+            builder.WithBlueprint(new RoomCommand(new LookCommand(target), name));
             return builder;
         }
     }

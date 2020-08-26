@@ -1,15 +1,14 @@
 ﻿using Adventure.GameEngine.Commands;
-using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Systems.Events;
-using EcsRx.Collections;
-using EcsRx.Events;
+using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Systems
 {
+    [UsedImplicitly]
     public sealed class PickupProcessor : CommandProcessor<PickupCommand>
     {
-        public PickupProcessor(IEventSystem eventSystem, IObservableGroupManager manager)
-            : base(eventSystem, manager)
+        public PickupProcessor(Game game)
+            : base(game)
         {
         }
 
@@ -17,7 +16,7 @@ namespace Adventure.GameEngine.Systems
         {
             var evt = new TransferObjectToInventory(command.ItemId, nameof(PickupCommand));
             EventSystem.Publish(evt);
-            UpdateTextContent(string.IsNullOrWhiteSpace(command.Respond) ? evt.Result : LazyString.New(command.Respond));
+            UpdateTextContent(command.Respond ?? evt.Result);
         }
     }
 }

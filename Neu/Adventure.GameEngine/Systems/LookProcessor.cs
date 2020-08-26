@@ -35,7 +35,7 @@ namespace Adventure.GameEngine.Systems
                 var ent = Database.GetCollection().Query(new QueryNamedItemFromRoom(command.Target, CurrentRoom.Name.Name)).FirstOrDefault();
                 if(ent == null) return;
 
-                UpdateTextContent(command.Responsd ?? ent.GetComponent<IngameObject>().Description);
+                UpdateTextContent(command.Responsd ?? ent.GetComponent<IngameObject>().Description.Value);
             }
         }
     }

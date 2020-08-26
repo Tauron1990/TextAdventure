@@ -6,6 +6,41 @@ using JetBrains.Annotations;
 
 namespace Adventure.GameEngine.Commands
 {
+    public sealed class EventInfo : IPersitable
+    {
+        public string Name { get; private set; }
+
+        public bool OneTime { get; private set; }
+
+        public bool Triggered { get; set; }
+
+        public EventInfo(string name, bool oneTime)
+        {
+            Name = name;
+            OneTime = oneTime;
+        }
+
+        public EventInfo()
+        {
+            Name = string.Empty;
+            OneTime = true;
+        }
+
+        void IPersitable.WriteTo(BinaryWriter writer)
+        {
+            writer.Write(Name);
+            writer.Write(OneTime);
+            writer.Write(Triggered);
+        }
+
+        void IPersitable.ReadFrom(BinaryReader reader)
+        {
+            Name = reader.ReadString();
+            OneTime = reader.ReadBoolean();
+            Triggered = reader.ReadBoolean();
+        }
+    }
+
     public abstract class Command : IEquatable<Command>, IPersitable
     {
         [PublicAPI]
@@ -13,7 +48,7 @@ namespace Adventure.GameEngine.Commands
 
         public string? Category { get; set; }
 
-        public string? TriggersEvent { get; set; }
+        public EventInfo? TriggersEvent { get; set; }
 
         public bool Hidden { get; set; }
 
@@ -33,7 +68,7 @@ namespace Adventure.GameEngine.Commands
         void IPersitable.ReadFrom(BinaryReader reader)
         {
             Category = BinaryHelper.ReadNull(reader);
-            TriggersEvent = BinaryHelper.ReadNull(reader);
+            TriggersEvent = BinaryHelper.ReadNull(reader, () => new EventInfo());
             Hidden = reader.ReadBoolean();
             HideOnExecute = reader.ReadBoolean();
         }

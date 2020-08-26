@@ -2,8 +2,6 @@
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Systems.Components;
-using EcsRx.Collections;
-using EcsRx.Events;
 using EcsRx.Extensions;
 using JetBrains.Annotations;
 
@@ -12,8 +10,8 @@ namespace Adventure.GameEngine.Systems
     [PublicAPI]
     public sealed class TravelProcessor : CommandProcessor<TravelCommand>
     {
-        public TravelProcessor(IEventSystem eventSystem, IObservableGroupManager manager) 
-            : base(eventSystem, manager)
+        public TravelProcessor(Game game) 
+            : base(game)
         {
         }
 

@@ -1,20 +1,20 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Adventure.GameEngine.Builder;
+using Adventure.GameEngine.Builder.Core;
 using JetBrains.Annotations;
 
-namespace Adventure.GameEngine.BuilderAlt
+namespace Adventure.GameEngine.Builder
 {
     [PublicAPI]
     public sealed class RoomConfiguration
     {
         private readonly IContentManagement _contentManagement;
-        public IInternalGameConfiguration Config { get; }
+        public GameConfiguration Config { get; }
 
         private readonly Dictionary<string, RoomBuilder> _rooms = new Dictionary<string, RoomBuilder>();
         
-        internal RoomConfiguration(IInternalGameConfiguration config, IContentManagement contentManagement)
+        internal RoomConfiguration(GameConfiguration config, IContentManagement contentManagement)
         {
             _contentManagement = contentManagement;
             Config = config;
@@ -27,21 +27,21 @@ namespace Adventure.GameEngine.BuilderAlt
 
         public RoomBuilder NewRoom(string name)
         {
-            var builder = new RoomBuilder(name, this, s => _rooms.ContainsKey(s) ? _rooms[s] : null, Config, _contentManagement);
+            var builder = new RoomBuilder(name, Config, s => _rooms.ContainsKey(s) ? _rooms[s] : null, _contentManagement, this);
             _rooms.Add(name, builder);
             return builder;
         }
 
         internal void Validate()
         {
-            foreach (var (key, roomBuilder) in _rooms)
-            {
-                var result = roomBuilder.Validate();
-                if (result != null)
-                    throw new InvalidOperationException($"Room Validation Faild {key} Error {result}");
-            }
+            foreach (var roomBuilder in _rooms.Select(p => p.Value).Cast<IEntityConfiguration>())
+                roomBuilder.Validate();
 
-            foreach (var prov in _rooms.SelectMany(r => r.Value.NewEntities))
+            foreach (var prov in _rooms
+                .Select(p => p.Value)
+                .Cast<IWithSubEntity>()
+                .SelectMany(r => r.SubEntities)
+                .Cast<IEntityConfiguration>())
                 prov.Validate();
         }
     }

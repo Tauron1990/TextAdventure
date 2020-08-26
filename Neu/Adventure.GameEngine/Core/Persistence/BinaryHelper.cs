@@ -147,6 +147,18 @@ namespace Adventure.GameEngine.Core.Persistence
         public static TType ReadNull<TType>(BinaryReader reader, Func<BinaryReader, TType> builder)
             => reader.ReadBoolean() ? builder(reader) : default;
 
+        [return: MaybeNull]
+        public static TType ReadNull<TType>(BinaryReader reader, Func<TType> builder)
+            where TType : IPersitable
+        {
+            if (!reader.ReadBoolean())
+                return default;
+            
+            var obj = builder();
+            obj.ReadFrom(reader);
+            return obj;
+        }
+
         public static void WriteNull(string? value, BinaryWriter writer)
         {
             if (Equals(value, null))

@@ -21,7 +21,7 @@ namespace Adventure.GameEngine.Systems
             var events = _currentRoom.Events;
 
             if (events.Events.TryGetValue(eventData.Name, out var evt))
-                evt.Dispatch(EventSystem);
+                evt.ForEach(e => e.Dispatch(EventSystem));
         }
     }
 }

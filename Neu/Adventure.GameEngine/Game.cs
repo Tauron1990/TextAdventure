@@ -1,8 +1,7 @@
 ﻿using System;
 using System.IO;
 using Adventure.GameEngine.Builder;
-using Adventure.GameEngine.BuilderAlt;
-using Adventure.GameEngine.ContentManagment;
+using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
 using Adventure.GameEngine.Core.Persistence;
@@ -87,7 +86,7 @@ namespace Adventure.GameEngine
                 var gameConfiguration = new GameConfiguration(Container, this);
                 var start = ConfigurateGame(gameConfiguration);
                 gameConfiguration.Validate();
-                start.WithBluePrint(new StartRoom());
+                start.WithBlueprint(new StartRoom());
 
                 var entityCollection = EntityDatabase.GetCollection();
 
@@ -96,12 +95,12 @@ namespace Adventure.GameEngine
 
                 foreach (var room in gameConfiguration.Rooms.Rooms)
                 {
-                    foreach (var entity in room.NewEntities)
-                        entityCollection.CreateEntity(entity.Blueprints);
+                    foreach (var entity in ((IWithSubEntity)room).SubEntities)
+                        entityCollection.CreateEntity(entity.Value.Blueprints);
 
-                    room.WithBluePrint(new DoorWayConfiguration(room.DoorWays, room.Connections));
+                    room.WithBlueprint(new DoorWayConfiguration(room.DoorWays, room.Connections));
 
-                    entityCollection.CreateEntity(room.Blueprints);
+                    entityCollection.CreateEntity(((IEntityConfiguration)room).Data);
                 }
 
                 EntityDatabase.GetCollection().CreateEntity(new PlayerSetup(start.Name));

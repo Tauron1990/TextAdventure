@@ -18,8 +18,8 @@ namespace Adventure.GameEngine.Builder
         private readonly RoomBuilder _builder;
         private readonly string _id;
 
-        public SimpleItemBuilder(RoomBuilder builder, string id, Dictionary<string, object> metadata, TEventSource eventSource)
-            : base(id, metadata, eventSource)
+        public SimpleItemBuilder(RoomBuilder builder, string id, TEventSource eventSource)
+            : base(id, eventSource.Metadata, eventSource)
         {
             _builder = builder;
             _id = id;
@@ -28,8 +28,8 @@ namespace Adventure.GameEngine.Builder
             AddBlueprint(BluePrint);
         }
 
-        public SimpleItemBuilder(RoomBuilder builder, ItemBuilder baseBuilder, Dictionary<string, object> metadata, TEventSource eventSource)
-            : base(baseBuilder.BluePrint, metadata, eventSource)
+        public SimpleItemBuilder(RoomBuilder builder, ItemBuilder baseBuilder, TEventSource eventSource)
+            : base(baseBuilder.BluePrint, eventSource.Metadata, eventSource)
         {
             BluePrint.Location = builder.Name;
             _id = baseBuilder.BluePrint.Id;

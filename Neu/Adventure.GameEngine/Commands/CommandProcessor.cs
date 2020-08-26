@@ -47,8 +47,13 @@ namespace Adventure.GameEngine.Commands
             }
 
             ProcessCommand(obj);
-            if(!string.IsNullOrWhiteSpace(obj.TriggersEvent))
-                EventSystem.Publish(new TriggerEvent(obj.TriggersEvent));
+            if (obj.TriggersEvent == null)
+                return;
+            if(obj.TriggersEvent.Triggered && obj.TriggersEvent.OneTime) 
+                return;
+
+            EventSystem.Publish(new TriggerEvent(obj.TriggersEvent.Name));
+            obj.TriggersEvent.Triggered = true;
         }
 
         protected virtual void InternalInit()

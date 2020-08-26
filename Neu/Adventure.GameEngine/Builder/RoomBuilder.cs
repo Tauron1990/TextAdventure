@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq.Expressions;
 using Adventure.GameEngine.Builder.Core;
 using Adventure.GameEngine.Builder.Events;
-using Adventure.GameEngine.BuilderAlt;
 using Adventure.GameEngine.Commands;
 using Adventure.GameEngine.Core;
 using Adventure.GameEngine.Core.Blueprints;
@@ -16,12 +14,12 @@ namespace Adventure.GameEngine.Builder
     public sealed class RoomBuilder : SubEntityConfiguration, IEventable<RoomBuilder, object>, IHasRoot
     {
         private readonly HashSet<Direction> _locked = new HashSet<Direction>();
-        private readonly Func<string, BuilderAlt.RoomBuilder?> _roomLookup;
+        private readonly Func<string, RoomBuilder?> _roomLookup;
 
         public string Name { get; }
 
-        public RoomBuilder(string name, Dictionary<string, object> metadata, Func<string, BuilderAlt.RoomBuilder?> roomLookup, IContentManagement contentManagement, RoomConfiguration roomConfiguration)
-            : base(metadata)
+        public RoomBuilder(string name, IWithMetadata metadata, Func<string, RoomBuilder?> roomLookup, IContentManagement contentManagement, RoomConfiguration roomConfiguration)
+            : base(metadata.Metadata)
         {
             Name = name;
             ContentManagement = contentManagement;
@@ -60,6 +58,35 @@ namespace Adventure.GameEngine.Builder
 
         public RoomConfiguration And()
             => RoomConfiguration;
+
+        internal bool Connect(string from, DoorWay original)
+        {
+            // ReSharper disable once SwitchStatementMissingSomeEnumCasesNoDefault
+            var realDirection = original.Direction switch
+            {
+                Direction.North => Direction.South,
+                Direction.East => Direction.West,
+                Direction.South => Direction.North,
+                Direction.West => Direction.East,
+                Direction.NorthEast => Direction.SouthWest,
+                Direction.SouthEast => Direction.NorthWest,
+                Direction.SouthWest => Direction.NorthEast,
+                Direction.NorthWest => Direction.SouthEast,
+                Direction.Up => Direction.Down,
+                Direction.Down => Direction.Up,
+                _ => Direction.Custom
+            };
+
+            if (realDirection == Direction.Custom)
+                return false;
+
+            if (!_locked.Add(realDirection))
+                return false;
+
+            Connections.Add(new DoorWayConnection(original, realDirection, from));
+
+            return true;
+        }
 
         protected override void ValidateImpl()
         {
