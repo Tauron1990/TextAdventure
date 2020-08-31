@@ -11,6 +11,13 @@ namespace Adventure.GameEngine.Builder
     [PublicAPI]
     public static class EventExtensions
     {
+        public static TSource RegisterWithId<TSource>(this TSource source, string name)
+            where TSource : IWithMetadata, ITargetValue
+        {
+            source.Metadata.Add("Custom_" + name, source.Value);
+            return source;
+        }
+
         public static TReturn ReactiToEvent<TReturn, TData>(this TReturn eventable, string eventName, Action<EventConfiguration<TReturn, TData>> config) 
             where TReturn : IWithMetadata, IEntityConfiguration, IEventable<TReturn, TData>
         {
