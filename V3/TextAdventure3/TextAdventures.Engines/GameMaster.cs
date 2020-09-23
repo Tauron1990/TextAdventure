@@ -1,7 +1,7 @@
 ﻿using System.Threading.Tasks;
 using Akka.Actor;
 
-namespace TextAdventures.Engines
+namespace TextAdventures.Engine
 {
     public sealed class GameMaster
     {

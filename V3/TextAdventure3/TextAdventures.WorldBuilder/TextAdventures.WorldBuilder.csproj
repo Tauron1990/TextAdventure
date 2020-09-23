@@ -7,4 +7,8 @@
     <RootNamespace>TextAdventures.Builder</RootNamespace>
   </PropertyGroup>
 
+  <ItemGroup>
+    <ProjectReference Include="..\..\..\Akkatecture\Akkatecture.csproj" />
+  </ItemGroup>
+
 </Project>

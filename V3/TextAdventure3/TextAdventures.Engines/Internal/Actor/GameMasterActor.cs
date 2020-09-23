@@ -1,7 +1,7 @@
 ﻿using Tauron.Akka;
-using TextAdventures.Engines.Internal.Messages;
+using TextAdventures.Engine.Internal.Messages;
 
-namespace TextAdventures.Engines.Internal.Actor
+namespace TextAdventures.Engine.Internal.Actor
 {
     public sealed class GameMasterActor : ExposedReceiveActor
     {
@@ -12,7 +12,7 @@ namespace TextAdventures.Engines.Internal.Actor
 
         private void InitializeGame(StartGame obj)
         {
-            if(obj.NewGame)
+            //if(obj.NewGame)
 
         }
     }

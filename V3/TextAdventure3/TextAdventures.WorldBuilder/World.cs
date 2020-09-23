@@ -1,4 +1,6 @@
-﻿using TextAdventures.Builder.Internal;
+﻿using TextAdventures.Builder.Builder;
+using TextAdventures.Builder.Data;
+using TextAdventures.Builder.Internal;
 
 namespace TextAdventures.Builder
 {
@@ -11,5 +13,7 @@ namespace TextAdventures.Builder
 
         public static World Create(string saveFile)
             => new WorldImpl(saveFile);
+
+        public abstract RoomBuilder GetRoom(Name name);
     }
 }

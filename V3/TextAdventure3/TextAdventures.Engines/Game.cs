@@ -6,10 +6,10 @@ using JetBrains.Annotations;
 using Microsoft.Data.Sqlite;
 using TextAdventures.Builder;
 using TextAdventures.Builder.Internal;
-using TextAdventures.Engines.Internal.Actor;
-using TextAdventures.Engines.Internal.Messages;
+using TextAdventures.Engine.Internal.Actor;
+using TextAdventures.Engine.Internal.Messages;
 
-namespace TextAdventures.Engines
+namespace TextAdventures.Engine
 {
     [PublicAPI]
     public sealed class Game
@@ -40,8 +40,11 @@ namespace TextAdventures.Engines
                 $"akka.persistence.snapshot-store.sqlite.connection-string : \"{connectionStringBuilder.ConnectionString}\"";
 
             var system = ActorSystem.Create("TextAdventures",
-                ConfigurationFactory.ParseString(connectionConfig).WithFallback(ConfigurationFactory.FromResource<Game>("TextAdventures.Engines.akka.conf")));
+                ConfigurationFactory.ParseString(connectionConfig).WithFallback(ConfigurationFactory.FromResource<Game>("TextAdventures.Engine.akka.conf")));
             var gameMaster = system.ActorOf<GameMasterActor>("GameMaster");
+
+            if(_newGame && File.Exists(_world.SaveGame))
+                File.Delete(_world.SaveGame);
 
             gameMaster.Tell(new StartGame(_world, _newGame || !File.Exists(_world.SaveGame)));
             return new GameMaster(gameMaster, system);

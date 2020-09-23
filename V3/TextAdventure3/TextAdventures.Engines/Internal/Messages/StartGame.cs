@@ -1,6 +1,6 @@
 ﻿using TextAdventures.Builder.Internal;
 
-namespace TextAdventures.Engines.Internal.Messages
+namespace TextAdventures.Engine.Internal.Messages
 {
     public sealed class StartGame
     {

@@ -1,6 +1,8 @@
-﻿using System.IO;
+﻿using System;
+using System.IO;
+using System.Threading;
 using TextAdventures.Builder;
-using TextAdventures.Engines;
+using TextAdventures.Engine;
 
 namespace Playground
 {
@@ -9,8 +11,9 @@ namespace Playground
         static void Main(string[] args)
         {
             var save = Path.GetFullPath("test.dat");
-            var game = Game.Create(World.Create(save), true);
+            var game = Game.Create(World.Create(save), false);
             var master = game.Start();
+
             master.Stop().Wait();
 
             //var builder = new SqliteConnectionStringBuilder {DataSource = "data.db", Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared};
@@ -40,6 +43,8 @@ namespace Playground
             //}, mat);
 
             //TestPersitence.Waiter.WaitOne();
+
+            Thread.Sleep(TimeSpan.FromMinutes(5));
         }
     }
 }
