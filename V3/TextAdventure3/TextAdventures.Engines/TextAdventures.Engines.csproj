@@ -1,0 +1,29 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netstandard2.1</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <None Remove="akka.conf" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="akka.conf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Akka.Persistence.Query" Version="1.4.10" />
+    <PackageReference Include="Akka.Persistence.Sqlite" Version="1.4.10" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Project-Manager-Akka\External\Akkatecture\Akkatecture.csproj" />
+    <ProjectReference Include="..\..\Project-Manager-Akka\Tauron.Application.Common\Tauron.Application.Common.csproj" />
+    <ProjectReference Include="..\TextAdventures.WorldBuilder\TextAdventures.WorldBuilder.csproj" />
+  </ItemGroup>
+
+</Project>
