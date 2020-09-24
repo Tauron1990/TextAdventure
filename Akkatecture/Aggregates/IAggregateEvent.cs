@@ -25,6 +25,7 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System;
 using Akkatecture.Core;
 using Akkatecture.Core.VersionedTypes;
 
@@ -32,6 +33,7 @@ namespace Akkatecture.Aggregates
 {
     public interface IAggregateEvent : IVersionedType
     {
+        DateTime Timestamp { get; }
     }
 
     public interface IAggregateEvent<TAggregate, TIdentity> : IAggregateEvent

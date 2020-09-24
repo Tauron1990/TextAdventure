@@ -1,8 +1,11 @@
 ﻿using System.Threading.Tasks;
 using Akka.Actor;
+using JetBrains.Annotations;
+using TextAdventures.Engine.Internal.Data.Commands;
 
 namespace TextAdventures.Engine
 {
+    [PublicAPI]
     public sealed class GameMaster
     {
         private readonly IActorRef _cooredinator;
@@ -16,5 +19,8 @@ namespace TextAdventures.Engine
 
         public Task Stop()
             => _actorSystem.Terminate().ContinueWith(_ => _actorSystem.Dispose());
+
+        public void SendCommand(IGameCommand command)
+            => _cooredinator.Tell(command);
     }
 }

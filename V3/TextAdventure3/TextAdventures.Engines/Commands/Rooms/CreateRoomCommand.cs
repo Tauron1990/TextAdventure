@@ -1,11 +1,11 @@
-﻿using Akkatecture.Commands;
-using TextAdventures.Builder.Data;
+﻿using TextAdventures.Builder.Data;
 using TextAdventures.Engine.Data;
 using TextAdventures.Engine.Internal.Data.Aggregates;
+using TextAdventures.Engine.Internal.Data.Commands;
 
-namespace TextAdventures.Engine.Internal.Data.Commands
+namespace TextAdventures.Engine.Commands.Rooms
 {
-    public sealed class CreateRoomCommand : Command<Room, RoomId>
+    public sealed class CreateRoomCommand : RoomCommand
     {
         public Name Name { get; }
 

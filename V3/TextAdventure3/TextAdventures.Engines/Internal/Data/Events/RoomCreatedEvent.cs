@@ -1,4 +1,5 @@
-﻿using Akkatecture.Aggregates;
+﻿using System;
+using Akkatecture.Aggregates;
 using Akkatecture.Events;
 using TextAdventures.Builder.Data;
 using TextAdventures.Engine.Data;
@@ -9,9 +10,15 @@ namespace TextAdventures.Engine.Internal.Data.Events
     [EventVersion("RoomCreated", 1)]
     public sealed class RoomCreatedEvent : AggregateEvent<Room, RoomId>
     {
-        public Name Name { get; set; }
+        public Name Name { get; }
 
-        public RoomCreatedEvent(Name name) 
-            => Name = name;
+        public RoomId Id { get; }
+
+        public RoomCreatedEvent(Name name, RoomId id, DateTime timestamp)
+            : base(timestamp)
+        {
+            Name = name;
+            Id = id;
+        }
     }
 }

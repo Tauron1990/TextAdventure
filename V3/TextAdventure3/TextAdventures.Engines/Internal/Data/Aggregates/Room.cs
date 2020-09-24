@@ -2,16 +2,16 @@
 using Akkatecture.Aggregates;
 using Akkatecture.Aggregates.Snapshot;
 using Akkatecture.Aggregates.Snapshot.Strategies;
-using Akkatecture.Commands;
 using Akkatecture.Specifications.Provided;
 using TextAdventures.Builder.Data;
+using TextAdventures.Engine.Commands.Rooms;
 using TextAdventures.Engine.Data;
 using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Data.Events;
 
 namespace TextAdventures.Engine.Internal.Data.Aggregates
 {
-    public sealed class RoomManager : AggregateManager<Room, RoomId, Command<Room, RoomId>>
+    public sealed class RoomManager : AggregateManager<Room, RoomId, RoomCommand>
     {
         public static readonly Guid RoomNamespace = new Guid("497C671A-F2F8-4BCE-BF84-5C4692B8DFBD");
     }
@@ -26,6 +26,7 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
         public override void Hydrate(RoomState aggregateSnapshot) => Name = aggregateSnapshot.Name;
     }
 
+    [AggregateName("Room")]
     public sealed class Room : GameAggregate<Room, RoomId, RoomState>,
         IExecute<CreateRoomCommand>
     {
@@ -42,7 +43,7 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
         public bool Execute(CreateRoomCommand command)
         {
             if (new AggregateIsNewSpecification().IsSatisfiedBy(this)) 
-                Emit(new RoomCreatedEvent(command.Name));
+                Emit(new RoomCreatedEvent(command.Name, command.AggregateId, DateTime.UtcNow));
 
             return true;
         }
