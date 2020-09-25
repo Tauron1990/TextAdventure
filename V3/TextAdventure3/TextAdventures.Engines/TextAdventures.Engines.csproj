@@ -8,6 +8,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Internal\WorldConstructor\**" />
+    <EmbeddedResource Remove="Internal\WorldConstructor\**" />
+    <None Remove="Internal\WorldConstructor\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <None Remove="akka.conf" />
   </ItemGroup>
 
@@ -28,10 +34,6 @@
     <ProjectReference Include="..\..\..\Akkatecture\Akkatecture.csproj" />
     <ProjectReference Include="..\..\..\Tauron.Application.Common\Tauron.Application.Common.csproj" />
     <ProjectReference Include="..\TextAdventures.WorldBuilder\TextAdventures.WorldBuilder.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Internal\WorldConstructor\" />
   </ItemGroup>
 
 </Project>

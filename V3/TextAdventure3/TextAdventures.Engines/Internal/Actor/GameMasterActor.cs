@@ -8,6 +8,7 @@ using TextAdventures.Engine.Internal.Data;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Messages;
+using TextAdventures.Engine.Internal.Querys;
 using TextAdventures.Engine.Querys;
 
 namespace TextAdventures.Engine.Internal.Actor
@@ -29,6 +30,7 @@ namespace TextAdventures.Engine.Internal.Actor
 
             });
             
+            Receive<INewProjector>(p => _projector.Forward(p));
             Receive<IAddAggregate>(a => _aggregates[a.Target] = (a.Props, a.Name));
 
             Receive<StartGame>(InitializeGame);

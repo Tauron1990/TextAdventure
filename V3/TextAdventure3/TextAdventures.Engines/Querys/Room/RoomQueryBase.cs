@@ -1,7 +1,8 @@
-﻿namespace TextAdventures.Engine.Querys.Room
+﻿using System;
+
+namespace TextAdventures.Engine.Querys.Room
 {
-    public abstract class RoomQueryBase : IGameQuery
+    public abstract class RoomQueryBase : GameQuery<RoomQueryBase>
     {
-        
     }
 }
