@@ -1,4 +1,5 @@
 ﻿using System;
+using TextAdventures.Builder.Querys;
 
 namespace TextAdventures.Engine.Querys.Room
 {

@@ -1,5 +1,6 @@
 ﻿using Akkatecture.Commands;
-using TextAdventures.Engine.Data;
+using TextAdventures.Builder.Data.Rooms;
+using TextAdventures.Engine.Commands;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 
 namespace TextAdventures.Engine.Internal.Data.Commands

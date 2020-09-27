@@ -33,7 +33,6 @@ namespace Akkatecture.Aggregates
 {
     public interface IAggregateEvent : IVersionedType
     {
-        DateTime Timestamp { get; }
     }
 
     public interface IAggregateEvent<TAggregate, TIdentity> : IAggregateEvent

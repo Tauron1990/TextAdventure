@@ -17,6 +17,11 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Tauron.Application.Common",
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Akkatecture", "..\..\Akkatecture\Akkatecture.csproj", "{062F6684-8D57-47BF-B162-33C5558D7136}"
 EndProject
+Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Solution Items", "Solution Items", "{0075C658-A3A9-4368-ABF8-2796F23CE154}"
+	ProjectSection(SolutionItems) = preProject
+		TODo.txt = TODo.txt
+	EndProjectSection
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU

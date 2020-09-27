@@ -2,7 +2,9 @@
 using System.Collections.Concurrent;
 using Akka.Actor;
 using Akkatecture.Core;
+using TextAdventures.Builder.Querys;
 using TextAdventures.Engine.Internal.Data.Projection;
+using TextAdventures.Engine.Projection.Base;
 using TextAdventures.Engine.Querys.Result;
 
 namespace TextAdventures.Engine.Querys
@@ -30,7 +32,7 @@ namespace TextAdventures.Engine.Querys
             }
         }
 
-        protected abstract object Query(TQuery query);
+        protected abstract QueryResult Query(TQuery queryBase);
     }
 
     public abstract class GameQueryHandler<TQuery> : IQueryHandler
@@ -52,6 +54,6 @@ namespace TextAdventures.Engine.Querys
             }
         }
 
-        protected abstract object Query(TQuery query);
+        protected abstract QueryResult Query(TQuery query);
     }
 }

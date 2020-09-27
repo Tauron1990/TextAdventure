@@ -1,7 +1,7 @@
 ﻿using System;
-using TextAdventures.Engine.Querys;
+using TextAdventures.Builder.Querys;
 
-namespace TextAdventures.Engine.Internal.Querys
+namespace TextAdventures.Builder.Commands
 {
     public interface INewQueryHandler
     {

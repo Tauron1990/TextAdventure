@@ -2,6 +2,7 @@
 using System.IO;
 using System.Threading;
 using TextAdventures.Builder;
+using TextAdventures.Builder.Data;
 using TextAdventures.Engine;
 
 namespace Playground
@@ -11,10 +12,12 @@ namespace Playground
         static void Main(string[] args)
         {
             var save = Path.GetFullPath("test.dat");
-            var game = Game.Create(World.Create(save), false);
-            var master = game.Start();
 
-            master.Stop().Wait();
+            var world = World.Create(save);
+            world.GetRoom(new Name("Start"));
+
+            var game = Game.Create(world, false);
+            var master = game.Start();
 
             //var builder = new SqliteConnectionStringBuilder {DataSource = "data.db", Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared};
             //var builder1 = $"akka.persistence.journal.sqlite.connection-string : \"{builder.ConnectionString}\"\n" +
@@ -45,6 +48,7 @@ namespace Playground
             //TestPersitence.Waiter.WaitOne();
 
             Thread.Sleep(TimeSpan.FromMinutes(5));
+            master.Stop().Wait();
         }
     }
 }

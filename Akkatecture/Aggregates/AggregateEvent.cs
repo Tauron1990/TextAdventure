@@ -37,13 +37,7 @@ namespace Akkatecture.Aggregates
         where TAggregate : IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
     {
-        public DateTime Timestamp { get; }
-
-        protected AggregateEvent(DateTime timestamp)
-        {
-            Timestamp = timestamp;
-        }
-
+        
         public override string ToString() => $"{typeof(TAggregate).PrettyPrint()}/{GetType().PrettyPrint()}";
     }
 }

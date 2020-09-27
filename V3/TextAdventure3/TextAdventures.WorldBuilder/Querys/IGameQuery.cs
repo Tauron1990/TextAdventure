@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace TextAdventures.Engine.Querys
+namespace TextAdventures.Builder.Querys
 {
     public interface IGameQuery
     {

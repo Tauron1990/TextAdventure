@@ -10,29 +10,38 @@ using JetBrains.Annotations;
 using LiquidProjections;
 using Tauron;
 using Tauron.Akka;
+using TextAdventures.Builder.Commands;
+using TextAdventures.Builder.Data.Actor;
+using TextAdventures.Builder.Data.Rooms;
+using TextAdventures.Builder.Querys;
 using TextAdventures.Engine.Commands;
-using TextAdventures.Engine.Data;
 using TextAdventures.Engine.Internal.Data.Events;
 using TextAdventures.Engine.Internal.Data.Projection;
 using TextAdventures.Engine.Internal.Messages;
 using TextAdventures.Engine.Internal.Querys;
+using TextAdventures.Engine.Projection;
+using TextAdventures.Engine.Projection.Base;
 using TextAdventures.Engine.Querys;
+using TextAdventures.Engine.Querys.Actors;
 using TextAdventures.Engine.Querys.Result;
 using TextAdventures.Engine.Querys.Room;
 
 namespace TextAdventures.Engine.Internal.Actor
 {
-    public sealed class ProjectionManager : ExposedReceiveActor
+    public sealed class ProjectionManagerActor : ExposedReceiveActor
     {
-        private static readonly MethodInfo ConstructProjectorMethodInfo = typeof(ProjectionManager).GetMethod("ConstructProjector", BindingFlags.Instance | BindingFlags.NonPublic)!;
+        private static readonly MethodInfo ConstructProjectorMethodInfo = typeof(ProjectionManagerActor).GetMethod("ConstructProjector", BindingFlags.Instance | BindingFlags.NonPublic)!;
 
         private readonly GameProjection _gameProjection = new GameProjection();
         private readonly EventStoreReader _eventStoreReader = new EventStoreReader(Context.System);
         private readonly List<IDisposable> _disposable = new List<IDisposable>();
         private readonly Dictionary<Type, IQueryHandler> _queryHandlers = new Dictionary<Type, IQueryHandler>();
+        private readonly IActorRef _loadingManager;
 
-        public ProjectionManager()
+        public ProjectionManagerActor(IActorRef loadingManager)
         {
+            _loadingManager = loadingManager;
+
             Receive<IGameQuery>(q =>
             {
                 if (!_queryHandlers.TryGetValue(q.Target, out var handler))
@@ -41,8 +50,11 @@ namespace TextAdventures.Engine.Internal.Actor
                     handler.Handle(q, Sender);
             });
             Receive<GameProjectionQuery>(g => Sender.Tell(QueryResult.Compleded(_gameProjection)));
+
             Receive<INewProjector>(np =>
             {
+                _eventStoreReader.AddLoadingSequence(np.Tag, LoadingSequence.Add(_loadingManager, TimeSpan.FromMinutes(2)));
+
                 _queryHandlers[np.Target] = np.Handler;
 
                 var targetDelegate = typeof(Func<,,,>)
@@ -57,7 +69,9 @@ namespace TextAdventures.Engine.Internal.Actor
                 np.Install(Delegate.CreateDelegate(targetDelegate, this, met));
             });
             Receive<INewQueryHandler>(h => _queryHandlers[h.Target] = h.Handler);
-            Receive<StartGame>(ConstructProjection);
+
+            Receive<StartGame>(ConstructProjections);
+            Receive<Task<IDisposable>>(t => t.Result.Dispose());
         }
 
         protected override void PostStop()
@@ -68,19 +82,73 @@ namespace TextAdventures.Engine.Internal.Actor
             base.PostStop();
         }
 
-        private void ConstructProjection(StartGame obj)
+        private void ConstructProjections(StartGame obj)
         {
-            Self.Tell(new AddProjection<RoomId, RoomProjection, RoomQueryHandler, RoomQueryBase>(
-                new RoomQueryHandler(_gameProjection.Rooms), "Room", disposable => _disposable.Add(disposable),
-                eventBuilder =>
-                {
-                    eventBuilder
-                       .Map<RoomCreatedEvent>()
-                       .AsCreateOf(e => e.Id)
-                       .IgnoringDuplicates()
-                       .Using((projection, createdEvent) => projection.Id = createdEvent.Id);
-                }), Self);
+            var waiter = LoadingSequence.Add(_loadingManager);
 
+            try
+            {
+
+                Self.Tell(NewProjection.Create<RoomId, RoomProjection, RoomQueryHandler, RoomQueryBase>(
+                    new RoomQueryHandler(_gameProjection.Rooms), "Room", disposable => _disposable.Add(disposable),
+                    eventBuilder =>
+                    {
+                        eventBuilder
+                           .Map<RoomCreatedEvent>()
+                           .AsCreateOf(e => e.Id)
+                           .IgnoringDuplicates()
+                           .Using((projection, createdEvent) =>
+                            {
+                                projection.Id = createdEvent.Id;
+                                projection.Doorways = createdEvent.Doorways;
+                            });
+
+                        eventBuilder
+                           .Map<RoomCommandLayerRemovedEvent>()
+                           .AsUpdateOf(e => e.RoomId)
+                           .IgnoringMisses()
+                           .Using((projection, evt) =>
+                            {
+                                var result = projection.CommandLayers.AsEnumerable().Reverse().FirstOrDefault(cl => cl.Name == evt.Name);
+                                if(result == null)
+                                    return;
+                                projection.CommandLayers.Remove(result);
+                            });
+
+                        eventBuilder
+                           .Map<RoomCommandsAddedEvent>()
+                           .AsUpdateOf(e => e.Room)
+                           .IgnoringMisses()
+                           .Using((projection, evt) =>
+                            {
+                                foreach (var layer in evt.Layers) 
+                                    projection.CommandLayers.Add(layer);
+                            });
+
+                    }));
+
+                Self.Tell(NewProjection.Create<GameActorId, GameActorProjection, GameActorQueryHandler, GameActorQueryBase>(
+                    new GameActorQueryHandler(_gameProjection.GameActors), "GameActor", disposable => _disposable.Add(disposable),
+                    eventBuilder =>
+                    {
+                        eventBuilder
+                           .Map<GameActorCreatedEvent>()
+                           .AsCreateOf(e => e.ActorId)
+                           .IgnoringDuplicates()
+                           .Using(((projection, createdEvent) =>
+                            {
+                                projection.Id = createdEvent.ActorId;
+                                projection.Name = createdEvent.Name;
+                                projection.DisplayName = createdEvent.DisplayName;
+                                projection.Location = createdEvent.Location;
+                                projection.PlayerType = createdEvent.PlayerType;
+                            }));
+                    }));
+            }
+            finally
+            {
+                Self.Tell(waiter);
+            }
         }
 
         [UsedImplicitly]

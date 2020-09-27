@@ -1,7 +1,7 @@
 ﻿using System;
-using TextAdventures.Engine.Querys;
+using TextAdventures.Builder.Querys;
 
-namespace TextAdventures.Engine.Internal.Querys
+namespace TextAdventures.Builder.Commands
 {
     public interface INewProjector
     {
@@ -12,6 +12,8 @@ namespace TextAdventures.Engine.Internal.Querys
         Type Key { get; }
 
         Type Projector { get; }
+
+        string Tag { get; }
 
         void Install(Delegate installer);
     }

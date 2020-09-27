@@ -78,6 +78,7 @@ namespace Akkatecture.Sagas.AggregateSaga
             if (Settings.AutoSpawnOnReceive) Receive<IDomainEvent>(Handle);
 
             Receive<UnsubscribeFromAll>(Handle);
+            Receive<Terminated>(Terminate);
         }
 
         public Expression<Func<TAggregateSaga>> SagaFactory { get; }

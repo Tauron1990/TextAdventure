@@ -1,4 +1,5 @@
 ﻿using TextAdventures.Builder.Builder;
+using TextAdventures.Builder.Commands;
 using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Internal;
 
@@ -14,6 +15,13 @@ namespace TextAdventures.Builder
         public static World Create(string saveFile)
             => new WorldImpl(saveFile);
 
+        public abstract void Add(params INewAggregate[] aggregates);
+        public abstract void Add(params INewProjector[] projectors);
+        public abstract void Add(params INewQueryHandler[] handlers);
+        public abstract void Add(params INewSaga[] sagas);
+
         public abstract RoomBuilder GetRoom(Name name);
+
+        public abstract void AddActor(ActorBuilder builder);
     }
 }

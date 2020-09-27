@@ -1,8 +1,7 @@
-﻿using System;
-using Akkatecture.Aggregates;
+﻿using Akkatecture.Aggregates;
 using Akkatecture.Events;
 using TextAdventures.Builder.Data;
-using TextAdventures.Engine.Data;
+using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 
 namespace TextAdventures.Engine.Internal.Data.Events
@@ -14,11 +13,13 @@ namespace TextAdventures.Engine.Internal.Data.Events
 
         public RoomId Id { get; }
 
-        public RoomCreatedEvent(Name name, RoomId id, DateTime timestamp)
-            : base(timestamp)
+        public Doorway[] Doorways { get; }
+
+        public RoomCreatedEvent(Name name, RoomId id, Doorway[] doorways)
         {
             Name = name;
             Id = id;
+            Doorways = doorways;
         }
     }
 }

@@ -1,4 +1,4 @@
-﻿namespace TextAdventures.Engine.Internal.Data.Projection
+﻿namespace TextAdventures.Engine.Projection.Base
 {
     public interface IProjectorData<TKey>
     {

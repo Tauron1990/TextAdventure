@@ -64,7 +64,7 @@ namespace Akkatecture.Sagas.AggregateSaga
         private Dictionary<Type, IActorRef>? SagaTimeoutManagers { get; set; }
 
         protected ISnapshotStrategy SnapshotStrategy { get; set; } = SnapshotNeverStrategy.Instance;
-        public TSagaState? State { get; }
+        public TSagaState State { get; } = null!;
         public override string PersistenceId { get; }
         public override Recovery Recovery => new Recovery(SnapshotSelectionCriteria.Latest);
         public AggregateSagaSettings Settings { get; }

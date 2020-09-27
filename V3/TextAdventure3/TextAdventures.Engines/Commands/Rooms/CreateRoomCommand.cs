@@ -1,6 +1,5 @@
 ﻿using TextAdventures.Builder.Data;
-using TextAdventures.Engine.Data;
-using TextAdventures.Engine.Internal.Data.Aggregates;
+using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Engine.Internal.Data.Commands;
 
 namespace TextAdventures.Engine.Commands.Rooms
@@ -9,8 +8,13 @@ namespace TextAdventures.Engine.Commands.Rooms
     {
         public Name Name { get; }
 
-        public CreateRoomCommand(Name name)
-            : base(RoomId.NewDeterministic(RoomManager.RoomNamespace, name.Value))
-            => Name = name;
+        public Doorway[] Doorways { get; }
+
+        public CreateRoomCommand(Name name, Doorway[] doorways)
+            : base(RoomId.FromName(name))
+        {
+            Name = name;
+            Doorways = doorways;
+        }
     }
 }

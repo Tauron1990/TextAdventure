@@ -1,9 +1,9 @@
 ﻿using System;
 using Akka.Actor;
 
-namespace TextAdventures.Engine.Internal.Data
+namespace TextAdventures.Builder.Commands
 {
-    public interface IAddAggregate
+    public interface INewAggregate
     {
         Type Target { get; }
 

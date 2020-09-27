@@ -1,6 +1,6 @@
 ﻿using Akka.Actor;
 
-namespace TextAdventures.Engine.Querys
+namespace TextAdventures.Builder.Querys
 {
     public interface IQueryHandler
     {
