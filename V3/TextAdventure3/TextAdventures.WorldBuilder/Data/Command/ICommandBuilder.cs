@@ -5,6 +5,6 @@ namespace TextAdventures.Builder.Data.Command
 {
     public interface ICommandBuilder
     {
-        IEnumerable<IGameCommand> Produce(ref CommandMetadata metadata, out bool updateMetadata);
+        IEnumerable<IGameCommand> Produce(CommandMetadata metadata);
     }
 }

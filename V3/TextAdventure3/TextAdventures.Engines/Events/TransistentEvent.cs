@@ -1,28 +1,27 @@
 ﻿using System;
+using Akka.Event;
 using Akkatecture.Aggregates;
-using Akkatecture.Core;
+using TextAdventures.Engine.Internal.Data.Aggregates;
 
 namespace TextAdventures.Engine.Events
 {
-    public abstract class TransistentEvent<TEvent> : IDomainEvent, IAggregateEvent, IIdentity
+    public abstract class TransistentEvent<TEvent> : AggregateEvent<GameInfo, GameInfoId>
         where TEvent : TransistentEvent<TEvent>
     {
-        public virtual Type AggregateType => typeof(TransistentEvent<TEvent>);
-
-        public virtual Type IdentityType => typeof(TransistentEvent<TEvent>);
-
-        public virtual Type EventType => GetType();
-
-        public virtual long AggregateSequenceNumber => 0;
-
-        public virtual Metadata Metadata => new Metadata();
-
-        public virtual DateTimeOffset Timestamp { get; } = DateTimeOffset.UtcNow;
-
-        public virtual IIdentity GetIdentity() => this;
-
-        public virtual IAggregateEvent GetAggregateEvent() => throw new NotImplementedException();
-
-        string IIdentity.Value => string.Empty;
+        public virtual void Publish(EventStream stream)
+        {
+            var eventMetadata = new Metadata
+                                {
+                                    Timestamp = DateTimeOffset.Now,
+                                    AggregateSequenceNumber = 0,
+                                    AggregateName = nameof(GameInfo),
+                                    AggregateId = GameInfoId.GameId,
+                                    EventId = new EventId("Transistent"),
+                                    EventName = typeof(TEvent).Name,
+                                    EventVersion = 1
+                                };
+            var domainfEvent = new DomainEvent<GameInfo, GameInfoId, TEvent>(new GameInfoId(), (TEvent)this, eventMetadata, DateTimeOffset.Now, 0);
+            stream.Publish(domainfEvent);
+        }
     }
 }

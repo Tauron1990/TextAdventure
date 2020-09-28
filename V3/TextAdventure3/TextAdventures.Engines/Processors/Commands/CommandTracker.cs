@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -89,7 +90,8 @@ namespace TextAdventures.Engine.Processors.Commands
     public sealed class CommandTracker : GameSaga<CommandTracker, CommandTrackerId, CommandTrackerState>,
                                          ISagaIsStartedBy<GameActor, GameActorId, PlayerCreated>, ISagaHandles<Room, RoomId, RoomCommandLayerRemovedEvent>,
                                          ISagaHandlesAsync<GameActor, GameActorId, ActorRoomChanged>, ISagaHandles<Room, RoomId, RoomCommandsAddedEvent>,
-                                         ISagaHandles<CommandTracker, CommandTrackerId, CommandLayerUpdatedEvent>
+                                         ISagaHandles<CommandTracker, CommandTrackerId, CommandLayerUpdatedEvent>, ISagaHandles<GameInfo, GameInfoId, GameLoaded>,
+                                         ISagaHandles<GameInfo, GameInfoId, UpdateCommandEvent>
 
     {
         private readonly IActorRef _gameMaster;
@@ -166,6 +168,37 @@ namespace TextAdventures.Engine.Processors.Commands
                     break;
                 layers.Add(command);
             }
+
+            var commands = new List<IGameCommand>();
+            foreach (var layer in layers)
+            {
+                var command = layer.Command.FastCreateInstance();
+
+                switch (command)
+                {
+                    case IGameCommand com:
+                        commands.Add(com);
+                        break;
+                    case ICommandBuilder builder:
+                        commands.AddRange(builder.Produce(layer.Metadata));
+                        break;
+                }
+            }
+
+            new CommandsUpdatedEvent(ImmutableList<IGameCommand>.Empty.AddRange(commands))
+               .Publish(Context.System.EventStream);
+        }
+
+        public bool Handle(IDomainEvent<GameInfo, GameInfoId, GameLoaded> domainEvent)
+        {
+            SendActuralLayers();
+            return true;
+        }
+
+        public bool Handle(IDomainEvent<GameInfo, GameInfoId, UpdateCommandEvent> domainEvent)
+        {
+            SendActuralLayers();
+            return true;
         }
     }
 

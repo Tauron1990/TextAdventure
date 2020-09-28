@@ -15,7 +15,6 @@ using TextAdventures.Engine.Internal.Data.Aggregates;
 using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Messages;
 using TextAdventures.Engine.Internal.WorldConstructor;
-using TextAdventures.Engine.Processors;
 using TextAdventures.Engine.Processors.Commands;
 
 namespace TextAdventures.Engine.Internal.Actor
@@ -52,7 +51,7 @@ namespace TextAdventures.Engine.Internal.Actor
         }
 
         private void GameLoadingCompled(LoadingCompled obj) 
-            => Context.System.EventStream.Publish(new GameLoaded());
+            => new GameLoaded().Publish(Context.System.EventStream);
 
         private void InitializeGame(StartGame start)
         {
@@ -68,6 +67,8 @@ namespace TextAdventures.Engine.Internal.Actor
 
                 Self.Tell(NewAggregate<RoomManager, Room, RoomId, RoomCommand>.Create());
                 Self.Tell(NewAggregate<GameActorManager, GameActor, GameActorId, GameActorCommand>.Create());
+                Self.Tell(NewAggregate<GameInfoManager, GameInfo, GameInfoId, GameInfoCommand>.Create());
+
                 Self.Tell(NewSaga.Create<CommandTrackerManager, CommandTracker, CommandTrackerId, CommandTrackerLocator>().With(Self));
 
                 if (start.NewGame)

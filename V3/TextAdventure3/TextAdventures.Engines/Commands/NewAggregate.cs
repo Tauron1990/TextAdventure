@@ -5,7 +5,6 @@ using Akkatecture.Aggregates;
 using Akkatecture.Commands;
 using Akkatecture.Core;
 using TextAdventures.Builder.Commands;
-using TextAdventures.Engine.Internal.Data;
 
 namespace TextAdventures.Engine.Commands
 {
@@ -15,15 +14,23 @@ namespace TextAdventures.Engine.Commands
         where TId : IIdentity 
         where TAggregate : ReceivePersistentActor, IAggregateRoot<TId>
     {
+        private object[] _params = Array.Empty<object>();
+
         Type INewAggregate.Target => typeof(TCommand);
 
-        Props INewAggregate.Props => Props.Create<TManager>();
+        Props INewAggregate.Props => Props.Create<TManager>(_params);
 
         string INewAggregate.Name => typeof(TAggregate).Name;
 
         private NewAggregate()
         {
             
+        }
+
+        public NewAggregate<TManager, TAggregate, TId, TCommand> With(params object[] parameter)
+        {
+            _params = parameter;
+            return this;
         }
 
         public static NewAggregate<TManager, TAggregate, TId, TCommand> Create()
