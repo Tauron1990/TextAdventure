@@ -1,3 +1,2 @@
-1. CommandLayer and Metadata System
-2. Better Game Time
-3. Multi Saves System
+Better Game Time
+Multi Saves System

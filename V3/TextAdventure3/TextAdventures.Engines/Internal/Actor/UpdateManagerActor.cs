@@ -6,6 +6,7 @@ using Akka.Streams.Dsl;
 using Tauron.Akka;
 using TextAdventures.Engine.Commands;
 using TextAdventures.Engine.Data;
+using TextAdventures.Engine.Internal.Data;
 
 namespace TextAdventures.Engine.Internal.Actor
 {
@@ -13,16 +14,16 @@ namespace TextAdventures.Engine.Internal.Actor
     {
         private readonly ActorMaterializer _materializer;
         private readonly ICancelable _cancelable;
-        private readonly Source<GameTime, NotUsed> _hub;
+        private readonly Source<GameStartTime, NotUsed> _hub;
 
         public UpdateManagerActor()
         {
-            GameTime time = new GameTime();
+            GameStartTime startTime = new GameStartTime();
             _materializer = Context.Materializer(namePrefix:"UpdateManger");
 
-            var producer = Source.Tick(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), time);
+            var producer = Source.Tick(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(5), startTime);
 
-            var (cancelable, source) = producer.ToMaterialized(BroadcastHub.Sink<GameTime>(), Keep.Both).Run(_materializer);
+            var (cancelable, source) = producer.ToMaterialized(BroadcastHub.Sink<GameStartTime>(), Keep.Both).Run(_materializer);
             _cancelable = cancelable;
             _hub = source.Buffer(10, OverflowStrategy.DropBuffer);
 

@@ -6,7 +6,6 @@ using System.Threading.Tasks;
 using Akka.Actor;
 using Akkatecture.Aggregates;
 using Akkatecture.Sagas;
-using Akkatecture.Sagas.AggregateSaga;
 using Akkatecture.Specifications.Provided;
 using Tauron;
 using TextAdventures.Builder.Data.Actor;
@@ -33,11 +32,15 @@ namespace TextAdventures.Engine.Processors.Commands
     {
         public override CommandTrackerId LocateSaga(IDomainEvent domainEvent)
         {
-            return domainEvent.GetAggregateEvent() switch
-            {
-                PlayerCreated evt => new CommandTrackerId($"CommandTracker-{evt.Actor}"),
-                _ => throw new ArgumentException("No Supportet Event", nameof(domainEvent))
-            };
+            const string id = "CommandTracker-33F92A5A-7516-4DDE-AE59-99CDC5668810";
+            var evt = domainEvent.GetAggregateEvent();
+
+            if(evt is PlayerCreated || evt is RoomCommandLayerRemovedEvent || evt is ActorRoomChanged || evt is RoomCommandsAddedEvent || evt is CommandLayerUpdatedEvent ||
+               evt is GameLoaded || evt is UpdateCommandEvent)
+                return new CommandTrackerId(id);
+
+
+            throw new ArgumentException("No Supportet Event", nameof(domainEvent));
         }
     }
 
