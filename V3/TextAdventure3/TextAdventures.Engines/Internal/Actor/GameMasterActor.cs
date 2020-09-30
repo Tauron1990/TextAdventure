@@ -16,6 +16,7 @@ using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Messages;
 using TextAdventures.Engine.Internal.WorldConstructor;
 using TextAdventures.Engine.Processors.Commands;
+using TextAdventures.Engine.Querys.Result;
 
 namespace TextAdventures.Engine.Internal.Actor
 {
@@ -25,6 +26,7 @@ namespace TextAdventures.Engine.Internal.Actor
         private IActorRef _projector = ActorRefs.Nobody;
         private IActorRef _loadingManager = ActorRefs.Nobody;
         private IActorRef _updateManager = ActorRefs.Nobody;
+        private IActorRef _saveGameManager = ActorRefs.Nobody;
 
         public GameMasterActor()
         {
@@ -44,8 +46,9 @@ namespace TextAdventures.Engine.Internal.Actor
             Receive<INewSaga>(s => Context.ActorOf(s.SagaManager, s.Name));
 
             Receive<RegisterForUpdate>(r => _updateManager.Forward(r));
+            Receive<SaveGameCommand>(c => _saveGameManager.Forward(c));
 
-            Receive<StartGame>(InitializeGame);
+            ReceiveAsync<StartGame>(InitializeGame);
             Receive<LoadingCompled>(GameLoadingCompled);
             Receive<Task<IDisposable>>(s => s.Result.Dispose());
         }
@@ -53,13 +56,23 @@ namespace TextAdventures.Engine.Internal.Actor
         private void GameLoadingCompled(LoadingCompled obj) 
             => new GameLoaded().Publish(Context.System.EventStream);
 
-        private void InitializeGame(StartGame start)
+        private async Task InitializeGame(StartGame start)
         {
             _loadingManager = Context.ActorOf<LoadingManagerActor>("LoadingManager");
             var waiter = LoadingSequence.Add(_loadingManager);
+            _saveGameManager = Context.ActorOf(Props.Create<SaveGameManager>(), "SaveGameManager");
 
             try
             {
+                var result = await _saveGameManager.Ask<QueryResult>(start);
+                if (result is QueryFailed)
+                {
+                    #pragma warning disable 4014
+                    Context.System.Terminate();
+                    #pragma warning restore 4014
+                    return;
+                }
+
                 _loadingManager.Tell(WaitUntilLoaded.New(Self, LoadingCompled.Instance));
 
                 _projector = Context.ActorOf(() => new ProjectionManagerActor(_loadingManager), "ProjectorManager");
@@ -80,7 +93,7 @@ namespace TextAdventures.Engine.Internal.Actor
             }
             finally
             {
-                Thread.Sleep(2000);
+                await Task.Delay(2000);
                 Self.Tell(waiter);
             }
 

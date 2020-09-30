@@ -10,7 +10,7 @@ namespace TextAdventures.Builder.Internal
 {
     public sealed class WorldImpl : World
     {
-        public string SaveGame { get; }
+        public string DataPath { get; }
 
         public Dictionary<Name, RoomBuilder> Rooms { get; } = new Dictionary<Name, RoomBuilder>();
 
@@ -18,7 +18,7 @@ namespace TextAdventures.Builder.Internal
 
         public List<object> GameMasterMessages { get; } = new List<object>();
 
-        internal WorldImpl(string saveGame) => SaveGame = saveGame;
+        internal WorldImpl(string dataPath) => DataPath = dataPath;
 
         public override void Add(params INewAggregate[] aggregates) => GameMasterMessages.AddRange(aggregates);
 

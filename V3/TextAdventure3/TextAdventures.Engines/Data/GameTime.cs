@@ -1,7 +1,9 @@
-﻿namespace TextAdventures.Engine.Data
+﻿using System;
+
+namespace TextAdventures.Engine.Data
 {
-    public class GameTime
+    public sealed class GameTime
     {
-        
+        public DateTime SessionStartTime { get; } = DateTime.UtcNow;
     }
 }

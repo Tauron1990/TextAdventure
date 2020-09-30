@@ -17,7 +17,7 @@ namespace Playground
             world.GetRoom(new Name("Start"));
 
             var game = Game.Create(world, false);
-            var master = game.Start();
+            var master = game.Start(null);
 
             //var builder = new SqliteConnectionStringBuilder {DataSource = "data.db", Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared};
             //var builder1 = $"akka.persistence.journal.sqlite.connection-string : \"{builder.ConnectionString}\"\n" +

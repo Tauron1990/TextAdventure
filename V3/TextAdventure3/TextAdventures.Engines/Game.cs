@@ -3,10 +3,10 @@ using System.IO;
 using Akka.Actor;
 using Akka.Configuration;
 using JetBrains.Annotations;
-using Microsoft.Data.Sqlite;
 using TextAdventures.Builder;
 using TextAdventures.Builder.Internal;
 using TextAdventures.Engine.Internal.Actor;
+using TextAdventures.Engine.Internal.Data;
 using TextAdventures.Engine.Internal.Messages;
 
 namespace TextAdventures.Engine
@@ -26,27 +26,25 @@ namespace TextAdventures.Engine
             _newGame = newGame;
         }
 
-        public GameMaster Start()
+        public GameMaster Start(string? saveGameName)
         {
-            var targetDic = Path.GetDirectoryName(_world.SaveGame);
-            var targetFile = Path.GetFileName(_world.SaveGame);
-            if(string.IsNullOrWhiteSpace(targetDic) || string.IsNullOrWhiteSpace(targetFile))
-                throw new InvalidOperationException("The Save game file is not an Valid Full Path");
+            var info = SaveProfile.Get(_world.DataPath);
+            Environment.CurrentDirectory = _world.DataPath;
 
-            Environment.CurrentDirectory = targetDic;
-            var connectionStringBuilder = new SqliteConnectionStringBuilder { DataSource = targetFile, Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared };
+            var connectionString = info.GetConnectionString();
+
             var connectionConfig = 
-                $"akka.persistence.journal.sqlite.connection-string : \"{connectionStringBuilder.ConnectionString}\"\n" +
-                $"akka.persistence.snapshot-store.sqlite.connection-string : \"{connectionStringBuilder.ConnectionString}\"";
+                $"akka.persistence.journal.sqlite.connection-string : \"{connectionString}\"\n" +
+                $"akka.persistence.snapshot-store.sqlite.connection-string : \"{connectionString}\"";
 
             var system = ActorSystem.Create("TextAdventures",
                 ConfigurationFactory.ParseString(connectionConfig).WithFallback(ConfigurationFactory.FromResource<Game>("TextAdventures.Engine.akka.conf")));
             var gameMaster = system.ActorOf<GameMasterActor>("GameMaster");
 
-            if(_newGame && File.Exists(_world.SaveGame))
-                File.Delete(_world.SaveGame);
+            if (_newGame) 
+                info.ClearSaves();
 
-            gameMaster.Tell(new StartGame(_world, _newGame || !File.Exists(_world.SaveGame)));
+            gameMaster.Tell(new StartGame(_world, _newGame || !File.Exists(Path.Combine(_world.DataPath, SaveProfile.ProfileFile)), info, info.GetSave(saveGameName)));
             return new GameMaster(gameMaster, system);
         }
     }

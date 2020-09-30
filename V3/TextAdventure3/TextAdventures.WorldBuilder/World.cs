@@ -12,8 +12,8 @@ namespace TextAdventures.Builder
             
         }
 
-        public static World Create(string saveFile)
-            => new WorldImpl(saveFile);
+        public static World Create(string saveDataPath)
+            => new WorldImpl(saveDataPath);
 
         public abstract void Add(params INewAggregate[] aggregates);
         public abstract void Add(params INewProjector[] projectors);

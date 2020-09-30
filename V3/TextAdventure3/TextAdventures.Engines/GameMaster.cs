@@ -4,10 +4,6 @@ using JetBrains.Annotations;
 using TextAdventures.Builder.Commands;
 using TextAdventures.Builder.Data.Command;
 using TextAdventures.Builder.Querys;
-using TextAdventures.Engine.Internal.Data;
-using TextAdventures.Engine.Internal.Data.Commands;
-using TextAdventures.Engine.Internal.Querys;
-using TextAdventures.Engine.Querys;
 using TextAdventures.Engine.Querys.Result;
 
 namespace TextAdventures.Engine

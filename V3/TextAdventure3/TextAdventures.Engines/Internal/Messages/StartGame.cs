@@ -1,4 +1,5 @@
 ﻿using TextAdventures.Builder.Internal;
+using TextAdventures.Engine.Internal.Data;
 
 namespace TextAdventures.Engine.Internal.Messages
 {
@@ -8,10 +9,16 @@ namespace TextAdventures.Engine.Internal.Messages
 
         public bool NewGame { get; }
 
-        public StartGame(WorldImpl world, bool newGame)
+        public SaveProfile SaveGame { get; }
+
+        public SaveInfo? SaveInfo { get; }
+
+        public StartGame(WorldImpl world, bool newGame, SaveProfile saveGame, SaveInfo? saveInfo)
         {
             World = world;
             NewGame = newGame;
+            SaveGame = saveGame;
+            SaveInfo = saveInfo;
         }
     }
 }
