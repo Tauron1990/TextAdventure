@@ -11,6 +11,9 @@ namespace TextAdventures.Engine.Internal.Data
 
         public DateTime SaveTime { get; set; }
 
+        [JsonIgnore]
+        public SaveProfile Profile { get; internal set; }
+
         [JsonConstructor]
         internal SaveInfo(string name, string path, DateTime saveTime)
         {

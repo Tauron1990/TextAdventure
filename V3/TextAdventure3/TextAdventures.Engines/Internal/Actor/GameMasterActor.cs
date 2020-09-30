@@ -11,6 +11,7 @@ using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Builder.Querys;
 using TextAdventures.Engine.Commands;
 using TextAdventures.Engine.Events;
+using TextAdventures.Engine.Internal.Data;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Messages;
@@ -54,7 +55,7 @@ namespace TextAdventures.Engine.Internal.Actor
         }
 
         private void GameLoadingCompled(LoadingCompled obj) 
-            => new GameLoaded().Publish(Context.System.EventStream);
+            => new GameLoaded(obj.Info, new GameMaster(Self, Context.System)).Publish(Context.System.EventStream);
 
         private async Task InitializeGame(StartGame start)
         {
@@ -73,7 +74,10 @@ namespace TextAdventures.Engine.Internal.Actor
                     return;
                 }
 
-                _loadingManager.Tell(WaitUntilLoaded.New(Self, LoadingCompled.Instance));
+                foreach (var (name, prop) in start.World.ActorProps) 
+                    Context.ActorOf(prop, name);
+
+                _loadingManager.Tell(WaitUntilLoaded.New(Self, new LoadingCompled(start.SaveGame)));
 
                 _projector = Context.ActorOf(() => new ProjectionManagerActor(_loadingManager), "ProjectorManager");
                 _projector.Tell(start);
@@ -99,9 +103,13 @@ namespace TextAdventures.Engine.Internal.Actor
 
         }
 
+        protected override SupervisorStrategy SupervisorStrategy() => new OneForOneStrategy(e => Directive.Escalate);
+
         private sealed class LoadingCompled
         {
-            public static readonly LoadingCompled Instance = new LoadingCompled();
+            public SaveProfile Info { get; }
+
+            public LoadingCompled(SaveProfile info) => Info = info;
         }
     }
 }

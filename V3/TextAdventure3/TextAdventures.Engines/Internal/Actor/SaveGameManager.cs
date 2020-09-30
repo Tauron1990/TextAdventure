@@ -52,10 +52,18 @@ namespace TextAdventures.Engine.Internal.Actor
                 saveFile.Open();
 
                 main.BackupDatabase(saveFile);
+
+                info.SaveTime = DateTime.Now;
+                info.Profile.Save();
+
+                if(Sender != null && !Sender.IsNobody() && !Sender.Equals(Self))
+                    Sender.Tell(QueryResult.Compleded(true));
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error on Save File");
+                if (Sender != null && !Sender.IsNobody() && !Sender.Equals(Self))
+                    Sender.Tell(QueryResult.Error(e));
             }
         }
 

@@ -1,5 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using Akka.Actor;
+using JetBrains.Annotations;
 using TextAdventures.Builder.Builder;
 using TextAdventures.Builder.Commands;
 using TextAdventures.Builder.Data;
@@ -18,7 +20,9 @@ namespace TextAdventures.Builder.Internal
 
         public List<object> GameMasterMessages { get; } = new List<object>();
 
-        internal WorldImpl(string dataPath) => DataPath = dataPath;
+        public Dictionary<string, Props> ActorProps { get; } = new Dictionary<string, Props>(); 
+
+        public override void Add(Props props, string name) => ActorProps.Add(name, props);
 
         public override void Add(params INewAggregate[] aggregates) => GameMasterMessages.AddRange(aggregates);
 
@@ -43,5 +47,10 @@ namespace TextAdventures.Builder.Internal
 
         internal RoomBuilder FindById(RoomId id)
             => Rooms.First(b => b.Value.Self == id).Value;
+
+        public WorldImpl(string dataPath)
+        {
+            DataPath = dataPath;
+        }
     }
 }

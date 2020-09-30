@@ -1,4 +1,5 @@
-﻿using TextAdventures.Builder.Builder;
+﻿using Akka.Actor;
+using TextAdventures.Builder.Builder;
 using TextAdventures.Builder.Commands;
 using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Internal;
@@ -7,14 +8,10 @@ namespace TextAdventures.Builder
 {
     public abstract class World
     {
-        internal World()
-        {
-            
-        }
-
         public static World Create(string saveDataPath)
             => new WorldImpl(saveDataPath);
 
+        public abstract void Add(Props props, string name);
         public abstract void Add(params INewAggregate[] aggregates);
         public abstract void Add(params INewProjector[] projectors);
         public abstract void Add(params INewQueryHandler[] handlers);

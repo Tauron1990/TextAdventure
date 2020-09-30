@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Data.Sqlite;
 using Newtonsoft.Json;
 using Tauron;
@@ -24,9 +25,10 @@ namespace TextAdventures.Engine.Internal.Data
 
         public TimeSpan AutoSaveInterval { get; set; }
 
-        public SaveProfile(string dataPath)
+        public SaveProfile(string dataPath, string name)
         {
             DataPath = dataPath;
+            Name = name;
             AutoSaveIncrement = 1;
             AutoSaveInterval = TimeSpan.FromMinutes(5);
         }
@@ -39,6 +41,29 @@ namespace TextAdventures.Engine.Internal.Data
             AutoSaveIncrement = autoSaveIncrement;
             AutosaveCount = autosaveCount;
             AutoSaveInterval = autoSaveInterval;
+        }
+
+        public static IEnumerable<SaveProfile> GetProfiles(string root)
+        {
+
+            return root
+                .EnumerateDirectorys()
+                .Select(directory => Path.Combine(directory, ProfileFile))
+                .Where(File.Exists)
+                .Select(data =>
+                {
+                    try
+                    {
+                        return JsonConvert.DeserializeObject<SaveProfile>(File.ReadAllText(data));
+                    }
+                    catch (Exception e)
+                    {
+                        if (e.IsCriticalApplicationException())
+                            throw;
+                        return null;
+                    }
+                })
+                .Where(s => s != null)!;
         }
 
         public static SaveProfile Get(string dataPath)
@@ -73,6 +98,7 @@ namespace TextAdventures.Engine.Internal.Data
                 throw new ArgumentException("Save game Exis", nameof(name));
             var file = new SaveInfo(name, Path.Combine(DataPath, $"{name}.dat"), DateTime.MinValue);
             Saves.Add(file);
+            file.Profile = this;
 
             return file;
         }
@@ -85,5 +111,12 @@ namespace TextAdventures.Engine.Internal.Data
             => new SqliteConnectionStringBuilder { DataSource = name, Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared }.ConnectionString;
 
         public void Save() => File.WriteAllText(Path.Combine(DataPath, ProfileFile), JsonConvert.SerializeObject(this, Formatting.Indented));
+
+        [OnDeserialized]
+        private void OnDeserialization(StreamingContext sender)
+        {
+            foreach (var info in Saves) 
+                info.Profile = this;
+        }
     }
 }
