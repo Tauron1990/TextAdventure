@@ -5,6 +5,8 @@ namespace TextAdventures.Builder.Data.Command
 {
     public interface ICommandMetadata
     {
+        CommandCallData CallData { get; set; }
+
         string Name { get; set; }
     }
 

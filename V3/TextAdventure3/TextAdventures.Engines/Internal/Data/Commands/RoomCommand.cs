@@ -1,5 +1,4 @@
-﻿using Akkatecture.Commands;
-using TextAdventures.Builder.Data.Rooms;
+﻿using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Engine.Commands;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 
@@ -9,11 +8,6 @@ namespace TextAdventures.Engine.Internal.Data.Commands
     {
         protected RoomCommand(RoomId aggregateId) 
             : base(aggregateId)
-        {
-        }
-
-        protected RoomCommand(RoomId aggregateId, CommandId sourceId) 
-            : base(aggregateId, sourceId)
         {
         }
     }

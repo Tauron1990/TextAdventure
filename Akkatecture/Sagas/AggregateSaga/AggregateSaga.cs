@@ -71,6 +71,9 @@ namespace Akkatecture.Sagas.AggregateSaga
 
         protected AggregateSaga()
         {
+            SetReceiveTimeout(TimeSpan.FromHours(1));
+            Command<ReceiveTimeout>(t => Context.Stop(Self));
+
             Settings = new AggregateSagaSettings(Context.System.Settings.Config);
             var idValue = Context.Self.Path.Name;
             PersistenceId = idValue;

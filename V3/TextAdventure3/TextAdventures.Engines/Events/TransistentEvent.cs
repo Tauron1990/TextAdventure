@@ -16,6 +16,7 @@ namespace TextAdventures.Engine.Events
                                     AggregateSequenceNumber = 1,
                                     AggregateName = nameof(GameInfo),
                                     AggregateId = GameInfoId.Id.Value,
+                                    EventId =   EventId.With(GameInfoId.GameId),
                                     EventName = typeof(TEvent).Name,
                                     EventVersion = 1
                                 };

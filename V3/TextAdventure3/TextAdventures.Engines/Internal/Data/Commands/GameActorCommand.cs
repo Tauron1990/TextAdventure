@@ -1,6 +1,4 @@
-﻿using Akkatecture.Commands;
-using JetBrains.Annotations;
-using TextAdventures.Builder.Data.Actor;
+﻿using TextAdventures.Builder.Data.Actor;
 using TextAdventures.Engine.Commands;
 
 namespace TextAdventures.Engine.Internal.Data.Commands
@@ -9,11 +7,6 @@ namespace TextAdventures.Engine.Internal.Data.Commands
     {
         protected GameActorCommand(GameActorId aggregateId) 
             : base(aggregateId)
-        {
-        }
-
-        protected GameActorCommand(GameActorId aggregateId, CommandId sourceId) 
-            : base(aggregateId, sourceId)
         {
         }
     }

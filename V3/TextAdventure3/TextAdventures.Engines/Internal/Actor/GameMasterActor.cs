@@ -29,6 +29,7 @@ namespace TextAdventures.Engine.Internal.Actor
         private IActorRef _loadingManager = ActorRefs.Nobody;
         private IActorRef _updateManager = ActorRefs.Nobody;
         private IActorRef _saveGameManager = ActorRefs.Nobody;
+        private IActorRef _commandLog = ActorRefs.Nobody;
 
         public GameMasterActor(Action<Exception> failAction)
         {
@@ -39,6 +40,10 @@ namespace TextAdventures.Engine.Internal.Actor
                 if (!_aggregates.TryGetValue(c.Target, out var target)) return false;
                 
                 Context.GetOrAdd(target.Name, target.Props).Tell(c);
+                
+                if(c is ILogCommand command)
+                    _commandLog.Tell(new CommandLogCommand(command));
+
                 return true;
 
             });
@@ -83,6 +88,8 @@ namespace TextAdventures.Engine.Internal.Actor
 
                 _projector = Context.ActorOf(() => new ProjectionManagerActor(_loadingManager), "ProjectorManager");
                 _projector.Tell(start);
+
+                _commandLog = Context.ActorOf<CommandLogManager>();
 
                 Self.Tell(NewAggregate<RoomManager, Room, RoomId, RoomCommand>.Create());
                 Self.Tell(NewAggregate<GameActorManager, GameActor, GameActorId, GameActorCommand>.Create());

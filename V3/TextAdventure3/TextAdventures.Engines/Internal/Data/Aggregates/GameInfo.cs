@@ -1,7 +1,6 @@
 ﻿using System;
 using Akkatecture.Aggregates;
 using Akkatecture.Core;
-using Newtonsoft.Json;
 using TextAdventures.Engine.Internal.Data.Commands;
 
 namespace TextAdventures.Engine.Internal.Data.Aggregates
@@ -10,7 +9,7 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
     {
         public static readonly Guid GameId = new Guid("B989CA41-C4F4-4E71-A421-8D0477DEE97D");
 
-        public static readonly GameInfoId Id = NewDeterministic(GameId, "GameInfo");
+        public static readonly GameInfoId Id = With(GameId);
 
         public GameInfoId(string value) : base(value)
         { }

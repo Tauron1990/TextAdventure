@@ -41,7 +41,7 @@ namespace Akkatecture.Aggregates
 
             UseDefaultEventRecover = aggregateRootConfig.GetBoolean("use-default-event-recover", true);
             UseDefaultSnapshotRecover = aggregateRootConfig.GetBoolean("use-default-snapshot-recover", true);
-            SetReceiveTimeout = aggregateRootConfig.GetTimeSpan("set-receive-timeout");
+            SetReceiveTimeout = aggregateRootConfig.GetTimeSpan("set-receive-timeout", TimeSpan.FromHours(1));
         }
     }
 }

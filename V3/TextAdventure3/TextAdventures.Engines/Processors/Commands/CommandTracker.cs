@@ -188,7 +188,12 @@ namespace TextAdventures.Engine.Processors.Commands
                 }
             }
 
-            new CommandsUpdatedEvent(ImmutableList<IGameCommand>.Empty.AddRange(commands))
+            new CommandsUpdatedEvent(ImmutableList<IGameCommand>.Empty.AddRange(commands.Select((sc, i) =>
+                {
+                    if(sc is ICommandMetadata metadata)
+                        metadata.CallData = new CommandCallData(CallType.UI, i);
+                    return sc;
+                })))
                .Publish(Context.System.EventStream);
         }
 

@@ -23,14 +23,5 @@ namespace TextAdventures.Engine.Commands.Actors
             DisplayName = displayName;
             Location = location;
         }
-
-        public CreateGameActorCommand(GameActorId aggregateId, CommandId sourceId, PlayerType playerType, Name name, Name displayName, ActorLocation location) 
-            : base(aggregateId, sourceId)
-        {
-            PlayerType = playerType;
-            Name = name;
-            DisplayName = displayName;
-            Location = location;
-        }
     }
 }

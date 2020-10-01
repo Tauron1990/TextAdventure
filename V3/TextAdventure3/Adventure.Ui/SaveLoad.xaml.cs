@@ -219,7 +219,11 @@ namespace Adventure.Ui
                 _dispatcher.Invoke(Profiles.Clear);
                 var profiles = SaveProfile.GetProfiles(SaveGmeLocation);
 
-                _dispatcher.Invoke(() => profiles.Foreach(p => Profiles.Add(p)));
+                _dispatcher.BeginInvoke(new Action(() =>
+                {
+                    foreach (var profile in profiles) 
+                        Profiles.Add(profile);
+                }));
             });
         }
 

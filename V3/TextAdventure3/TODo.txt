@@ -1,5 +1,2 @@
-UI Path
-Testing
-Command Log
 Room Description-Name
 Event System
