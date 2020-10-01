@@ -8,8 +8,8 @@ namespace TextAdventures.Builder
 {
     public abstract class World
     {
-        public static World Create(string saveDataPath)
-            => new WorldImpl(saveDataPath);
+        public static World Create(string saveDataPath, string profileName)
+            => new WorldImpl(saveDataPath, profileName);
 
         public abstract void Add(Props props, string name);
         public abstract void Add(params INewAggregate[] aggregates);

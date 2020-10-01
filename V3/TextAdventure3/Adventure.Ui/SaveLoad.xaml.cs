@@ -4,6 +4,7 @@ using System.Collections.ObjectModel;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
+using System.Windows;
 using System.Windows.Input;
 using System.Windows.Threading;
 using Adventure.Ui.Internal;
@@ -16,9 +17,11 @@ using Tauron;
 using Tauron.Application;
 using TextAdventures.Builder;
 using TextAdventures.Engine;
+using TextAdventures.Engine.Commands;
 using TextAdventures.Engine.Events;
 using TextAdventures.Engine.Internal.Data;
 using TextAdventures.Engine.Internal.Data.Aggregates;
+using TextAdventures.Engine.Querys.Result;
 
 namespace Adventure.Ui
 {
@@ -40,6 +43,7 @@ namespace Adventure.Ui
         public void Init(string saveGameLocations)
         {
             _model.SaveGmeLocation = saveGameLocations;
+            saveGameLocations.CreateDirectoryIfNotExis();
         }
 
         [PublicAPI]
@@ -55,10 +59,16 @@ namespace Adventure.Ui
         {
             gl.Master
                 .WhenTerminated
-                .ContinueWith(t => _model.IsGameRunning = false);
+                .ContinueWith(t =>
+                {
+                    _model.IsGameRunning = false;
+                    _model.GameMaster = null;
+                    _model.Profile = null;
+                });
 
             _model.GameMaster = gl.Master;
             _model.IsGameRunning = true;
+            _model.Profile = gl.Info;
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
@@ -91,6 +101,10 @@ namespace Adventure.Ui
         private List<string>? _blockedNames;
         private string _newNameText = string.Empty;
         private GameMaster? _gameMaster;
+        private string? _saveGameName;
+        private NameInfo _isSaveGameNameOk;
+        private SaveProfile? _profile;
+        private string _saveGmeLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         public GameMaster? GameMaster
         {
@@ -101,6 +115,17 @@ namespace Adventure.Ui
                 _gameMaster = value;
                 OnPropertyChanged();
                 UpdateSaveGames();
+            }
+        }
+
+        public SaveProfile? Profile
+        {
+            get => _profile;
+            set
+            {
+                if (Equals(value, _profile)) return;
+                _profile = value;
+                OnPropertyChanged();
             }
         }
 
@@ -119,7 +144,15 @@ namespace Adventure.Ui
 
         public ObservableCollection<SaveProfile> Profiles { get; } = new ObservableCollection<SaveProfile>();
 
-        public string SaveGmeLocation { get; set; } = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        public string SaveGmeLocation
+        {
+            get => _saveGmeLocation;
+            set
+            {
+                _saveGmeLocation = value;
+                UpdateSaveGames();
+            }
+        }
 
         public bool IsGameRunning
         {
@@ -150,7 +183,7 @@ namespace Adventure.Ui
             _dispatcher = dispatcher;
             NewName = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
             GenericLoadGame = new SimpleCommand(ExcuteLoad);
-            UpdateSaveGames();
+            GenericSvaeGame = new SimpleCommand(_ => IsGameRunning && IsSaveGameNameOk != NameInfo.Error, ExcuteSave);
         }
 
         private NameInfo ValidateNewName()
@@ -165,15 +198,18 @@ namespace Adventure.Ui
 
         private void NewGame()
         {
+            var name = NewNameText;
+            NewNameText = string.Empty;
+
             _blockedNames = null;
             if (IsGameRunning && GameMaster != null)
             {
                 GameMaster
                     .Stop()
-                    .ContinueWith(_ => _starter(NewNameText, null, true));
+                    .ContinueWith(_ => _starter(name, null, true));
             }
             else
-                _starter(NewNameText, null, true);
+                _starter(name, null, true);
         }
 
         private void UpdateSaveGames()
@@ -194,8 +230,10 @@ namespace Adventure.Ui
             void ExecuteAction(Action action)
             {
                 if (IsGameRunning && GameMaster != null)
+                {
                     GameMaster.Stop()
-                        .ContinueWith(e => action());
+                       .ContinueWith(e => action());
+                }
                 else
                     action();
             }
@@ -213,11 +251,56 @@ namespace Adventure.Ui
             }
         }
 
+        public string SaveGameName
+        {
+            get => _saveGameName;
+            set
+            {
+                if (value == _saveGameName) return;
+                _saveGameName = value;
+                OnPropertyChanged();
+                IsSaveGameNameOk = ValidateSaveGameInfo();
+            }
+        }
+
+        public NameInfo IsSaveGameNameOk
+        {
+            get => _isSaveGameNameOk;
+            set
+            {
+                if (value == _isSaveGameNameOk) return;
+                _isSaveGameNameOk = value;
+                OnPropertyChanged();
+            }
+        }
+
         public ICommand GenericSvaeGame { get; }
 
-        private void ExcuteSave(object? target)
+        private NameInfo ValidateSaveGameInfo()
         {
+            if (SaveGameName.Any(InvalidChars.Contains))
+                return NameInfo.Error;
 
+            return Profile?.Saves.Any(z => z.Name == SaveGameName) == true ? NameInfo.Warning : NameInfo.Ok;
+        }
+
+        private async void ExcuteSave(object? target)
+        {
+            if(GameMaster == null)
+                return;
+
+            string targetName = target switch
+            {
+                null => SaveGameName,
+                SaveInfo info => info.Name,
+                _ => string.Empty
+            };
+
+            var result = await GameMaster.SendSave(new SaveGameCommand(targetName));
+            if (result is QueryFailed failed)
+                MessageBox.Show(Application.Current.MainWindow!, failed.Error.ToString());
+
+            OnPropertyChangedExplicit(nameof(Profile));
         }
     }
 }

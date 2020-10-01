@@ -11,13 +11,13 @@ namespace Playground
     {
         static void Main(string[] args)
         {
-            var save = Path.GetFullPath("test.dat");
+            var save = Path.GetFullPath("test");
 
-            var world = World.Create(save);
+            var world = World.Create(save, "Test");
             world.GetRoom(new Name("Start"));
 
             var game = Game.Create(world, false);
-            var master = game.Start(null);
+            var master = game.Start(null, Console.WriteLine);
 
             //var builder = new SqliteConnectionStringBuilder {DataSource = "data.db", Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared};
             //var builder1 = $"akka.persistence.journal.sqlite.connection-string : \"{builder.ConnectionString}\"\n" +

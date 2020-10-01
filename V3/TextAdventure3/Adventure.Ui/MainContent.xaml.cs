@@ -1,15 +1,15 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Reactive.Disposables;
+using System.Linq;
 using System.Windows.Documents;
-using Adventure.GameEngine;
-using Adventure.GameEngine.Commands;
-using Adventure.GameEngine.Core;
-using Adventure.GameEngine.Systems.Events;
-using EcsRx.Events;
-using EcsRx.Infrastructure.Events;
-using EcsRx.MicroRx.Events;
+using Akka.Actor;
+using Akkatecture.Aggregates;
+using Akkatecture.Subscribers;
 using JetBrains.Annotations;
+using TextAdventures.Builder;
+using TextAdventures.Builder.Data.Command;
+using TextAdventures.Engine;
+using TextAdventures.Engine.Events;
+using TextAdventures.Engine.Internal.Data.Aggregates;
 
 namespace Adventure.Ui
 {
@@ -19,27 +19,22 @@ namespace Adventure.Ui
     [PublicAPI]
     public partial class MainContent
     {
-        private CompositeDisposable? _disposable;
-        private IEventSystem _eventSystem = new EventSystem(new MessageBroker());
-
         private Paragraph _description = new Paragraph();
         private Paragraph _content = new Paragraph();
+        private GameMaster? _gameMaster;
 
-        public MainContent() => InitializeComponent();
-
-        public void LoadGame(Game game)
+        public MainContent()
         {
+            InitializeComponent();
+            CommandBox.CommandSelect += command => _gameMaster?.SendCommand(command);
+        }
+
+        public void PrepareGame(World game)
+        {
+            game.Add(Props.Create(() => new MainContentSubscriber(GameLoaded, UpdateCommands, UpdateContent)), "Main_Content_Subscriber");
+
             Dispatcher.Invoke(() =>
             {
-                CommandBox.InitGame(game);
-                _disposable = new CompositeDisposable
-                              {
-                                  game.EventSystem.Receive<UpdateTextContent>().Subscribe(u => Dispatcher.Invoke(() => UpdateContent(u))),
-                                  game.EventSystem.Receive<UpdateCommandList>().Subscribe(c => Dispatcher.Invoke(() => UpdateComands(c.Commands)))
-                              };
-
-                _eventSystem = game.EventSystem;
-
                 var document = new FlowDocument();
 
                 _description = new Paragraph();
@@ -49,19 +44,19 @@ namespace Adventure.Ui
                 document.Blocks.Add(_content);
 
                 TextContent.Document = document;
-
-                game.EventSystem.Publish(new QueryLastEntry());
             });
         }
 
-        public void UnloadGame()
+        private void GameLoaded(GameLoaded loaded)
         {
-            CommandBox.UnloadGame();
-            _disposable?.Dispose();
+            _gameMaster = loaded.Master;
+            loaded.Master
+               .WhenTerminated
+               .ContinueWith(_ => CommandBox.UnloadGame());
         }
 
-        private void UpdateComands(IEnumerable<(LazyString Name, Command command)> data)
-            => CommandBox.Update(data);
+        private void UpdateCommands(CommandsUpdatedEvent update) 
+            => CommandBox.Update(update.Commands.Select(c => (c as ICommandMetadata, c)));
 
         private void UpdateContent(UpdateTextContent update)
         {
@@ -79,5 +74,38 @@ namespace Adventure.Ui
         }
         
         public void Display(string content) => Dispatcher.Invoke(() => UpdateContent(new UpdateTextContent(string.Empty, content)));
+
+        private sealed class MainContentSubscriber : DomainEventSubscriber, ISubscribeTo<GameInfo, GameInfoId, CommandsUpdatedEvent>,
+                                                     ISubscribeTo<GameInfo, GameInfoId, GameLoaded>, ISubscribeTo<GameInfo, GameInfoId, UpdateTextContent>
+        {
+            private readonly Action<GameLoaded> _loaded;
+            private readonly Action<CommandsUpdatedEvent> _updateCommand;
+            private readonly Action<UpdateTextContent> _updateText;
+
+            public MainContentSubscriber(Action<GameLoaded> loaded, Action<CommandsUpdatedEvent> updateCommand, Action<UpdateTextContent> updateText)
+            {
+                _loaded = loaded;
+                _updateCommand = updateCommand;
+                _updateText = updateText;
+            }
+
+            public bool Handle(IDomainEvent<GameInfo, GameInfoId, CommandsUpdatedEvent> domainEvent)
+            {
+                _updateCommand(domainEvent.AggregateEvent);
+                return true;
+            }
+
+            public bool Handle(IDomainEvent<GameInfo, GameInfoId, GameLoaded> domainEvent)
+            {
+                _loaded(domainEvent.AggregateEvent);
+                return true;
+            }
+
+            public bool Handle(IDomainEvent<GameInfo, GameInfoId, UpdateTextContent> domainEvent)
+            {
+                _updateText(domainEvent.AggregateEvent);
+                return true;
+            }
+        }
     }
 }

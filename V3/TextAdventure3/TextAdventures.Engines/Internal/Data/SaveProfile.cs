@@ -66,12 +66,12 @@ namespace TextAdventures.Engine.Internal.Data
                 .Where(s => s != null)!;
         }
 
-        public static SaveProfile Get(string dataPath)
+        public static SaveProfile Get(string dataPath, string name)
         {
             dataPath.CreateDirectoryIfNotExis();
             var fullFile = Path.Combine(dataPath, ProfileFile);
 
-            return File.Exists(fullFile) ? JsonConvert.DeserializeObject<SaveProfile>(File.ReadAllText(fullFile)) : new SaveProfile(dataPath);
+            return File.Exists(fullFile) ? JsonConvert.DeserializeObject<SaveProfile>(File.ReadAllText(fullFile)) : new SaveProfile(dataPath, name);
         }
 
         public SaveInfo? GetSave(string? name) => Saves.Find(s => s.Name == name);

@@ -26,9 +26,9 @@ namespace TextAdventures.Engine
             _newGame = newGame;
         }
 
-        public GameMaster Start(string? saveGameName)
+        public GameMaster Start(string? saveGameName, Action<Exception> fail)
         {
-            var info = SaveProfile.Get(_world.DataPath);
+            var info = SaveProfile.Get(_world.DataPath, _world.ProfileName);
             Environment.CurrentDirectory = _world.DataPath;
 
             var connectionString = info.GetConnectionString();
@@ -39,7 +39,7 @@ namespace TextAdventures.Engine
 
             var system = ActorSystem.Create("TextAdventures",
                 ConfigurationFactory.ParseString(connectionConfig).WithFallback(ConfigurationFactory.FromResource<Game>("TextAdventures.Engine.akka.conf")));
-            var gameMaster = system.ActorOf<GameMasterActor>("GameMaster");
+            var gameMaster = system.ActorOf(Props.Create(() => new GameMasterActor(fail)), "GameMaster");
 
             if (_newGame) 
                 info.ClearSaves();

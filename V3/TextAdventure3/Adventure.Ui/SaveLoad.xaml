@@ -7,14 +7,14 @@
       xmlns:internal="clr-namespace:Adventure.Ui.Internal"
       xmlns:data="clr-namespace:TextAdventures.Engine.Internal.Data;assembly=TextAdventures.Engine"
       mc:Ignorable="d" d:DataContext="{d:DesignInstance local:SaveLoadModel}"
-      d:DesignHeight="450" d:DesignWidth="800" Name="RootMenu">
+      d:DesignHeight="450" d:DesignWidth="800" Name="RootMenu" Background="Transparent" Foreground="White">
     <Menu.Resources>
         <internal:NameInfoValueConverter x:Key="NameInfoConv"/>
     </Menu.Resources>
     <MenuItem Header="Neu">
         <TextBox MinWidth="120" MaxWidth="120" Text="{Binding NewNameText, UpdateSourceTrigger=PropertyChanged, Delay=100}"/>
-        <Rectangle Width="20" Height="20" RadiusX="20" RadiusY="20" Fill="{Binding IsNewNameOk, Converter={StaticResource NameInfoConv}}"/>
-        <MenuItem Command="{Binding NewName}"/>
+        <Rectangle Width="15" Height="15" RadiusX="20" RadiusY="20" Fill="{Binding IsNewNameOk, Converter={StaticResource NameInfoConv}}"/>
+        <MenuItem Header="Neues Spiel" Command="{Binding NewName}"/>
     </MenuItem>
     <MenuItem Header="Laden" ItemsSource="{Binding Profiles}">
         <MenuItem.Resources>
@@ -28,7 +28,16 @@
             </DataTemplate>
         </MenuItem.Resources>
     </MenuItem>
-    <MenuItem Header="Speichern">
-
+    <MenuItem Header="Speichern" IsEnabled="{Binding IsGameRunning}">
+        <MenuItem.Resources>
+            <DataTemplate DataType="{x:Type data:SaveInfo}">
+                <MenuItem Header="{Binding Name}" Command="{Binding DataContext.GenericSvaeGame, ElementName=RootMenu}"></MenuItem>
+            </DataTemplate>
+        </MenuItem.Resources>
+        <TextBox MinWidth="120" MaxWidth="120" Text="{Binding SaveGameName, UpdateSourceTrigger=PropertyChanged, Delay=100}"/>
+        <Rectangle Width="15" Height="15" RadiusX="20" RadiusY="20" Fill="{Binding IsSaveGameNameOk, Converter={StaticResource NameInfoConv}}"/>
+        <MenuItem Header="Speichern" Command="{Binding GenericSvaeGame}"/>
+        <Separator/>
+        <MenuItem Header="Speicher Stände" ItemsSource="{Binding Profile.Saves}"/>
     </MenuItem>
 </Menu>

@@ -13,14 +13,13 @@ namespace TextAdventures.Engine.Events
             var eventMetadata = new Metadata
                                 {
                                     Timestamp = DateTimeOffset.Now,
-                                    AggregateSequenceNumber = 0,
+                                    AggregateSequenceNumber = 1,
                                     AggregateName = nameof(GameInfo),
-                                    AggregateId = GameInfoId.GameId,
-                                    EventId = new EventId("Transistent"),
+                                    AggregateId = GameInfoId.Id.Value,
                                     EventName = typeof(TEvent).Name,
                                     EventVersion = 1
                                 };
-            var domainfEvent = new DomainEvent<GameInfo, GameInfoId, TEvent>(new GameInfoId(), (TEvent)this, eventMetadata, DateTimeOffset.Now, 0);
+            var domainfEvent = new DomainEvent<GameInfo, GameInfoId, TEvent>(GameInfoId.Id, (TEvent)this, eventMetadata, DateTimeOffset.Now, 1);
             stream.Publish(domainfEvent);
         }
     }

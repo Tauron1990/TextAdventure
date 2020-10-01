@@ -13,6 +13,7 @@ namespace TextAdventures.Builder.Internal
     public sealed class WorldImpl : World
     {
         public string DataPath { get; }
+        public string ProfileName { get; }
 
         public Dictionary<Name, RoomBuilder> Rooms { get; } = new Dictionary<Name, RoomBuilder>();
 
@@ -48,9 +49,10 @@ namespace TextAdventures.Builder.Internal
         internal RoomBuilder FindById(RoomId id)
             => Rooms.First(b => b.Value.Self == id).Value;
 
-        public WorldImpl(string dataPath)
+        public WorldImpl(string dataPath, string profileName)
         {
             DataPath = dataPath;
+            ProfileName = profileName;
         }
     }
 }

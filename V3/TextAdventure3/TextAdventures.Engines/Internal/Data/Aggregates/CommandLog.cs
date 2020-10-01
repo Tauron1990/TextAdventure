@@ -1,7 +1,7 @@
 ﻿using Akkatecture.Aggregates;
 using Akkatecture.Core;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
+using TextAdventures.Engine.Internal.Data.Commands;
 
 namespace TextAdventures.Engine.Internal.Data.Aggregates
 {
@@ -26,8 +26,15 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
         }
     }
 
-    public sealed class CommandLog : IAggregateRoot<CommandLogId>
+    public sealed class CommandLog : GameAggregate<CommandLog, CommandLogId, CommandLogStade>
     {
-        
+        public CommandLog(CommandLogId id) 
+            : base(id)
+        { }
+    }
+
+    public sealed class CommandLogManager : AggregateManager<CommandLog, CommandLogId, CommandLogCommand>
+    {
+
     }
 }

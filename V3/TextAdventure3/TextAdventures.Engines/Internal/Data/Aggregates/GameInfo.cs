@@ -1,4 +1,5 @@
-﻿using Akkatecture.Aggregates;
+﻿using System;
+using Akkatecture.Aggregates;
 using Akkatecture.Core;
 using Newtonsoft.Json;
 using TextAdventures.Engine.Internal.Data.Commands;
@@ -7,17 +8,12 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
 {
     public sealed class GameInfoId : Identity<GameInfoId>
     {
-        public const string GameId = "gameinfo-B989CA41-C4F4-4E71-A421-8D0477DEE97D";
+        public static readonly Guid GameId = new Guid("B989CA41-C4F4-4E71-A421-8D0477DEE97D");
 
-        [JsonConstructor]
-        private GameInfoId(string value) : base(value)
+        public static readonly GameInfoId Id = NewDeterministic(GameId, "GameInfo");
+
+        public GameInfoId(string value) : base(value)
         { }
-
-        public GameInfoId()
-            : this(GameId)
-        {
-            
-        }
     }
 
     public sealed class GameInfoState : GameState<GameInfoState, GameInfo, GameInfoId>

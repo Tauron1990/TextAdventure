@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Tauron.Akka;
@@ -23,14 +22,17 @@ namespace TextAdventures.Engine.Internal.Actor
 {
     public sealed class GameMasterActor : ExposedReceiveActor
     {
+        private readonly Action<Exception> _failAction;
         private readonly Dictionary<Type, (Props Props, string Name)> _aggregates = new Dictionary<Type, (Props Props, string Name)>();
+
         private IActorRef _projector = ActorRefs.Nobody;
         private IActorRef _loadingManager = ActorRefs.Nobody;
         private IActorRef _updateManager = ActorRefs.Nobody;
         private IActorRef _saveGameManager = ActorRefs.Nobody;
 
-        public GameMasterActor()
+        public GameMasterActor(Action<Exception> failAction)
         {
+            _failAction = failAction;
             Receive<IGameQuery>(q => _projector.Forward(q));
             Receive<IGameCommand>(c =>
             {
@@ -103,7 +105,14 @@ namespace TextAdventures.Engine.Internal.Actor
 
         }
 
-        protected override SupervisorStrategy SupervisorStrategy() => new OneForOneStrategy(e => Directive.Escalate);
+        protected override SupervisorStrategy SupervisorStrategy()
+        {
+            return new OneForOneStrategy(e =>
+            {
+                _failAction(e);
+                return Directive.Escalate;
+            });
+        }
 
         private sealed class LoadingCompled
         {

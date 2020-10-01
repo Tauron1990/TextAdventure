@@ -25,20 +25,15 @@ namespace Adventure.Ui.CommandDisplay
             });
         }
 
-        public CommandViewModel()
-        {
-            _executor = new SimpleCommand(() => { });
-        }
-
         public void Clear()
             => Commands.Clear();
 
-        public void UpdateCommands(IEnumerable<(ICommandMetadata Metadata, IGameCommand Command)> commands)
+        public void UpdateCommands(IEnumerable<(ICommandMetadata? Metadata, IGameCommand Command)> commands)
         {
             Clear();
 
             foreach (var (metadata, command) in commands)
-                Commands.Add(new PotentalCommand(command, metadata.Name, _executor));
+                Commands.Add(new PotentalCommand(command, metadata?.Name ?? $"Unbekannt {command.GetType()}", _executor));
         }
     }
 }

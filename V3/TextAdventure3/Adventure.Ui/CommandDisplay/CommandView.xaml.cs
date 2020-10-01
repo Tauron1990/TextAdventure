@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using Adventure.GameEngine;
-using Adventure.GameEngine.Commands;
-using Adventure.GameEngine.Core;
+using TextAdventures.Builder.Data.Command;
 
 namespace Adventure.Ui.CommandDisplay
 {
@@ -21,15 +19,12 @@ namespace Adventure.Ui.CommandDisplay
             DataContext = _model;
         }
 
-        public event Action<Command>? CommandSelect; 
-
-        public void InitGame(Game game)
-            => _model.NewContent(game.Content);
+        public event Action<IGameCommand>? CommandSelect;
 
         public void UnloadGame()
-            => _model.Clear();
+            => Dispatcher.Invoke(_model.Clear);
 
-        public void Update(IEnumerable<(LazyString, Command)> commands)
-            => _model.UpdateCommands(commands);
+        public void Update(IEnumerable<(ICommandMetadata?, IGameCommand)> commands)
+            => Dispatcher.Invoke(() => _model.UpdateCommands(commands));
     }
 }
