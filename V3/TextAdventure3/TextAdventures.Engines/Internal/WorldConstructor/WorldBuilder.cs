@@ -28,8 +28,8 @@ namespace TextAdventures.Engine.Internal.WorldConstructor
             foreach (object message in _world.GameMasterMessages) 
                 _gameMaster.Tell(message);
 
-            foreach (var (id, room) in _world.Rooms) 
-                _gameMaster.Tell(new CreateRoomCommand(id, room.Doorways.Values.ToArray()));
+            foreach (var (_, room) in _world.Rooms) 
+                _gameMaster.Tell(CreateRoomCommand.CreateFrom(room));
 
             foreach (var (id, actor) in _world.Actors) 
                 _gameMaster.Tell(new CreateGameActorCommand(id, actor.PlayerType, actor.Name, actor.DisplayName, actor.Location));

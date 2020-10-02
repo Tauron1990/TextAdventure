@@ -1,10 +1,12 @@
 ﻿using Akkatecture.Aggregates;
+using Akkatecture.Events;
 using TextAdventures.Builder.Data.Actor;
 using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 
-namespace TextAdventures.Engine.Internal.Data.Events
+namespace TextAdventures.Engine.Events.Actor
 {
+    [EventVersion("ActorRoomChanged", 1)]
     public sealed class ActorRoomChanged : AggregateEvent<GameActor, GameActorId>
     {
         public GameActorId Actor { get; }

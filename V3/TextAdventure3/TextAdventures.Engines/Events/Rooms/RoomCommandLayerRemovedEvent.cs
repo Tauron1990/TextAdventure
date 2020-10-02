@@ -1,11 +1,12 @@
 ﻿using Akkatecture.Aggregates;
+using Akkatecture.Events;
 using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Data.Rooms;
-using TextAdventures.Engine.Internal.Data.Aggregates;
 
-namespace TextAdventures.Engine.Internal.Data.Events
+namespace TextAdventures.Engine.Events.Rooms
 {
-    public sealed class RoomCommandLayerRemovedEvent : AggregateEvent<Room, RoomId>
+    [EventVersion("RoomCommandLayerRemovedEvent", 1)]
+    public sealed class RoomCommandLayerRemovedEvent : AggregateEvent<Internal.Data.Aggregates.Room, RoomId>
     {
         public RoomId RoomId { get; }
 

@@ -4,6 +4,7 @@ using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Data.Actor;
 using TextAdventures.Engine.Commands.Actors;
 using TextAdventures.Engine.Events;
+using TextAdventures.Engine.Events.Actor;
 using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Data.Events;
 

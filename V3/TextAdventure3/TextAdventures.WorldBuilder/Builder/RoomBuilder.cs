@@ -21,11 +21,27 @@ namespace TextAdventures.Builder.Builder
 
         public IReadOnlyList<CommandLayer> CommandLayers => _commandLayers;
 
+        public Description Description { get; private set; } = new Description(string.Empty);
+
+        public Description DestailDescription { get; private set; } = new Description(string.Empty);
+
         public RoomBuilder(WorldImpl worldImpl, RoomId self, Name name)
         {
             _worldImpl = worldImpl;
             Self = self;
             Name = name;
+        }
+
+        public RoomBuilder WithDetailDescription(Description description)
+        {
+            DestailDescription = description;
+            return this;
+        }
+
+        public RoomBuilder WithDescription(Description description)
+        {
+            Description = description;
+            return this;
         }
 
         public RoomBuilder WithDoorway(params DoorwayBuilder[] doorways)

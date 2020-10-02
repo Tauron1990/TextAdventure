@@ -15,6 +15,8 @@ using TextAdventures.Builder.Data.Actor;
 using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Builder.Querys;
 using TextAdventures.Engine.Commands;
+using TextAdventures.Engine.Events.Actor;
+using TextAdventures.Engine.Events.Rooms;
 using TextAdventures.Engine.Internal.Data.Events;
 using TextAdventures.Engine.Internal.Data.Projection;
 using TextAdventures.Engine.Internal.Messages;

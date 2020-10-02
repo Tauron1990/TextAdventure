@@ -13,6 +13,8 @@ using TextAdventures.Builder.Data.Command;
 using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Engine.Data;
 using TextAdventures.Engine.Events;
+using TextAdventures.Engine.Events.Actor;
+using TextAdventures.Engine.Events.Rooms;
 using TextAdventures.Engine.Internal.Data.Aggregates;
 using TextAdventures.Engine.Internal.Data.Events;
 using TextAdventures.Engine.Querys.Result;

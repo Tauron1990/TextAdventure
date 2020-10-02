@@ -10,6 +10,7 @@ using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Data.Command;
 using TextAdventures.Builder.Data.Rooms;
 using TextAdventures.Engine.Commands.Rooms;
+using TextAdventures.Engine.Events.Rooms;
 using TextAdventures.Engine.Internal.Data.Commands;
 using TextAdventures.Engine.Internal.Data.Events;
 
@@ -21,26 +22,38 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
     }
 
     public sealed class RoomState : GameState<RoomState, Room, RoomId>,
-        IApply<RoomCreatedEvent>, IApply<RoomCommandLayerRemovedEvent>,
-        IApply<RoomCommandsAddedEvent>
+        IApply<RoomCreatedEvent>, IApply<RoomCommandLayerRemovedEvent>, IApply<RoomDescriptionRevertEvent>,
+        IApply<RoomCommandsAddedEvent>, IApply<RoomDescriptionChangedEvent>
     {
         public Name Name { get; set; } = Name.Default;
 
         public Doorway[] Doorways { get; set; } = Array.Empty<Doorway>();
 
-        public List<CommandLayer> Layers { get; } = new List<CommandLayer>();
+        public List<CommandLayer> Layers { get; set; } = new List<CommandLayer>();
+
+        public Stack<Description> Descriptions { get; } = new Stack<Description>();
+
+        public Stack<Description> DetailDescriptions { get; } = new Stack<Description>();
 
         public override void Hydrate(RoomState aggregateSnapshot)
         {
             Name = aggregateSnapshot.Name;
             Doorways = aggregateSnapshot.Doorways;
             Layers.AddRange(aggregateSnapshot.Layers);
+
+            foreach (var description in aggregateSnapshot.Descriptions) 
+                Descriptions.Push(description);
+
+            foreach (var detailDescription in aggregateSnapshot.DetailDescriptions) 
+                DetailDescriptions.Push(detailDescription);
         }
 
         public void Apply(RoomCreatedEvent aggregateEvent)
         {
             Name = aggregateEvent.Name;
             Doorways = aggregateEvent.Doorways;
+            Descriptions.Push(aggregateEvent.Description);
+            DetailDescriptions.Push(aggregateEvent.DetailDescription);
         }
 
         public void Apply(RoomCommandsAddedEvent aggregateEvent) 
@@ -51,6 +64,22 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
             var result = Layers.AsEnumerable().Reverse().FirstOrDefault(l => l.Name == aggregateEvent.Name);
             if (result != null)
                 Layers.Remove(result);
+        }
+
+        public void Apply(RoomDescriptionChangedEvent aggregateEvent)
+        {
+            if(aggregateEvent.IsDetail)
+                DetailDescriptions.Push(aggregateEvent.Description);
+            else
+                Descriptions.Push(aggregateEvent.Description);
+        }
+
+        public void Apply(RoomDescriptionRevertEvent aggregateEvent)
+        {
+            if (aggregateEvent.Detail)
+                DetailDescriptions.Pop();
+            else
+                Descriptions.Pop();
         }
     }
 
@@ -68,7 +97,13 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
         public bool Execute(CreateRoomCommand command)
         {
             if (AggregateIsNewSpecification.Instance.IsSatisfiedBy(this)) 
-                Emit(new RoomCreatedEvent(command.Name, command.AggregateId, command.Doorways));
+            {
+                EmitAll(
+                    new RoomCreatedEvent(command.RoomName, command.AggregateId, command.Doorways),
+                    new RoomDescriptionChangedEvent(command.Description, false),
+                    new RoomDescriptionChangedEvent(command.DetailDescription, true),
+                    new RoomCommandsAddedEvent(command.CommandLayers, command.AggregateId));
+            }
 
             return true;
         }

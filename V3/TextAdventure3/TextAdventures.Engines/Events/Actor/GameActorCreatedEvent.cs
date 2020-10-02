@@ -2,11 +2,12 @@
 using Akkatecture.Events;
 using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Data.Actor;
+using TextAdventures.Engine.Internal.Data.Aggregates;
 
-namespace TextAdventures.Engine.Internal.Data.Events
+namespace TextAdventures.Engine.Events.Actor
 {
     [EventVersion("GameActorCreatedEvent", 1)]
-    public class GameActorCreatedEvent : AggregateEvent<Aggregates.GameActor, GameActorId>
+    public class GameActorCreatedEvent : AggregateEvent<GameActor, GameActorId>
     {
         public PlayerType PlayerType { get; }
 

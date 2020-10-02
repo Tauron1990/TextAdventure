@@ -2,12 +2,11 @@
 using Akkatecture.Events;
 using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Data.Rooms;
-using TextAdventures.Engine.Internal.Data.Aggregates;
 
-namespace TextAdventures.Engine.Internal.Data.Events
+namespace TextAdventures.Engine.Events.Rooms
 {
     [EventVersion("RoomCreated", 1)]
-    public sealed class RoomCreatedEvent : AggregateEvent<Room, RoomId>
+    public sealed class RoomCreatedEvent : AggregateEvent<Internal.Data.Aggregates.Room, RoomId>
     {
         public Name Name { get; }
 
