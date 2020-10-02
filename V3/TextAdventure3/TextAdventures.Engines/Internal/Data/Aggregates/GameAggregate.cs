@@ -1,10 +1,23 @@
-﻿using Akkatecture.Aggregates;
+﻿using System;
+using Akka.Actor;
+using Akka.Pattern;
+using Akka.Persistence;
+using Akkatecture.Aggregates;
 using Akkatecture.Aggregates.Snapshot;
 using Akkatecture.Aggregates.Snapshot.Strategies;
+using Akkatecture.Commands;
 using Akkatecture.Core;
+using TextAdventures.Engine.Internal.Actor;
 
 namespace TextAdventures.Engine.Internal.Data.Aggregates
 {
+    public abstract class GameAggregateManager<TAggregate, TIdentity, TCommand> : AggregateManager<TAggregate, TIdentity, TCommand>
+        where TAggregate : ReceivePersistentActor, IAggregateRoot<TIdentity>
+        where TIdentity : IIdentity 
+        where TCommand : ICommand<TAggregate, TIdentity>
+    {
+    }
+
     public abstract class GameState<TState, TAggregate, TIdentity> : AggregateState<TAggregate, TIdentity>, IHydrate<TState>, IAggregateSnapshot<TAggregate, TIdentity>
         where TState : IAggregateSnapshot 
         where TIdentity : IIdentity 

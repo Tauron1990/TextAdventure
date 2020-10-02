@@ -39,6 +39,7 @@ using Akkatecture.Core;
 using Akkatecture.Events;
 using Akkatecture.Extensions;
 using JetBrains.Annotations;
+using Tauron;
 using SnapshotMetadata = Akkatecture.Aggregates.Snapshot.SnapshotMetadata;
 
 namespace Akkatecture.Aggregates
@@ -81,7 +82,7 @@ namespace Akkatecture.Aggregates
             {
                 try
                 {
-                    State = (TAggregateState) Activator.CreateInstance(typeof(TAggregateState));
+                    State = (TAggregateState?) typeof(TAggregateState).FastCreateInstance();
                 }
                 catch (Exception exception)
                 {
@@ -117,18 +118,13 @@ namespace Akkatecture.Aggregates
         public long Version { get; protected set; }
         public bool IsNew => Version <= 0;
 
-        public bool HasSourceId(ISourceId sourceId)
-        {
-            return !sourceId.IsNone() && _previousSourceIds.Any(s => s.Value == sourceId.Value);
-        }
+        public bool HasSourceId(ISourceId sourceId) => !sourceId.IsNone() && _previousSourceIds.Any(s => s.Value == sourceId.Value);
 
         public IIdentity GetIdentity() => Id;
 
 
-        protected void SetSourceIdHistory(int count)
-        {
-            _previousSourceIds = new CircularBuffer<ISourceId>(count);
-        }
+        protected void SetSourceIdHistory(int count) 
+            => _previousSourceIds = new CircularBuffer<ISourceId>(count);
 
         public virtual void Emit<TAggregateEvent>(TAggregateEvent aggregateEvent, IMetadata? metadata = null)
             where TAggregateEvent : class, IAggregateEvent<TAggregate, TIdentity>
@@ -181,16 +177,14 @@ namespace Akkatecture.Aggregates
                 var genericType = typeof(CommittedEvent<,,>)
                    .MakeGenericType(typeof(TAggregate), typeof(TIdentity), aggregateEvent.GetType());
 
-
-                var committedEvent = Activator.CreateInstance(
-                    genericType,
+                var committedEvent = genericType.FastCreateInstance(
                     Id,
                     aggregateEvent,
                     eventMetadata,
                     now,
                     aggregateSequenceNumber);
 
-                return committedEvent;
+                return committedEvent ?? throw new InvalidOperationException($"No Commited Event Created {aggregateEvent} ");
             }
 
             throw new InvalidOperationException("could not perform the required mapping for committed event.");
@@ -243,36 +237,33 @@ namespace Akkatecture.Aggregates
             Version++;
 
             var domainEvent = new DomainEvent<TAggregate, TIdentity, TAggregateEvent>(Id, committedEvent.AggregateEvent, committedEvent.Metadata, committedEvent.Timestamp, Version);
-
+            
             Publish(domainEvent);
             ReplyIfAvailable();
 
-            if (SnapshotStrategy.ShouldCreateSnapshot(this))
+            if (!SnapshotStrategy.ShouldCreateSnapshot(this)) return;
+            var aggregateSnapshot = CreateSnapshot();
+            
+            if (aggregateSnapshot == null) return;
+            _snapshotDefinitionService.Load(aggregateSnapshot.GetType());
+            var snapshotDefinition = _snapshotDefinitionService.GetDefinition(aggregateSnapshot.GetType());
+            var snapshotMetadata = new SnapshotMetadata
             {
-                var aggregateSnapshot = CreateSnapshot();
-                if (aggregateSnapshot != null)
-                {
-                    _snapshotDefinitionService.Load(aggregateSnapshot.GetType());
-                    var snapshotDefinition = _snapshotDefinitionService.GetDefinition(aggregateSnapshot.GetType());
-                    var snapshotMetadata = new SnapshotMetadata
-                                           {
-                                               AggregateId = Id.Value,
-                                               AggregateName = Name.Value,
-                                               AggregateSequenceNumber = Version,
-                                               SnapshotName = snapshotDefinition.Name,
-                                               SnapshotVersion = snapshotDefinition.Version
-                                           };
+                AggregateId = Id.Value,
+                AggregateName = Name.Value,
+                AggregateSequenceNumber = Version,
+                SnapshotName = snapshotDefinition.Name,
+                SnapshotVersion = snapshotDefinition.Version
+            };
 
-                    var committedSnapshot =
-                        new CommittedSnapshot<TAggregate, TIdentity, IAggregateSnapshot<TAggregate, TIdentity>>(
-                            Id,
-                            aggregateSnapshot,
-                            snapshotMetadata,
-                            committedEvent.Timestamp, Version);
+            var committedSnapshot =
+                new CommittedSnapshot<TAggregate, TIdentity, IAggregateSnapshot<TAggregate, TIdentity>>(
+                    Id,
+                    aggregateSnapshot,
+                    snapshotMetadata,
+                    committedEvent.Timestamp, Version);
 
-                    SaveSnapshot(committedSnapshot);
-                }
-            }
+            SaveSnapshot(committedSnapshot);
         }
 
         private void ApplyObjectCommittedEvent(object committedEvent)
@@ -286,7 +277,7 @@ namespace Akkatecture.Aggregates
 
                 var genericMethod = method.MakeGenericMethod(committedEvent.GetType().GenericTypeArguments[2]);
 
-                genericMethod.Invoke(this, new[] {committedEvent});
+                genericMethod.InvokeFast(this, committedEvent);
             }
             catch (Exception exception)
             {
@@ -302,11 +293,10 @@ namespace Akkatecture.Aggregates
 
         protected override bool AroundReceive(Receive receive, object message)
         {
-            if (message is Command<TAggregate, TIdentity> command)
-            {
-                if (IsNew || Id.Equals(command.AggregateId))
-                    PinnedCommand = command;
-            }
+            if (!(message is Command<TAggregate, TIdentity> command)) return base.AroundReceive(receive, message);
+
+            if (IsNew || Id.Equals(command.AggregateId))
+                PinnedCommand = command;
 
             return base.AroundReceive(receive, message);
         }
@@ -442,7 +432,7 @@ namespace Akkatecture.Aggregates
 
         public override string ToString() => $"{GetType().PrettyPrint()} v{Version}";
 
-        public bool Timeout(ReceiveTimeout message)
+        public virtual bool Timeout(ReceiveTimeout message)
         {
             Log.Debug("Aggregate of Name={0}, and Id={1}; has received a timeout message and will stop.", Name, Id);
             Context.Stop(Self);
@@ -462,7 +452,7 @@ namespace Akkatecture.Aggregates
         {
             try
             {
-                var handler = (TCommandHandler) Activator.CreateInstance(typeof(TCommandHandler));
+                var handler = (TCommandHandler) (typeof(TCommandHandler).FastCreateInstance() ?? throw new InvalidOperationException("Command Handler Not Created"));
                 Command(x => handler.HandleCommand((TAggregate) this, Context, x), shouldHandle);
             }
             catch (Exception exception)
@@ -512,7 +502,7 @@ namespace Akkatecture.Aggregates
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
                 var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
 
-                actorReceiveMethod.Invoke(this, new object[] {subscriptionFunction});
+                actorReceiveMethod.InvokeFast(this, subscriptionFunction);
             }
         }
     }

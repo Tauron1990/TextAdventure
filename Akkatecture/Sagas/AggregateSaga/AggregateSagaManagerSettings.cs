@@ -37,8 +37,8 @@ namespace Akkatecture.Sagas.AggregateSaga
             var aggregateSagaManagerConfig = config.WithFallback(AkkatectureDefaultSettings.DefaultConfig());
             aggregateSagaManagerConfig = aggregateSagaManagerConfig.GetConfig(_section);
 
-            AutoSpawnOnReceive = aggregateSagaManagerConfig.GetBoolean("auto-spawn-on-receive", true);
-            AutoSubscribe = aggregateSagaManagerConfig.GetBoolean("auto-subscribe", true);
+            AutoSpawnOnReceive = aggregateSagaManagerConfig.GetBoolean("auto-spawn-on-receive");
+            AutoSubscribe = aggregateSagaManagerConfig.GetBoolean("auto-subscribe");
         }
     }
 }

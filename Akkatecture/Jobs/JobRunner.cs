@@ -26,6 +26,7 @@ using System.Linq;
 using System.Reflection;
 using Akka.Actor;
 using Akkatecture.Extensions;
+using Tauron;
 
 namespace Akkatecture.Jobs
 {
@@ -81,7 +82,7 @@ namespace Akkatecture.Jobs
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
                 var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
 
-                actorReceiveMethod.Invoke(this, new[] {subscriptionFunction});
+                actorReceiveMethod.InvokeFast(this, subscriptionFunction);
             }
         }
     }

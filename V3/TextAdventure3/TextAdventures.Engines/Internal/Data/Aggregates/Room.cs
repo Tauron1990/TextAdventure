@@ -52,8 +52,6 @@ namespace TextAdventures.Engine.Internal.Data.Aggregates
         {
             Name = aggregateEvent.Name;
             Doorways = aggregateEvent.Doorways;
-            Descriptions.Push(aggregateEvent.Description);
-            DetailDescriptions.Push(aggregateEvent.DetailDescription);
         }
 
         public void Apply(RoomCommandsAddedEvent aggregateEvent) 

@@ -42,6 +42,7 @@ using Akkatecture.Extensions;
 using Akkatecture.Jobs.Commands;
 using Akkatecture.Sagas.SagaTimeouts;
 using JetBrains.Annotations;
+using Tauron;
 using SnapshotMetadata = Akkatecture.Aggregates.Snapshot.SnapshotMetadata;
 
 namespace Akkatecture.Sagas.AggregateSaga
@@ -77,7 +78,7 @@ namespace Akkatecture.Sagas.AggregateSaga
             Settings = new AggregateSagaSettings(Context.System.Settings.Config);
             var idValue = Context.Self.Path.Name;
             PersistenceId = idValue;
-            Id = (TIdentity) Activator.CreateInstance(typeof(TIdentity), idValue);
+            Id = (TIdentity) (typeof(TIdentity).FastCreateInstance(idValue) ?? throw new InvalidOperationException("Identity Creation Failed"));
 
             if (Id == null)
             {
@@ -95,7 +96,7 @@ namespace Akkatecture.Sagas.AggregateSaga
             {
                 try
                 {
-                    State = (TSagaState) Activator.CreateInstance(typeof(TSagaState));
+                    State = (TSagaState) (typeof(TSagaState).FastCreateInstance() ?? throw new InvalidOperationException("Saga State Creation Failed"));
                 }
                 catch (Exception exception)
                 {
@@ -192,7 +193,7 @@ namespace Akkatecture.Sagas.AggregateSaga
                 var funcType = typeof(Func<,>).MakeGenericType(timeoutSubscriptionType, typeof(bool));
                 var timeoutHandlerFunction = Delegate.CreateDelegate(funcType, this, methods[timeoutSubscriptionType]);
                 var timeoutHandlerMethod = method.MakeGenericMethod(timeoutSubscriptionType);
-                timeoutHandlerMethod.Invoke(this, new[] {timeoutHandlerFunction});
+                timeoutHandlerMethod.InvokeFast(this, timeoutHandlerFunction);
                 SagaTimeoutTypes.Add(timeoutSubscriptionType);
             }
         }
@@ -235,7 +236,7 @@ namespace Akkatecture.Sagas.AggregateSaga
                 var funcType = typeof(Func<,>).MakeGenericType(timeoutSubscriptionType, typeof(Task));
                 var timeoutHandlerFunction = Delegate.CreateDelegate(funcType, this, methods[timeoutSubscriptionType]);
                 var timeoutHandlerMethod = method.MakeGenericMethod(timeoutSubscriptionType);
-                timeoutHandlerMethod.Invoke(this, new[] {timeoutHandlerFunction, null});
+                timeoutHandlerMethod.InvokeFast(this, timeoutHandlerFunction, null);
 
                 SagaTimeoutTypes.Add(timeoutSubscriptionType);
             }
@@ -285,7 +286,7 @@ namespace Akkatecture.Sagas.AggregateSaga
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
                 var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
 
-                actorReceiveMethod.Invoke(this, new[] {subscriptionFunction});
+                actorReceiveMethod.InvokeFast(this, subscriptionFunction);
             }
         }
 
@@ -333,7 +334,7 @@ namespace Akkatecture.Sagas.AggregateSaga
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
                 var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
 
-                actorReceiveMethod.Invoke(this, new[] {subscriptionFunction, null});
+                actorReceiveMethod.InvokeFast(this, subscriptionFunction, null);
             }
         }
 
@@ -386,13 +387,12 @@ namespace Akkatecture.Sagas.AggregateSaga
                    .MakeGenericType(typeof(TAggregateSaga), typeof(TIdentity), aggregateEvent.GetType());
 
 
-                var committedEvent = Activator.CreateInstance(
-                    genericType,
+                var committedEvent = genericType.FastCreateInstance(
                     Id,
                     aggregateEvent,
                     eventMetadata,
                     now,
-                    aggregateSequenceNumber);
+                    aggregateSequenceNumber)!;
 
                 return committedEvent;
             }
@@ -411,7 +411,7 @@ namespace Akkatecture.Sagas.AggregateSaga
 
                 var genericMethod = method.MakeGenericMethod(committedEvent.GetType().GenericTypeArguments[2]);
 
-                genericMethod.Invoke(this, new[] {committedEvent});
+                genericMethod.InvokeFast(this, committedEvent);
             }
             catch (Exception exception)
             {
@@ -486,32 +486,30 @@ namespace Akkatecture.Sagas.AggregateSaga
 
             Publish(domainEvent);
 
-            if (SnapshotStrategy.ShouldCreateSnapshot(this))
+            if (!SnapshotStrategy.ShouldCreateSnapshot(this)) return;
+            var aggregateSnapshot = CreateSnapshot();
+            
+            if (aggregateSnapshot == null) return;
+            
+            SnapshotDefinitionService.Load(aggregateSnapshot.GetType());
+            var snapshotDefinition = SnapshotDefinitionService.GetDefinition(aggregateSnapshot.GetType());
+            var snapshotMetadata = new SnapshotMetadata
             {
-                var aggregateSnapshot = CreateSnapshot();
-                if (aggregateSnapshot != null)
-                {
-                    SnapshotDefinitionService.Load(aggregateSnapshot.GetType());
-                    var snapshotDefinition = SnapshotDefinitionService.GetDefinition(aggregateSnapshot.GetType());
-                    var snapshotMetadata = new SnapshotMetadata
-                                           {
-                                               AggregateId = Id.Value,
-                                               AggregateName = Name.Value,
-                                               AggregateSequenceNumber = Version,
-                                               SnapshotName = snapshotDefinition.Name,
-                                               SnapshotVersion = snapshotDefinition.Version
-                                           };
+                AggregateId = Id.Value,
+                AggregateName = Name.Value,
+                AggregateSequenceNumber = Version,
+                SnapshotName = snapshotDefinition.Name,
+                SnapshotVersion = snapshotDefinition.Version
+            };
 
-                    var committedSnapshot =
-                        new CommittedSnapshot<TAggregateSaga, TIdentity, IAggregateSnapshot<TAggregateSaga, TIdentity>>(
-                            Id,
-                            aggregateSnapshot,
-                            snapshotMetadata,
-                            committedEvent.Timestamp, Version);
+            var committedSnapshot =
+                new CommittedSnapshot<TAggregateSaga, TIdentity, IAggregateSnapshot<TAggregateSaga, TIdentity>>(
+                    Id,
+                    aggregateSnapshot,
+                    snapshotMetadata,
+                    committedEvent.Timestamp, Version);
 
-                    SaveSnapshot(committedSnapshot);
-                }
-            }
+            SaveSnapshot(committedSnapshot);
         }
 
         protected virtual void Publish<TEvent>(TEvent aggregateEvent)

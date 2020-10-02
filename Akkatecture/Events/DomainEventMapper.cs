@@ -24,6 +24,8 @@
 using System;
 using Akka.Persistence.Query;
 using Akkatecture.Aggregates;
+using Akkatecture.Extensions;
+using Tauron;
 
 namespace Akkatecture.Events
 {
@@ -33,27 +35,20 @@ namespace Akkatecture.Events
         {
             var eventType = evt.GetType();
 
-            if (evt is ICommittedEvent && eventType.GenericTypeArguments.Length == 3)
-            {
-                //dynamic dispatch here to get AggregateEvent
+            if (!(evt is ICommittedEvent) || eventType.GenericTypeArguments.Length != 3) return evt;
 
-                var committedEvent = evt as dynamic;
+            var genericType = typeof(DomainEvent<,,>)
+                .MakeGenericType(eventType.GetGenericArguments()[0], eventType.GetGenericArguments()[1], eventType.GetGenericArguments()[2]);
 
-                var genericType = typeof(DomainEvent<,,>)
-                   .MakeGenericType(eventType.GetGenericArguments()[0], eventType.GetGenericArguments()[1], eventType.GetGenericArguments()[2]);
+            var domainEvent = genericType.FastCreateInstance(
+                evt.GetPropertyValue("AggregateIdentity")!,
+                evt.GetPropertyValue("AggregateEvent")!,
+                evt.GetPropertyValue("Metadata")!,
+                evt.GetPropertyValue("Timestamp")!,
+                evt.GetPropertyValue("AggregateSequenceNumber")!)!;
 
-                var domainEvent = Activator.CreateInstance(
-                    genericType,
-                    committedEvent.AggregateIdentity,
-                    committedEvent.AggregateEvent,
-                    committedEvent.Metadata,
-                    committedEvent.Timestamp,
-                    committedEvent.AggregateSequenceNumber);
+            return domainEvent;
 
-                return domainEvent;
-            }
-
-            return evt;
         }
 
         public static EventEnvelope FromEnvelope(EventEnvelope eventEnvelope)

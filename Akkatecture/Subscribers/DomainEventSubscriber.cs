@@ -31,6 +31,7 @@ using Akka.Event;
 using Akkatecture.Extensions;
 using Akkatecture.Messages;
 using JetBrains.Annotations;
+using Tauron;
 
 namespace Akkatecture.Subscribers
 {
@@ -45,10 +46,7 @@ namespace Akkatecture.Subscribers
             DomainEventSubscriberSettings? settings = null)
         {
             Logger = Context.GetLogger();
-            if (settings == null)
-                Settings = new DomainEventSubscriberSettings(Context.System.Settings.Config);
-            else
-                Settings = settings;
+            Settings = settings ?? new DomainEventSubscriberSettings(Context.System.Settings.Config);
 
             SubscriptionTypes = new List<Type>();
 
@@ -124,7 +122,7 @@ namespace Akkatecture.Subscribers
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
                 var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
 
-                actorReceiveMethod.Invoke(this, new object[] {subscriptionFunction});
+                actorReceiveMethod.InvokeFast(this, subscriptionFunction);
             }
         }
 
@@ -170,7 +168,7 @@ namespace Akkatecture.Subscribers
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
                 var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
 
-                actorReceiveMethod.Invoke(this, new[] {subscriptionFunction, null});
+                actorReceiveMethod.InvokeFast(this, subscriptionFunction, null);
             }
         }
 

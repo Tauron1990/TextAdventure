@@ -85,10 +85,9 @@ namespace Akkatecture.Aggregates
 
         protected bool Handle(DeadLetter deadLetter)
         {
-            if (!(deadLetter.Message is TCommand) || (deadLetter.Message as dynamic).AggregateId.GetType() != typeof(TIdentity)) return true;
-            var command = deadLetter.Message as dynamic;
-
-            ReDispatch(command);
+            if (!(deadLetter.Message is TCommand) || deadLetter.Message.GetPropertyValue("AggregateId")?.GetType() != typeof(TIdentity)) return true;
+           
+            ReDispatch((TCommand) deadLetter.Message);
 
             return true;
         }

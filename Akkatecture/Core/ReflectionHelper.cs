@@ -1,4 +1,4 @@
-﻿// The MIT License (MIT)
+﻿    // The MIT License (MIT)
 //
 // Copyright (c) 2015-2020 Rasmus Mikkelsen
 // Copyright (c) 2015-2020 eBay Software Foundation
@@ -31,6 +31,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using Akkatecture.Extensions;
+using FastExpressionCompiler;
 using JetBrains.Annotations;
 
 namespace Akkatecture.Core
@@ -38,14 +39,14 @@ namespace Akkatecture.Core
     [PublicAPI]
     public static class ReflectionHelper
     {
-        public static TResult CompileMethodInvocation<TResult>(Type type, string methodName, params Type[] methodSignature)
+        public static TResult CompileMethodInvocation<TResult>(Type type, string methodName, params Type[] methodSignature) where TResult : class
         {
             var typeInfo = type.GetTypeInfo();
             var methods = typeInfo
                .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
                .Where(m => m.Name == methodName);
 
-            var methodInfo = methodSignature == null || !methodSignature.Any()
+            var methodInfo = !methodSignature.Any()
                 ? methods.SingleOrDefault()
                 : methods.SingleOrDefault(m => m.GetParameters().Select(mp => mp.ParameterType).SequenceEqual(methodSignature));
 
@@ -54,7 +55,7 @@ namespace Akkatecture.Core
             return CompileMethodInvocation<TResult>(methodInfo);
         }
 
-        public static TResult CompileMethodInvocation<TResult>(MethodInfo methodInfo)
+        public static TResult CompileMethodInvocation<TResult>(MethodInfo methodInfo) where TResult : class
         {
             var genericArguments = typeof(TResult).GetTypeInfo().GetGenericArguments();
             var methodArgumentList = methodInfo.GetParameters().Select(p => p.ParameterType).ToList();
@@ -77,7 +78,7 @@ namespace Akkatecture.Core
                                      instanceArgument
                                  };
 
-            var type = methodInfo.DeclaringType;
+            var type = methodInfo.DeclaringType ?? typeof(object);
             var instanceVariable = Expression.Variable(type);
             var blockVariables = new List<ParameterExpression>
                                  {
@@ -117,7 +118,7 @@ namespace Akkatecture.Core
 
             var lambdaExpression = Expression.Lambda<TResult>(block, lambdaArgument);
 
-            return lambdaExpression.Compile();
+            return lambdaExpression.CompileFast();
         }
     }
 }

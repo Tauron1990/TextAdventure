@@ -33,6 +33,7 @@ using System.Text.RegularExpressions;
 using Akkatecture.Extensions;
 using Akkatecture.ValueObjects;
 using JetBrains.Annotations;
+using Tauron;
 
 namespace Akkatecture.Core
 {
@@ -73,7 +74,7 @@ namespace Akkatecture.Core
         {
             try
             {
-                return (T) Activator.CreateInstance(typeof(T), value);
+                return (T) (typeof(T).FastCreateInstance(value) ?? throw new InvalidOperationException($"No Instantance of {typeof(T)} Created"));
             }
             catch (TargetInvocationException e)
             {
