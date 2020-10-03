@@ -21,9 +21,13 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
+using System.Collections.Generic;
+using System.Linq;
 using Akka.Persistence.Journal;
+using Akkatecture.Core;
 using Akkatecture.Extensions;
 using JetBrains.Annotations;
+using Tauron;
 
 namespace Akkatecture.Events
 {
@@ -49,7 +53,10 @@ namespace Akkatecture.Events
                 eventDefinitionService.Load(aggregateEventType);
                 var eventDefinition = eventDefinitionService.GetDefinition(aggregateEventType);
 
-                return new Tagged(evt, new[] {aggregateName.Value, eventDefinition.Name});
+                var tags = new HashSet<string> {aggregateName.Value, eventDefinition.Name};
+                evt.GetType().GetAllCustomAttributes<TagAttribute>().Select(a => a.Name).Foreach(s => tags.Add(s));
+
+                return new Tagged(evt, tags);
             }
             catch
             {

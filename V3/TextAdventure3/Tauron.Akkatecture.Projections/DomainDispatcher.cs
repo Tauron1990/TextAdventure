@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Threading.Tasks;
+using Akkatecture.Core;
 using JetBrains.Annotations;
 using LiquidProjections;
 using LiquidProjections.Abstractions;
@@ -8,7 +8,9 @@ using LiquidProjections.Abstractions;
 namespace Tauron.Akkatecture.Projections
 {
     [PublicAPI]
-    public class DomainDispatcher<TAggregate, TProjection, TIdentity>
+    public class DomainDispatcher<TProjection, TIdentity>
+        where TProjection : class, IProjectorData<TIdentity> 
+        where TIdentity : IIdentity
     {
         public AggregateEventReader Reader { get; }
         public DomainProjector Projector { get; }
@@ -37,11 +39,18 @@ namespace Tauron.Akkatecture.Projections
         protected virtual Task<ExceptionResolution> ExceptionHandler(Exception exception, int attempts, SubscriptionInfo info) 
             => !exception.IsCriticalApplicationException() && attempts < 3 ? Task.FromResult(ExceptionResolution.Retry) : Task.FromResult(ExceptionResolution.Abort);
 
-        public IDisposable Subscribe()
+        public IDisposable Subscribe<TAggregate>()
         {
-            var options = new SubscriptionOptions {Id = typeof(TAggregate).AssemblyQualifiedName};
+            var options = new SubscriptionOptions {Id = "Type@" + typeof(TAggregate).AssemblyQualifiedName};
 
-            return Dispatcher.Subscribe(Repo.GetLastCheckpoint<TProjection, TIdentity>())
+            return Dispatcher.Subscribe(Repo.GetLastCheckpoint<TProjection, TIdentity>(), (list, info) => Projector.Projector.Handle(list), options);
+        }
+
+        public IDisposable Subscribe(string tag)
+        {
+            var options = new SubscriptionOptions { Id = "Tag@" + tag };
+
+            return Dispatcher.Subscribe(Repo.GetLastCheckpoint<TProjection, TIdentity>(), (list, info) => Projector.Projector.Handle(list), options);
         }
     }
 }
