@@ -12,6 +12,7 @@ namespace Tauron.Akkatecture.Projections
     public sealed class DomainEventMapBuilder<TProjection, TAggregate, TIdentity> 
         where TAggregate : IAggregateRoot<TIdentity>
         where TIdentity : IIdentity
+        where TProjection : class, IProjectorData<TIdentity>
     {
         private readonly EventMapBuilder<TProjection, TIdentity, ProjectionContext> _builder;
 

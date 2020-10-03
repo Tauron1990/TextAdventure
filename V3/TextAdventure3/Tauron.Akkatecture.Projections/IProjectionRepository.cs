@@ -1,21 +1,30 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Akkatecture.Core;
 using JetBrains.Annotations;
+using LiquidProjections;
 
 namespace Tauron.Akkatecture.Projections
 {
     [PublicAPI]
     public interface IProjectionRepository
     {
-        Task<TProjection> Get<TProjection, TIdentity>(TIdentity identity)
-            where TProjection : IProjectorData<TIdentity>
+        Task<TProjection?> Get<TProjection, TIdentity>(ProjectionContext context, TIdentity identity)
+            where TProjection : class, IProjectorData<TIdentity>
             where TIdentity : IIdentity;
 
-        Task<TProjection> Create<TProjection, TIdentity>(TIdentity identity)
-            where TProjection : IProjectorData<TIdentity>
+        Task<TProjection> Create<TProjection, TIdentity>(ProjectionContext context, TIdentity identity, Func<TProjection, bool> shouldoverwite)
+            where TProjection : class, IProjectorData<TIdentity>
             where TIdentity : IIdentity;
 
-        Task Commit<TIdentity>(TIdentity identity)
+        Task<bool> Delete<TIdentity>(ProjectionContext context, TIdentity identity)
+            where TIdentity : IIdentity;
+
+        Task Commit<TIdentity>(ProjectionContext context, TIdentity identity)
+            where TIdentity : IIdentity;
+
+        int GetLastCheckpoint<TProjection, TIdentity>()
+            where TProjection : class, IProjectorData<TIdentity>
             where TIdentity : IIdentity;
     }
 }

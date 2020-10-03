@@ -37,7 +37,7 @@ namespace Akkatecture.Query
         public static Consumer Create(ActorSystem actorSystem) => new Consumer(actorSystem.Name, actorSystem);
 
         public Consumer<TJournal> Using<TJournal>(
-            string? readJournalPluginId = null)
+            string readJournalPluginId)
             where TJournal : IEventsByTagQuery, ICurrentEventsByTagQuery
         {
             var readJournal = PersistenceQuery
@@ -65,7 +65,7 @@ namespace Akkatecture.Query
         {
             var mapper = new DomainEventReadAdapter();
             var aggregateName = typeof(TAggregate).GetAggregateName();
-
+            
             return Journal
                .EventsByTag(aggregateName.Value, offset)
                .Select(x =>
