@@ -9,18 +9,14 @@ namespace Tauron.Application
     [Serializable]
     [UsedImplicitly(ImplicitUseTargetFlags.WithMembers)]
     public sealed class GenericWeakReference<TType> : WeakReference, IEquatable<GenericWeakReference<TType>>,
-        IWeakReference
+                                                      IWeakReference
         where TType : class
     {
         public GenericWeakReference(TType target)
-            : base(target)
-        {
-        }
+            : base(target) { }
 
         private GenericWeakReference(SerializationInfo info, StreamingContext context)
-            : base(info, context)
-        {
-        }
+            : base(info, context) { }
 
         public TType TypedTarget
         {
@@ -38,8 +34,8 @@ namespace Tauron.Application
 
         public override bool Equals(object obj)
         {
-            var target = Target;
-            object? temp = obj as GenericWeakReference<TType>;
+            var     target = Target;
+            object? temp   = obj as GenericWeakReference<TType>;
             if (temp != null)
                 return Equals(temp);
 
@@ -52,24 +48,12 @@ namespace Tauron.Application
             return target == null ? 0 : target.GetHashCode();
         }
 
-        public static bool operator ==(GenericWeakReference<TType> left, GenericWeakReference<TType> right)
-        {
-            return Equals(left, right);
-        }
+        public static bool operator ==(GenericWeakReference<TType> left, GenericWeakReference<TType> right) => Equals(left, right);
 
-        public static bool operator !=(GenericWeakReference<TType> left, GenericWeakReference<TType> right)
-        {
-            return !Equals(left, right);
-        }
+        public static bool operator !=(GenericWeakReference<TType> left, GenericWeakReference<TType> right) => !Equals(left, right);
 
-        public static bool operator ==(GenericWeakReference<TType> left, object right)
-        {
-            return Equals(left, right);
-        }
+        public static bool operator ==(GenericWeakReference<TType> left, object right) => Equals(left, right);
 
-        public static bool operator !=(GenericWeakReference<TType> left, object right)
-        {
-            return !Equals(left, right);
-        }
+        public static bool operator !=(GenericWeakReference<TType> left, object right) => !Equals(left, right);
     }
 }

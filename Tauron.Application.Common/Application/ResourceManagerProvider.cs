@@ -10,7 +10,7 @@ namespace Tauron.Application
     public static class ResourceManagerProvider
     {
         private static readonly Dictionary<Assembly, ResourceManager> Resources =
-            new Dictionary<Assembly, ResourceManager>();
+            new();
 
         public static void Register(ResourceManager manager, Assembly key)
         {

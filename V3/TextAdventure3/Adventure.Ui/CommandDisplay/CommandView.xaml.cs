@@ -5,7 +5,7 @@ using TextAdventures.Builder.Data.Command;
 namespace Adventure.Ui.CommandDisplay
 {
     /// <summary>
-    /// Interaktionslogik für CommandView.xaml
+    ///     Interaktionslogik für CommandView.xaml
     /// </summary>
     public partial class CommandView
     {
@@ -15,7 +15,7 @@ namespace Adventure.Ui.CommandDisplay
         {
             InitializeComponent();
 
-            _model = new CommandViewModel(c => CommandSelect?.Invoke(c));
+            _model      = new CommandViewModel(c => CommandSelect?.Invoke(c));
             DataContext = _model;
         }
 

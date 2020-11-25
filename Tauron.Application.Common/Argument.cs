@@ -21,12 +21,12 @@ namespace Tauron
         [MethodImpl(MethodImplOptions.NoInlining)]
         [return: System.Diagnostics.CodeAnalysis.NotNull]
         public static TType NotNull<TType>([System.Diagnostics.CodeAnalysis.NotNull]
-            TType toCheck, string parameterName)
+                                           TType toCheck, string parameterName)
         {
             Check(() => toCheck == null ? new ArgumentNullException(parameterName) : null);
-#pragma warning disable CS8777 // Parameter must have a non-null value when exiting.
+            #pragma warning disable CS8777 // Parameter must have a non-null value when exiting.
             return toCheck!;
-#pragma warning restore CS8777 // Parameter must have a non-null value when exiting.
+            #pragma warning restore CS8777 // Parameter must have a non-null value when exiting.
         }
 
         [MethodImpl(MethodImplOptions.NoInlining)]
@@ -52,12 +52,12 @@ namespace Tauron
         [MethodImpl(MethodImplOptions.NoInlining)]
         [return: System.Diagnostics.CodeAnalysis.NotNull]
         public static TValue CheckResult<TValue>([System.Diagnostics.CodeAnalysis.NotNull]
-            TValue value, string name)
+                                                 TValue value, string name)
         {
             Check(() => value == null ? new ArgumentNullException(name) : null);
-#pragma warning disable CS8777 // Parameter must have a non-null value when exiting.
+            #pragma warning disable CS8777 // Parameter must have a non-null value when exiting.
             return value!;
-#pragma warning restore CS8777 // Parameter must have a non-null value when exiting.
+            #pragma warning restore CS8777 // Parameter must have a non-null value when exiting.
         }
     }
 }

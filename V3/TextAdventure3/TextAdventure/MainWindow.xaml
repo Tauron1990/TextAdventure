@@ -10,13 +10,13 @@
     <Window.Resources>
         <ResourceDictionary>
             <ResourceDictionary.MergedDictionaries>
-                <ResourceDictionary Source="Theme/Monotone.xaml"/>
+                <ResourceDictionary Source="Theme/Monotone.xaml" />
             </ResourceDictionary.MergedDictionaries>
         </ResourceDictionary>
     </Window.Resources>
     <Window.Style>
         <Style TargetType="Window">
-            <Setter Property="Background" Value="{StaticResource BaseBrush}"></Setter>
+            <Setter Property="Background" Value="{StaticResource BaseBrush}" />
             <Setter Property="Foreground" Value="{DynamicResource TextBrush}" />
             <Style.Triggers>
 
@@ -27,7 +27,7 @@
         </Style>
     </Window.Style>
     <DockPanel LastChildFill="True">
-        <ui:SaveLoad Name="Saves" DockPanel.Dock="Top"/>
-        <ui:MainContent Name="MainContent"/>
+        <ui:SaveLoad Name="Saves" DockPanel.Dock="Top" />
+        <ui:MainContent Name="MainContent" />
     </DockPanel>
 </Window>

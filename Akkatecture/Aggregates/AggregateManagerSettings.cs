@@ -29,15 +29,15 @@ namespace Akkatecture.Aggregates
     public class AggregateManagerSettings
     {
         private static readonly string _section = "akkatecture.aggregate-manager";
-        public readonly bool AutoDispatchOnReceive;
-        public readonly bool HandleDeadLetters;
+        public readonly         bool   AutoDispatchOnReceive;
+        public readonly         bool   HandleDeadLetters;
 
         public AggregateManagerSettings(Config config)
         {
             var aggregateManagerConfig = config.WithFallback(AkkatectureDefaultSettings.DefaultConfig());
             aggregateManagerConfig = aggregateManagerConfig.GetConfig(_section);
 
-            HandleDeadLetters = aggregateManagerConfig.GetBoolean("handle-deadletters", true);
+            HandleDeadLetters     = aggregateManagerConfig.GetBoolean("handle-deadletters", true);
             AutoDispatchOnReceive = aggregateManagerConfig.GetBoolean("auto-dispatch-on-receive", true);
         }
     }

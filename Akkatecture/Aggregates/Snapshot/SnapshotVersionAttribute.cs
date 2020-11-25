@@ -33,9 +33,7 @@ namespace Akkatecture.Aggregates.Snapshot
     {
         public SnapshotVersionAttribute(
             string name,
-            int version)
-            : base(name, version)
-        {
-        }
+            int    version)
+            : base(name, version) { }
     }
 }

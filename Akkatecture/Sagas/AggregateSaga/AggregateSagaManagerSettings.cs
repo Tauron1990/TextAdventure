@@ -29,8 +29,8 @@ namespace Akkatecture.Sagas.AggregateSaga
     public class AggregateSagaManagerSettings
     {
         private static readonly string _section = "akkatecture.aggregate-saga-manager";
-        public readonly bool AutoSpawnOnReceive;
-        public readonly bool AutoSubscribe;
+        public readonly         bool   AutoSpawnOnReceive;
+        public readonly         bool   AutoSubscribe;
 
         public AggregateSagaManagerSettings(Config config)
         {
@@ -38,7 +38,7 @@ namespace Akkatecture.Sagas.AggregateSaga
             aggregateSagaManagerConfig = aggregateSagaManagerConfig.GetConfig(_section);
 
             AutoSpawnOnReceive = aggregateSagaManagerConfig.GetBoolean("auto-spawn-on-receive");
-            AutoSubscribe = aggregateSagaManagerConfig.GetBoolean("auto-subscribe");
+            AutoSubscribe      = aggregateSagaManagerConfig.GetBoolean("auto-subscribe");
         }
     }
 }

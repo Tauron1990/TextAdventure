@@ -38,41 +38,32 @@ namespace Akkatecture.Jobs
     {
         private static readonly IJobName JobName = typeof(TJob).GetJobName();
 
-        public IJobName Name => JobName;
-        protected ILoggingAdapter Log { get; }
-        protected IActorRef JobScheduler { get; }
-        protected IActorRef JobRunner { get; }
-
         public JobManager(
             Expression<Func<TJobScheduler>> jobSchedulerFactory,
-            Expression<Func<TJobRunner>> jobRunnerFactory)
+            Expression<Func<TJobRunner>>    jobRunnerFactory)
         {
-            var runnerProps = Props.Create(jobRunnerFactory).WithDispatcher(Context.Props.Dispatcher);
+            var runnerProps    = Props.Create(jobRunnerFactory).WithDispatcher(Context.Props.Dispatcher);
             var schedulerProps = Props.Create(jobSchedulerFactory).WithDispatcher(Context.Props.Dispatcher);
-            var runnerName = $"{Name}-runner";
-            var schedulerName = $"{Name}-scheduler";
+            var runnerName     = $"{Name}-runner";
+            var schedulerName  = $"{Name}-scheduler";
 
             var runnerSupervisorProps =
-                BackoffSupervisor.Props(
-                    Backoff.OnFailure(
-                        runnerProps,
-                        runnerName,
-                        TimeSpan.FromSeconds(10),
-                        TimeSpan.FromSeconds(60),
-                        0.2,
-                        3)).WithDispatcher(Context.Props.Dispatcher);
+                BackoffSupervisor.Props(Backoff.OnFailure(runnerProps,
+                                                          runnerName,
+                                                          TimeSpan.FromSeconds(10),
+                                                          TimeSpan.FromSeconds(60),
+                                                          0.2,
+                                                          3)).WithDispatcher(Context.Props.Dispatcher);
 
             var schedulerSupervisorProps =
-                BackoffSupervisor.Props(
-                    Backoff.OnFailure(
-                        schedulerProps,
-                        schedulerName,
-                        TimeSpan.FromSeconds(10),
-                        TimeSpan.FromSeconds(60),
-                        0.2,
-                        3)).WithDispatcher(Context.Props.Dispatcher);
+                BackoffSupervisor.Props(Backoff.OnFailure(schedulerProps,
+                                                          schedulerName,
+                                                          TimeSpan.FromSeconds(10),
+                                                          TimeSpan.FromSeconds(60),
+                                                          0.2,
+                                                          3)).WithDispatcher(Context.Props.Dispatcher);
 
-            JobRunner = Context.ActorOf(runnerSupervisorProps, $"{runnerName}-supervisor");
+            JobRunner    = Context.ActorOf(runnerSupervisorProps, $"{runnerName}-supervisor");
             JobScheduler = Context.ActorOf(schedulerSupervisorProps, $"{schedulerName}-supervisor");
 
             Log = Context.GetLogger();
@@ -80,6 +71,11 @@ namespace Akkatecture.Jobs
             Receive<TJob>(Forward);
             Receive<SchedulerMessage<TJob, TIdentity>>(Forward);
         }
+
+        public    IJobName        Name         => JobName;
+        protected ILoggingAdapter Log          { get; }
+        protected IActorRef       JobScheduler { get; }
+        protected IActorRef       JobRunner    { get; }
 
         private bool Forward(TJob command)
         {

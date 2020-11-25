@@ -34,10 +34,10 @@ namespace Tauron
             Argument.NotNull(arguments, nameof(arguments));
             // ReSharper disable NotResolvedInText
             Argument.Check(arguments.BufferSize < 128, () => throw new ArgumentOutOfRangeException("arguments.BufferSize",
-                arguments.BufferSize, "BufferSize has to be greater or equal than 128."));
+                                                                                                   arguments.BufferSize, "BufferSize has to be greater or equal than 128."));
             Argument.Check(arguments.ProgressChangeCallbackInterval.TotalSeconds < 0, () => throw new ArgumentOutOfRangeException("arguments.ProgressChangeCallbackInterval",
-                arguments.ProgressChangeCallbackInterval,
-                "ProgressChangeCallbackInterval has to be greater or equal than 0."));
+                                                                                                                                  arguments.ProgressChangeCallbackInterval,
+                                                                                                                                  "ProgressChangeCallbackInterval has to be greater or equal than 0."));
             // ReSharper restore NotResolvedInText
 
             long length = 0;
@@ -45,29 +45,29 @@ namespace Tauron
             var runningFlag = true;
 
             Action<Stream, Stream, int> copyMemory = (targetParm, sourceParm, bufferSize) =>
-                //Raw copy-operation, "length" and "runningFlag" are enclosed as closure
-            {
-                int count;
-                byte[] buffer = new byte[bufferSize];
+                                                         //Raw copy-operation, "length" and "runningFlag" are enclosed as closure
+                                                     {
+                                                         int    count;
+                                                         byte[] buffer = new byte[bufferSize];
 
-                // ReSharper disable AccessToModifiedClosure
-                while ((count = sourceParm.Read(buffer, 0, bufferSize)) != 0 && runningFlag)
-                {
-                    targetParm.Write(buffer, 0, count);
-                    var newLength = length + count;
-                    //"length" can be read as this is the only thread which writes to "length"
-                    Interlocked.Exchange(ref length, newLength);
-                }
-                // ReSharper restore AccessToModifiedClosure
-            };
+                                                         // ReSharper disable AccessToModifiedClosure
+                                                         while ((count = sourceParm.Read(buffer, 0, bufferSize)) != 0 && runningFlag)
+                                                         {
+                                                             targetParm.Write(buffer, 0, count);
+                                                             var newLength = length + count;
+                                                             //"length" can be read as this is the only thread which writes to "length"
+                                                             Interlocked.Exchange(ref length, newLength);
+                                                         }
+                                                         // ReSharper restore AccessToModifiedClosure
+                                                     };
 
             IAsyncResult asyncResult = copyMemory.BeginInvoke(target, source, arguments.BufferSize, null, null);
 
-            var totalLength = arguments.TotalLength;
+            var totalLength                                      = arguments.TotalLength;
             if (totalLength == -1 && source.CanSeek) totalLength = source.Length;
 
-            var lastCallback = DateTime.Now;
-            long lastLength = 0;
+            var  lastCallback = DateTime.Now;
+            long lastLength   = 0;
 
             while (!asyncResult.IsCompleted)
             {
@@ -82,7 +82,7 @@ namespace Tauron
 
                 if (currentLength == lastLength) continue;
 
-                lastLength = currentLength;
+                lastLength   = currentLength;
                 lastCallback = DateTime.Now;
                 arguments.ProgressChangeCallback(currentLength, totalLength);
             }
@@ -105,9 +105,9 @@ namespace Tauron
         /// <returns>The number of bytes actually copied.</returns>
         public static long CopyFrom(this Stream stream, Stream source, int bufferSize = 4096)
         {
-            int count;
+            int    count;
             byte[] buffer = new byte[bufferSize];
-            long length = 0;
+            long   length = 0;
 
             while ((count = source.Read(buffer, 0, bufferSize)) != 0)
             {

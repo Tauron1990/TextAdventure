@@ -13,35 +13,37 @@ namespace Tauron.Akka
     [PublicAPI]
     public sealed class TimerScheduler : SchedulerBase, IDateTimeOffsetNowTimeProvider, IDisposable
     {
-        private static readonly Stopwatch Stopwatch = new Stopwatch();
+        private static readonly Stopwatch Stopwatch = new();
 
-        private readonly ConcurrentDictionary<string, Registration> _registrations = new ConcurrentDictionary<string, Registration>();
-        private readonly BlockingCollection<(Action, IDisposable)> _toRun = new BlockingCollection<(Action, IDisposable)>();
-        private int _isDiposed;
+        private readonly ConcurrentDictionary<string, Registration> _registrations = new();
+        private readonly BlockingCollection<(Action, IDisposable)>  _toRun         = new();
+        private          int                                        _isDiposed;
 
         public TimerScheduler(Config scheduler, ILoggingAdapter log)
             : base(scheduler, log)
         {
             Task.Factory.StartNew(() =>
-            {
-                foreach (var action in _toRun.GetConsumingEnumerable())
-                    try
-                    {
-                        action.Item1();
-                    }
-                    catch (Exception e)
-                    {
-                        Log.Error(e, "Error On Shedule Task");
-                        action.Item2.Dispose();
-                    }
+                                  {
+                                      foreach (var action in _toRun.GetConsumingEnumerable())
+                                      {
+                                          try
+                                          {
+                                              action.Item1();
+                                          }
+                                          catch (Exception e)
+                                          {
+                                              Log.Error(e, "Error On Shedule Task");
+                                              action.Item2.Dispose();
+                                          }
+                                      }
 
-                _toRun.Dispose();
-            }, TaskCreationOptions.LongRunning);
+                                      _toRun.Dispose();
+                                  }, TaskCreationOptions.LongRunning);
         }
 
-        protected override DateTimeOffset TimeNow => DateTimeOffset.Now;
-        public override TimeSpan MonotonicClock => Stopwatch.Elapsed;
-        public override TimeSpan HighResMonotonicClock => Stopwatch.Elapsed;
+        protected override DateTimeOffset TimeNow               => DateTimeOffset.Now;
+        public override    TimeSpan       MonotonicClock        => Stopwatch.Elapsed;
+        public override    TimeSpan       HighResMonotonicClock => Stopwatch.Elapsed;
 
         public void Dispose()
         {
@@ -84,16 +86,14 @@ namespace Tauron.Akka
             var dispoise = new Disposer();
 
             var registration = new Registration(() =>
-            {
-                try
-                {
-                    if (_toRun.IsAddingCompleted) return;
-                    _toRun.Add((runner, dispoise));
-                }
-                catch (ObjectDisposedException)
-                {
-                }
-            }, delay, interval, cancelable, id, key => _registrations.TryRemove(key, out _));
+                                                {
+                                                    try
+                                                    {
+                                                        if (_toRun.IsAddingCompleted) return;
+                                                        _toRun.Add((runner, dispoise));
+                                                    }
+                                                    catch (ObjectDisposedException) { }
+                                                }, delay, interval, cancelable, id, key => _registrations.TryRemove(key, out _));
             dispoise.Set(registration);
 
             _registrations[id] = registration;
@@ -117,18 +117,18 @@ namespace Tauron.Akka
 
         private class Registration : IDisposable
         {
-            private readonly ICancelable? _cancelable;
-            private readonly string _id;
+            private readonly ICancelable?   _cancelable;
+            private readonly string         _id;
             private readonly Action<string> _remove;
-            private readonly Action _runner;
-            private readonly Timer _timer;
+            private readonly Action         _runner;
+            private readonly Timer          _timer;
 
             public Registration(Action runner, TimeSpan delay, TimeSpan interval, ICancelable? cancelable, string id, Action<string> remove)
             {
-                _runner = runner;
+                _runner     = runner;
                 _cancelable = cancelable;
-                _id = id;
-                _remove = remove;
+                _id         = id;
+                _remove     = remove;
 
                 _timer = new Timer(Run, null, delay, interval);
             }

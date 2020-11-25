@@ -29,19 +29,19 @@ namespace Akkatecture.Aggregates
 {
     public class AggregateRootSettings
     {
-        private static readonly string _section = "akkatecture.aggregate-root";
-        public readonly TimeSpan SetReceiveTimeout;
-        public readonly bool UseDefaultEventRecover;
-        public readonly bool UseDefaultSnapshotRecover;
+        private static readonly string   _section = "akkatecture.aggregate-root";
+        public readonly         TimeSpan SetReceiveTimeout;
+        public readonly         bool     UseDefaultEventRecover;
+        public readonly         bool     UseDefaultSnapshotRecover;
 
         public AggregateRootSettings(Config config)
         {
             var aggregateRootConfig = config.WithFallback(AkkatectureDefaultSettings.DefaultConfig());
             aggregateRootConfig = aggregateRootConfig.GetConfig(_section);
 
-            UseDefaultEventRecover = aggregateRootConfig.GetBoolean("use-default-event-recover");
+            UseDefaultEventRecover    = aggregateRootConfig.GetBoolean("use-default-event-recover");
             UseDefaultSnapshotRecover = aggregateRootConfig.GetBoolean("use-default-snapshot-recover");
-            SetReceiveTimeout = aggregateRootConfig.GetTimeSpan("set-receive-timeout");
+            SetReceiveTimeout         = aggregateRootConfig.GetTimeSpan("set-receive-timeout");
         }
     }
 }

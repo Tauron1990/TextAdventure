@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.1</TargetFramework>
+    <TargetFramework>net5.0</TargetFramework>
     <Nullable>enable</Nullable>
     <AssemblyName>TextAdventures.Engine</AssemblyName>
     <RootNamespace>TextAdventures.Engine</RootNamespace>
@@ -9,12 +9,6 @@
 
   <ItemGroup>
     <None Remove="akka.conf" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="akka.conf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
   </ItemGroup>
 
   <ItemGroup>
@@ -29,6 +23,12 @@
     <ProjectReference Include="..\..\..\Akkatecture\Akkatecture.csproj" />
     <ProjectReference Include="..\..\..\Tauron.Application.Common\Tauron.Application.Common.csproj" />
     <ProjectReference Include="..\TextAdventures.WorldBuilder\TextAdventures.WorldBuilder.csproj" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <EmbeddedResource Include="akka.conf">
+      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
+    </EmbeddedResource>
   </ItemGroup>
 
 </Project>

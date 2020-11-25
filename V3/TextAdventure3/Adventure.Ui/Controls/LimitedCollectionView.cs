@@ -6,15 +6,24 @@ namespace Adventure.Ui.Controls
 {
     public class LimitedCollectionView : CollectionView, IEnumerable
     {
+        public LimitedCollectionView(IEnumerable? list)
+            : base(list ?? Array.Empty<object>()) =>
+            Limit = int.MaxValue;
+
         public int Limit { get; set; }
 
-        public LimitedCollectionView(IEnumerable? list)
-            : base(list ?? Array.Empty<object>())
+        public override int Count => Math.Min(base.Count, Limit);
+
+        #region IEnumerable Members
+
+        IEnumerator IEnumerable.GetEnumerator()
         {
-            Limit = int.MaxValue;
+            do
+                yield return CurrentItem;
+            while (MoveCurrentToNext());
         }
 
-        public override int Count => Math.Min(base.Count, Limit);
+        #endregion
 
         public override bool MoveCurrentToLast() => base.MoveCurrentToPosition(Count - 1);
 
@@ -23,17 +32,5 @@ namespace Adventure.Ui.Controls
         public override bool MoveCurrentToPrevious() => base.IsCurrentAfterLast ? base.MoveCurrentToPosition(Count - 1) : base.MoveCurrentToPrevious();
 
         public override bool MoveCurrentToPosition(int position) => base.MoveCurrentToPosition(position < Count ? position : base.Count);
-
-        #region IEnumerable Members
-
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            do
-            {
-                yield return CurrentItem;
-            } while (MoveCurrentToNext());
-        }
-
-        #endregion
     }
 }

@@ -19,8 +19,8 @@ namespace Tauron.Localization.Actor
         {
             public QueryRequest(string key, string id, CultureInfo cultureInfo)
             {
-                Key = key;
-                Id = id;
+                Key         = key;
+                Id          = id;
                 CultureInfo = cultureInfo;
             }
 
@@ -36,7 +36,7 @@ namespace Tauron.Localization.Actor
             public QueryResponse(object? value, string id)
             {
                 Value = value;
-                Id = id;
+                Id    = id;
             }
 
             public object? Value { get; }

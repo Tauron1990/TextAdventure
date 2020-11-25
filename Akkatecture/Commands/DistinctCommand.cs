@@ -53,7 +53,7 @@ namespace Akkatecture.Commands
             AggregateId = aggregateId;
         }
 
-        public ISourceId SourceId => _lazySourceId.Value;
+        public ISourceId SourceId    => _lazySourceId.Value;
         public TIdentity AggregateId { get; }
 
 
@@ -62,9 +62,8 @@ namespace Akkatecture.Commands
         private CommandId CalculateSourceId()
         {
             var bytes = GetSourceIdComponents().SelectMany(b => b).ToArray();
-            return CommandId.NewDeterministic(
-                GuidFactories.Deterministic.Namespaces.Commands,
-                bytes);
+            return CommandId.NewDeterministic(GuidFactories.Deterministic.Namespaces.Commands,
+                                              bytes);
         }
 
         protected abstract IEnumerable<byte[]> GetSourceIdComponents();

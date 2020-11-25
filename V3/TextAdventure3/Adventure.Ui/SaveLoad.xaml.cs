@@ -26,16 +26,16 @@ using TextAdventures.Engine.Querys.Result;
 namespace Adventure.Ui
 {
     /// <summary>
-    /// Interaktionslogik für SaveLoad.xaml
+    ///     Interaktionslogik für SaveLoad.xaml
     /// </summary>
     public partial class SaveLoad
     {
         private readonly SaveLoadModel _model;
-        
+
         public SaveLoad()
         {
             InitializeComponent();
-            _model = new SaveLoadModel((s1, s2, b) => NewGame?.Invoke(s1, s2, b), Dispatcher.CurrentDispatcher);
+            _model      = new SaveLoadModel((s1, s2, b) => NewGame?.Invoke(s1, s2, b), Dispatcher.CurrentDispatcher);
             DataContext = _model;
         }
 
@@ -47,7 +47,7 @@ namespace Adventure.Ui
         }
 
         [PublicAPI]
-        public event Action<string, string?, bool>? NewGame; 
+        public event Action<string, string?, bool>? NewGame;
 
         [PublicAPI]
         public void Prepare(World world)
@@ -58,29 +58,26 @@ namespace Adventure.Ui
         private void GameLoaded(GameLoaded gl)
         {
             gl.Master
-                .WhenTerminated
-                .ContinueWith(t =>
-                {
-                    _model.IsGameRunning = false;
-                    _model.GameMaster = null;
-                    _model.Profile = null;
-                });
+              .WhenTerminated
+              .ContinueWith(t =>
+                            {
+                                _model.IsGameRunning = false;
+                                _model.GameMaster    = null;
+                                _model.Profile       = null;
+                            });
 
-            _model.GameMaster = gl.Master;
+            _model.GameMaster    = gl.Master;
             _model.IsGameRunning = true;
-            _model.Profile = gl.Info;
+            _model.Profile       = gl.Info;
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
         private sealed class SaveLoadSubscriber : DomainEventSubscriber,
-            ISubscribeTo<GameInfo, GameInfoId, GameLoaded>
+                                                  ISubscribeTo<GameInfo, GameInfoId, GameLoaded>
         {
             private readonly Action<GameLoaded> _gameLoaded;
 
-            public SaveLoadSubscriber(Action<GameLoaded> gameLoaded)
-            {
-                _gameLoaded = gameLoaded;
-            }
+            public SaveLoadSubscriber(Action<GameLoaded> gameLoaded) => _gameLoaded = gameLoaded;
 
             public bool Handle(IDomainEvent<GameInfo, GameInfoId, GameLoaded> domainEvent)
             {
@@ -92,19 +89,28 @@ namespace Adventure.Ui
 
     internal sealed class SaveLoadModel : ObservableObject
     {
-        private static readonly char[] InvalidChars = Path.GetInvalidFileNameChars();
+        private static readonly char[]     InvalidChars = Path.GetInvalidFileNameChars();
+        private readonly        Dispatcher _dispatcher;
 
         private readonly Action<string, string?, bool> _starter;
-        private readonly Dispatcher _dispatcher;
-        private NameInfo _isNewNameOk;
-        private bool _isGameRunning;
-        private List<string>? _blockedNames;
-        private string _newNameText = string.Empty;
-        private GameMaster? _gameMaster;
-        private string? _saveGameName;
-        private NameInfo _isSaveGameNameOk;
-        private SaveProfile? _profile;
-        private string _saveGmeLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        private          List<string>?                 _blockedNames;
+        private          GameMaster?                   _gameMaster;
+        private          bool                          _isGameRunning;
+        private          NameInfo                      _isNewNameOk;
+        private          NameInfo                      _isSaveGameNameOk;
+        private          string                        _newNameText = string.Empty;
+        private          SaveProfile?                  _profile;
+        private          string?                       _saveGameName;
+        private          string                        _saveGmeLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+
+        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher)
+        {
+            _starter        = starter;
+            _dispatcher     = dispatcher;
+            NewName         = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
+            GenericLoadGame = new SimpleCommand(ExcuteLoad);
+            GenericSvaeGame = new SimpleCommand(_ => IsGameRunning && IsSaveGameNameOk != NameInfo.Error, ExcuteSave);
+        }
 
         public GameMaster? GameMaster
         {
@@ -142,7 +148,7 @@ namespace Adventure.Ui
 
         public ICommand NewName { get; }
 
-        public ObservableCollection<SaveProfile> Profiles { get; } = new ObservableCollection<SaveProfile>();
+        public ObservableCollection<SaveProfile> Profiles { get; } = new();
 
         public string SaveGmeLocation
         {
@@ -177,83 +183,7 @@ namespace Adventure.Ui
             }
         }
 
-        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher)
-        {
-            _starter = starter;
-            _dispatcher = dispatcher;
-            NewName = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
-            GenericLoadGame = new SimpleCommand(ExcuteLoad);
-            GenericSvaeGame = new SimpleCommand(_ => IsGameRunning && IsSaveGameNameOk != NameInfo.Error, ExcuteSave);
-        }
-
-        private NameInfo ValidateNewName()
-        {
-            if (string.IsNullOrWhiteSpace(NewNameText) || NewNameText.Contains('.') || NewNameText.Any(InvalidChars.Contains))
-                return NameInfo.Error;
-
-            _blockedNames ??= new List<string>(SaveProfile.GetProfiles(SaveGmeLocation).Select(sp => sp.Name));
-
-            return _blockedNames.Contains(NewNameText) ? NameInfo.Warning : NameInfo.Ok;
-        }
-
-        private void NewGame()
-        {
-            var name = NewNameText;
-            NewNameText = string.Empty;
-
-            _blockedNames = null;
-            if (IsGameRunning && GameMaster != null)
-            {
-                GameMaster
-                    .Stop()
-                    .ContinueWith(_ => _starter(name, null, true));
-            }
-            else
-                _starter(name, null, true);
-        }
-
-        private void UpdateSaveGames()
-        {
-            Task.Run(() =>
-            {
-                _dispatcher.Invoke(Profiles.Clear);
-                var profiles = SaveProfile.GetProfiles(SaveGmeLocation);
-
-                _dispatcher.BeginInvoke(new Action(() =>
-                {
-                    foreach (var profile in profiles) 
-                        Profiles.Add(profile);
-                }));
-            });
-        }
-
         public ICommand GenericLoadGame { get; }
-
-        private void ExcuteLoad(object? target)
-        {
-            void ExecuteAction(Action action)
-            {
-                if (IsGameRunning && GameMaster != null)
-                {
-                    GameMaster.Stop()
-                       .ContinueWith(e => action());
-                }
-                else
-                    action();
-            }
-
-            if(target == null) return;
-
-            switch (target)
-            {
-                case SaveInfo info:
-                    ExecuteAction(() => _starter(info.Profile.Name, info.Name, false));
-                    break;
-                case SaveProfile profile:
-                    ExecuteAction(() => _starter(profile.Name, null, false));
-                    break;
-            }
-        }
 
         public string SaveGameName
         {
@@ -280,6 +210,73 @@ namespace Adventure.Ui
 
         public ICommand GenericSvaeGame { get; }
 
+        private NameInfo ValidateNewName()
+        {
+            if (string.IsNullOrWhiteSpace(NewNameText) || NewNameText.Contains('.') || NewNameText.Any(InvalidChars.Contains))
+                return NameInfo.Error;
+
+            _blockedNames ??= new List<string>(SaveProfile.GetProfiles(SaveGmeLocation).Select(sp => sp.Name));
+
+            return _blockedNames.Contains(NewNameText) ? NameInfo.Warning : NameInfo.Ok;
+        }
+
+        private void NewGame()
+        {
+            var name = NewNameText;
+            NewNameText = string.Empty;
+
+            _blockedNames = null;
+            if (IsGameRunning && GameMaster != null)
+            {
+                GameMaster
+                   .Stop()
+                   .ContinueWith(_ => _starter(name, null, true));
+            }
+            else
+                _starter(name, null, true);
+        }
+
+        private void UpdateSaveGames()
+        {
+            Task.Run(() =>
+                     {
+                         _dispatcher.Invoke(Profiles.Clear);
+                         var profiles = SaveProfile.GetProfiles(SaveGmeLocation);
+
+                         _dispatcher.BeginInvoke(new Action(() =>
+                                                            {
+                                                                foreach (var profile in profiles)
+                                                                    Profiles.Add(profile);
+                                                            }));
+                     });
+        }
+
+        private void ExcuteLoad(object? target)
+        {
+            void ExecuteAction(Action action)
+            {
+                if (IsGameRunning && GameMaster != null)
+                {
+                    GameMaster.Stop()
+                              .ContinueWith(e => action());
+                }
+                else
+                    action();
+            }
+
+            if (target == null) return;
+
+            switch (target)
+            {
+                case SaveInfo info:
+                    ExecuteAction(() => _starter(info.Profile.Name, info.Name, false));
+                    break;
+                case SaveProfile profile:
+                    ExecuteAction(() => _starter(profile.Name, null, false));
+                    break;
+            }
+        }
+
         private NameInfo ValidateSaveGameInfo()
         {
             if (SaveGameName.Any(InvalidChars.Contains))
@@ -290,7 +287,7 @@ namespace Adventure.Ui
 
         private async void ExcuteSave(object? target)
         {
-            if(GameMaster == null)
+            if (GameMaster == null)
                 return;
 
             string targetName = target switch

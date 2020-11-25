@@ -1,8 +1,10 @@
 ﻿using System;
+using JetBrains.Annotations;
 
 namespace TextAdventures.Engine.Querys.Result
 {
-    public abstract class QueryResult
+    [PublicAPI]
+    public abstract record QueryResult
     {
         public abstract bool Compled { get; }
 
@@ -13,4 +15,3 @@ namespace TextAdventures.Engine.Querys.Result
         public static QueryResult Compleded(object result) => new QueryCompled(result);
     }
 }
-    

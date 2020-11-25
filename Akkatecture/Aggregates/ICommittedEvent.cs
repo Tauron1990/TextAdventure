@@ -34,11 +34,11 @@ namespace Akkatecture.Aggregates
     [PublicAPI]
     public interface ICommittedEvent
     {
-        long AggregateSequenceNumber { get; }
-        Metadata Metadata { get; }
-        DateTimeOffset Timestamp { get; }
+        long           AggregateSequenceNumber { get; }
+        Metadata       Metadata                { get; }
+        DateTimeOffset Timestamp               { get; }
 
-        IIdentity GetIdentity();
+        IIdentity       GetIdentity();
         IAggregateEvent GetAggregateEvent();
     }
 

@@ -12,19 +12,17 @@ namespace Adventure.Ui.WpfCommands
         private readonly Func<object?, bool>? _canExecute;
 
         private readonly Action<object?> _execute;
-        private readonly object? _parameter;
+        private readonly object?         _parameter;
 
         public SimpleCommand(Func<object?, bool>? canExecute, Action<object?> execute, object? parameter = null)
         {
             _canExecute = canExecute;
-            _execute = execute ?? throw new ArgumentNullException(nameof(execute));
-            _parameter = parameter;
+            _execute    = execute ?? throw new ArgumentNullException(nameof(execute));
+            _parameter  = parameter;
         }
 
         public SimpleCommand(Action<object?> execute)
-            : this(null, execute)
-        {
-        }
+            : this(null, execute) { }
 
         public SimpleCommand(Func<bool>? canExecute, Action execute)
         {
@@ -34,9 +32,7 @@ namespace Adventure.Ui.WpfCommands
         }
 
         public SimpleCommand(Action execute)
-            : this(null, execute)
-        {
-        }
+            : this(null, execute) { }
 
         public override bool CanExecute(object? parameter)
         {

@@ -25,10 +25,7 @@ namespace Tauron
             Argument.NotNull(path, nameof(path));
             if (!path.ExisFile()) return Activator.CreateInstance<TValue>();
 
-            using (var stream = path.OpenRead())
-            {
-                return (TValue) InternalDeserialize(new BinaryFormatter(), stream);
-            }
+            using (var stream = path.OpenRead()) return (TValue) InternalDeserialize(new BinaryFormatter(), stream);
         }
 
         public static void Serialize([NotNull] this object graph, IFormatter formatter, string path)
@@ -81,10 +78,7 @@ namespace Tauron
         }
 
 
-        private static object InternalDeserialize(IFormatter formatter, Stream stream)
-        {
-            return formatter.Deserialize(stream);
-        }
+        private static object InternalDeserialize(IFormatter formatter, Stream stream) => formatter.Deserialize(stream);
 
         private static void InternalSerialize(object graph, IFormatter formatter, Stream stream)
         {
@@ -110,7 +104,7 @@ namespace Tauron
 
             public StreamingContext Context
             {
-                get => new StreamingContext();
+                get => new();
 
                 set { }
             }
@@ -122,10 +116,7 @@ namespace Tauron
                 set { }
             }
 
-            public object Deserialize(Stream serializationStream)
-            {
-                return _serializer.Deserialize(serializationStream);
-            }
+            public object Deserialize(Stream serializationStream) => _serializer.Deserialize(serializationStream);
 
             public void Serialize(Stream serializationStream, object graph)
             {

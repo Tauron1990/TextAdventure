@@ -2,12 +2,8 @@
 
 namespace TextAdventures.Engine.Querys.Result
 {
-    public sealed class QueryFailed : QueryResult
+    public sealed record QueryFailed(Exception Error) : QueryResult
     {
         public override bool Compled => false;
-
-        public Exception Error { get; }
-
-        public QueryFailed(Exception error) => Error = error;
     }
 }

@@ -2,9 +2,9 @@
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Windows;
+using System.Windows.Input;
 using Adventure.Ui.WpfCommands;
 using TextAdventures.Builder.Data.Command;
-using ICommand = System.Windows.Input.ICommand;
 
 namespace Adventure.Ui.CommandDisplay
 {
@@ -12,18 +12,18 @@ namespace Adventure.Ui.CommandDisplay
     {
         private readonly ICommand _executor;
 
-        public ObservableCollection<ICommandContent> Commands { get; } = new ObservableCollection<ICommandContent>();
-
         public CommandViewModel(Action<IGameCommand> exec)
         {
             _executor = new SimpleCommand(o =>
-            {
-                if (o != null)
-                    exec((IGameCommand) o);
-                else
-                    MessageBox.Show("No Command", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
-            });
+                                          {
+                                              if (o != null)
+                                                  exec((IGameCommand) o);
+                                              else
+                                                  MessageBox.Show("No Command", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
+                                          });
         }
+
+        public ObservableCollection<ICommandContent> Commands { get; } = new();
 
         public void Clear()
             => Commands.Clear();

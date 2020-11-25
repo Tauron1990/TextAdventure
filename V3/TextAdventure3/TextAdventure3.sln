@@ -26,8 +26,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adventure.Ui", "Adventure.U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextAdventure", "TextAdventure\TextAdventure.csproj", "{02321C1E-37C6-4511-946C-D24616B2118C}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Tauron.Akkatecture.Projections", "Tauron.Akkatecture.Projections\Tauron.Akkatecture.Projections.csproj", "{456B44BA-457D-47B3-863E-FCB1417A7B46}"
-EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -62,10 +60,6 @@ Global
 		{02321C1E-37C6-4511-946C-D24616B2118C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02321C1E-37C6-4511-946C-D24616B2118C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02321C1E-37C6-4511-946C-D24616B2118C}.Release|Any CPU.Build.0 = Release|Any CPU
-		{456B44BA-457D-47B3-863E-FCB1417A7B46}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{456B44BA-457D-47B3-863E-FCB1417A7B46}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{456B44BA-457D-47B3-863E-FCB1417A7B46}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{456B44BA-457D-47B3-863E-FCB1417A7B46}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -74,7 +68,6 @@ Global
 		{2FCD2880-2918-4D6A-AA3F-AA5D822711F2} = {C5CDFA52-7974-4219-B903-6001444B98E3}
 		{B4E8C3A4-8035-48E8-9386-31D621A738E5} = {466DDF81-2050-49E4-8489-B1B474881B49}
 		{062F6684-8D57-47BF-B162-33C5558D7136} = {466DDF81-2050-49E4-8489-B1B474881B49}
-		{456B44BA-457D-47B3-863E-FCB1417A7B46} = {466DDF81-2050-49E4-8489-B1B474881B49}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E01EB3F-480B-47D1-ADF1-F830E279C7F7}

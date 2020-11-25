@@ -38,16 +38,11 @@ namespace Akkatecture.Aggregates
         where TIdentity : IIdentity
         where TCommand : ICommand<TAggregate, TIdentity>
     {
-        protected ILoggingAdapter Logger { get; set; }
-        protected Func<DeadLetter, bool> DeadLetterHandler => Handle;
-        public AggregateManagerSettings Settings { get; }
-        public string Name { get; }
-
         protected AggregateManager()
         {
-            Logger = Context.GetLogger();
+            Logger   = Context.GetLogger();
             Settings = new AggregateManagerSettings(Context.System.Settings.Config);
-            Name = GetType().PrettyPrint();
+            Name     = GetType().PrettyPrint();
             Receive<Terminated>(Terminate);
 
             if (Settings.AutoDispatchOnReceive)
@@ -59,6 +54,11 @@ namespace Akkatecture.Aggregates
                 Receive(DeadLetterHandler);
             }
         }
+
+        protected ILoggingAdapter          Logger            { get; set; }
+        protected Func<DeadLetter, bool>   DeadLetterHandler => Handle;
+        public    AggregateManagerSettings Settings          { get; }
+        public    string                   Name              { get; }
 
         protected virtual bool Dispatch(TCommand command)
         {
@@ -86,7 +86,7 @@ namespace Akkatecture.Aggregates
         protected bool Handle(DeadLetter deadLetter)
         {
             if (!(deadLetter.Message is TCommand) || deadLetter.Message.GetPropertyValue("AggregateId")?.GetType() != typeof(TIdentity)) return true;
-           
+
             ReDispatch((TCommand) deadLetter.Message);
 
             return true;
@@ -118,14 +118,13 @@ namespace Akkatecture.Aggregates
         protected override SupervisorStrategy SupervisorStrategy()
         {
             var logger = Logger;
-            return new OneForOneStrategy(
-                3,
-                3000,
-                x =>
-                {
-                    logger.Warning("AggregateManager of Type={0}; will supervise Exception={1} to be decided as {2}.", Name, x.ToString(), Directive.Restart);
-                    return Directive.Restart;
-                });
+            return new OneForOneStrategy(3,
+                                         3000,
+                                         x =>
+                                         {
+                                             logger.Warning("AggregateManager of Type={0}; will supervise Exception={1} to be decided as {2}.", Name, x.ToString(), Directive.Restart);
+                                             return Directive.Restart;
+                                         });
         }
     }
 }

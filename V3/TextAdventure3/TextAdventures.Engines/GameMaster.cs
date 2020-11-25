@@ -2,8 +2,8 @@
 using Akka.Actor;
 using JetBrains.Annotations;
 using TextAdventures.Builder.Commands;
-using TextAdventures.Builder.Data.Command;
-using TextAdventures.Builder.Querys;
+using TextAdventures.Builder.Data.Commands;
+using TextAdventures.Builder.Data.Querys;
 using TextAdventures.Engine.Commands;
 using TextAdventures.Engine.Querys.Result;
 
@@ -12,13 +12,13 @@ namespace TextAdventures.Engine
     [PublicAPI]
     public sealed class GameMaster
     {
-        private readonly IActorRef _cooredinator;
         private readonly ActorSystem _actorSystem;
+        private readonly IActorRef   _cooredinator;
 
         public GameMaster(IActorRef cooredinator, ActorSystem actorSystem)
         {
             _cooredinator = cooredinator;
-            _actorSystem = actorSystem;
+            _actorSystem  = actorSystem;
         }
 
         public Task WhenTerminated => _actorSystem.WhenTerminated;

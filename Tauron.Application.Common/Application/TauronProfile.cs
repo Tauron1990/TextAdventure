@@ -13,14 +13,14 @@ namespace Tauron.Application
     {
         private static readonly char[] ContentSplitter = {'='};
 
-        private readonly string _defaultPath;
+        private readonly string  _defaultPath;
         private readonly ILogger _logger = Log.ForContext<TauronProfile>();
 
-        private readonly Dictionary<string, string> _settings = new Dictionary<string, string>();
+        private readonly Dictionary<string, string> _settings = new();
 
         protected TauronProfile(string application, string defaultPath)
         {
-            Application = Argument.NotNull(application, nameof(application));
+            Application  = Argument.NotNull(application, nameof(application));
             _defaultPath = Argument.NotNull(defaultPath, nameof(defaultPath));
         }
 
@@ -50,10 +50,7 @@ namespace Tauron.Application
             return _settings.Select(k => k.Key).GetEnumerator();
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
         public void Delete()
         {
@@ -69,7 +66,7 @@ namespace Tauron.Application
             Argument.NotNull<object>(name, nameof(name));
             IlligalCharCheck(name);
 
-            Name = name;
+            Name       = name;
             Dictionary = _defaultPath.CombinePath(Application, name);
             Dictionary.CreateDirectoryIfNotExis();
             FilePath = Dictionary.CombinePath("Settings.db");
@@ -79,8 +76,8 @@ namespace Tauron.Application
             _settings.Clear();
             foreach (var vals in
                 FilePath.EnumerateTextLinesIfExis()
-                    .Select(line => line.Split(ContentSplitter, 2))
-                    .Where(vals => vals.Length == 2))
+                        .Select(line => line.Split(ContentSplitter, 2))
+                        .Where(vals => vals.Length == 2))
             {
                 _logger.Information("key: {0} | Value {1}", vals[0], vals[1]);
 
@@ -120,15 +117,9 @@ namespace Tauron.Application
             return !_settings.ContainsKey(cKey) ? defaultValue : _settings[cKey];
         }
 
-        public virtual int GetValue(int defaultValue, [CallerMemberName] string? key = null)
-        {
-            return int.TryParse(GetValue(null, key), out var result) ? result : defaultValue;
-        }
+        public virtual int GetValue(int defaultValue, [CallerMemberName] string? key = null) => int.TryParse(GetValue(null, key), out var result) ? result : defaultValue;
 
-        public virtual bool GetValue(bool defaultValue, [CallerMemberName] string? key = null)
-        {
-            return bool.TryParse(GetValue(null, key), out var result) ? result : defaultValue;
-        }
+        public virtual bool GetValue(bool defaultValue, [CallerMemberName] string? key = null) => bool.TryParse(GetValue(null, key), out var result) ? result : defaultValue;
 
         public virtual void SetVaue(object value, [CallerMemberName] string? key = null)
         {

@@ -8,21 +8,18 @@ namespace Tauron.Application.Workflow
     {
         //public static readonly StepId Null = new StepId();
 
-        public static readonly StepId Fail = new StepId("Fail");
-        public static readonly StepId None = new StepId("None");
-        public static readonly StepId Finish = new StepId("Finish");
-        public static readonly StepId Loop = new StepId("Loop");
-        public static readonly StepId LoopEnd = new StepId("LoopEnd");
-        public static readonly StepId LoopContinue = new StepId("LoopContinue");
-        public static readonly StepId Skip = new StepId("Skip");
-        public static readonly StepId Start = new StepId("Start");
-        public static readonly StepId Waiting = new StepId("Waiting");
+        public static readonly StepId Fail         = new("Fail");
+        public static readonly StepId None         = new("None");
+        public static readonly StepId Finish       = new("Finish");
+        public static readonly StepId Loop         = new("Loop");
+        public static readonly StepId LoopEnd      = new("LoopEnd");
+        public static readonly StepId LoopContinue = new("LoopContinue");
+        public static readonly StepId Skip         = new("Skip");
+        public static readonly StepId Start        = new("Start");
+        public static readonly StepId Waiting      = new("Waiting");
 
         [DebuggerStepThrough]
-        public override int GetHashCode()
-        {
-            return Name.GetHashCode();
-        }
+        public override int GetHashCode() => Name.GetHashCode();
 
         public StepId([NotNull] string name) : this()
         {
@@ -30,7 +27,8 @@ namespace Tauron.Application.Workflow
             Name = name;
         }
 
-        [NotNull] public string Name { get; }
+        [NotNull]
+        public string Name { get; }
 
         [DebuggerStepThrough]
         public override bool Equals(object obj)
@@ -41,20 +39,11 @@ namespace Tauron.Application.Workflow
             return ((StepId) obj).Name == Name;
         }
 
-        public static bool operator ==(StepId id1, StepId id2)
-        {
-            return id1.Name == id2.Name;
-        }
+        public static bool operator ==(StepId id1, StepId id2) => id1.Name == id2.Name;
 
-        public static bool operator !=(StepId id1, StepId id2)
-        {
-            return id1.Name != id2.Name;
-        }
+        public static bool operator !=(StepId id1, StepId id2) => id1.Name != id2.Name;
 
         [DebuggerStepThrough]
-        public override string ToString()
-        {
-            return Name;
-        }
+        public override string ToString() => Name;
     }
 }

@@ -1,7 +1,7 @@
 ﻿<UserControl x:Class="Adventure.Ui.CommandDisplay.CommandView"
              xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
              xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
              xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
              xmlns:commandDisplay="clr-namespace:Adventure.Ui.CommandDisplay"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance commandDisplay:CommandViewModel}"
@@ -10,10 +10,8 @@
         <DataTemplate DataType="{x:Type commandDisplay:PotentalCommand}">
             <Button Content="{Binding Name}" Margin="10"
                     Command="{Binding Executor}" Padding="15"
-                    CommandParameter="{Binding Command}">
-
-            </Button>
+                    CommandParameter="{Binding Command}" />
         </DataTemplate>
     </UserControl.Resources>
-    <ItemsControl ItemsSource="{Binding Commands}" HorizontalContentAlignment="Stretch"/>
+    <ItemsControl ItemsSource="{Binding Commands}" HorizontalContentAlignment="Stretch" />
 </UserControl>

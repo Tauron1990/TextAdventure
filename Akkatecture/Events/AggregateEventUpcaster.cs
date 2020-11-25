@@ -35,9 +35,7 @@ namespace Akkatecture.Events
 {
     public abstract class AggregateEventUpcaster<TAggregate, TIdentity> : AggregateEventUpcaster<TAggregate, TIdentity, IEventUpcaster<TAggregate, TIdentity>>
         where TAggregate : IAggregateRoot<TIdentity>
-        where TIdentity : IIdentity
-    {
-    }
+        where TIdentity : IIdentity { }
 
     public abstract class AggregateEventUpcaster<TAggregate, TIdentity, TEventUpcaster> : IReadEventAdapter, IEventUpcaster<TAggregate, TIdentity>
         where TEventUpcaster : class, IEventUpcaster<TAggregate, TIdentity>
@@ -45,20 +43,19 @@ namespace Akkatecture.Events
         where TIdentity : IIdentity
     {
         // ReSharper disable once StaticMemberInGenericType
-        private static ConcurrentDictionary<Type, bool> _decisionCache = new ConcurrentDictionary<Type, bool>();
+        private static   ConcurrentDictionary<Type, bool>                                                  _decisionCache = new();
         private readonly IReadOnlyDictionary<Type, Func<TEventUpcaster, IAggregateEvent, IAggregateEvent>> _upcastFunctions;
 
 
         protected AggregateEventUpcaster()
         {
             var upcastTypes = GetType().GetAggregateEventUpcastTypes();
-            var dictionary = upcastTypes.ToDictionary(x => x, x => true);
+            var dictionary  = upcastTypes.ToDictionary(x => x, x => true);
             _decisionCache = new ConcurrentDictionary<Type, bool>(dictionary);
 
             if (!(this is TEventUpcaster))
             {
-                throw new InvalidOperationException(
-                    $"Event applier of type '{GetType().PrettyPrint()}' has a wrong generic argument '{typeof(TEventUpcaster).PrettyPrint()}'");
+                throw new InvalidOperationException($"Event applier of type '{GetType().PrettyPrint()}' has a wrong generic argument '{typeof(TEventUpcaster).PrettyPrint()}'");
             }
 
             _upcastFunctions = GetType().GetAggregateEventUpcastMethods<TAggregate, TIdentity, TEventUpcaster>();
@@ -85,12 +82,11 @@ namespace Akkatecture.Events
                 Type genericType = typeof(CommittedEvent<,,>)
                    .MakeGenericType(typeof(TAggregate), typeof(TIdentity), upcastedEvent.GetType());
 
-                var upcastedCommittedEvent = genericType.FastCreateInstance(
-                    evt.GetPropertyValue("AggregateIdentity")!,
-                    upcastedEvent,
-                    evt.GetPropertyValue("Metadata")!,
-                    evt.GetPropertyValue("Timestamp")!,
-                    evt.GetPropertyValue("AggregateSequenceNumber")!);
+                var upcastedCommittedEvent = genericType.FastCreateInstance(evt.GetPropertyValue("AggregateIdentity")!,
+                                                                            upcastedEvent,
+                                                                            evt.GetPropertyValue("Metadata")!,
+                                                                            evt.GetPropertyValue("Timestamp")!,
+                                                                            evt.GetPropertyValue("AggregateSequenceNumber")!);
 
                 return EventSequence.Single(upcastedCommittedEvent);
             }

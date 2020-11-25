@@ -27,15 +27,12 @@ namespace Akkatecture.Sagas.SagaTimeouts
 {
     public class SagaTimeoutManager<TTimeout> :
         JobManager<
-            SagaTimeoutJobScheduler<TTimeout>,
-            SagaTimeoutJobRunner<TTimeout>,
-            TTimeout,
-            SagaTimeoutId> where TTimeout : ISagaTimeoutJob
+        SagaTimeoutJobScheduler<TTimeout>,
+        SagaTimeoutJobRunner<TTimeout>,
+        TTimeout,
+        SagaTimeoutId> where TTimeout : ISagaTimeoutJob
     {
-        public SagaTimeoutManager() : base(
-            () => new SagaTimeoutJobScheduler<TTimeout>(),
-            () => new SagaTimeoutJobRunner<TTimeout>())
-        {
-        }
+        public SagaTimeoutManager() : base(() => new SagaTimeoutJobScheduler<TTimeout>(),
+                                           () => new SagaTimeoutJobRunner<TTimeout>()) { }
     }
 }

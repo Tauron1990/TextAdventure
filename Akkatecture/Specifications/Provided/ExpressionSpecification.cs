@@ -35,13 +35,13 @@ namespace Akkatecture.Specifications.Provided
     public class ExpressionSpecification<T> : Specification<T>
     {
         private readonly Func<T, bool> _predicate;
-        private readonly Lazy<string> _string;
+        private readonly Lazy<string>  _string;
 
         public ExpressionSpecification(
             Expression<Func<T, bool>> expression)
         {
             _predicate = expression.Compile();
-            _string = new Lazy<string>(() => MakeString(expression));
+            _string    = new Lazy<string>(() => MakeString(expression));
         }
 
         public override string ToString() => _string.Value;
@@ -56,11 +56,11 @@ namespace Akkatecture.Specifications.Provided
             try
             {
                 var paramName = expression.Parameters[0].Name;
-                var expBody = expression.Body.ToString();
+                var expBody   = expression.Body.ToString();
 
                 expBody = expBody
-                   .Replace("AndAlso", "&&")
-                   .Replace("OrElse", "||");
+                         .Replace("AndAlso", "&&")
+                         .Replace("OrElse", "||");
 
                 return $"{paramName} => {expBody}";
             }

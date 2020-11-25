@@ -6,12 +6,12 @@ namespace Tauron.Host
 {
     public class ApplicationLifetime : IHostApplicationLifetime, IApplicationLifetime, IDisposable
     {
-        private readonly ILogger _logger = Log.ForContext<ApplicationLifetime>();
-        private readonly CancellationTokenSource _startedSource = new CancellationTokenSource();
+        private readonly ILogger                 _logger        = Log.ForContext<ApplicationLifetime>();
+        private readonly CancellationTokenSource _startedSource = new();
 
-        private readonly CancellationTokenSource _stoppedSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _stoppedSource = new();
 
-        private readonly CancellationTokenSource _stoppingSource = new CancellationTokenSource();
+        private readonly CancellationTokenSource _stoppingSource = new();
 
         public void Shutdown(int exitCode)
         {

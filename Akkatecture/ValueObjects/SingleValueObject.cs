@@ -35,10 +35,8 @@ namespace Akkatecture.ValueObjects
     public abstract class SingleValueObject<T> : ValueObject, IComparable, ISingleValueObject
         where T : IComparable
     {
-        private static readonly Type Type = typeof(T);
+        private static readonly Type     Type     = typeof(T);
         private static readonly TypeInfo TypeInfo = typeof(T).GetTypeInfo();
-
-        public T Value { get; }
 
         protected SingleValueObject(T value)
         {
@@ -47,7 +45,9 @@ namespace Akkatecture.ValueObjects
             Value = value;
         }
 
-        public int CompareTo(object obj)
+        public T Value { get; }
+
+        public int CompareTo(object? obj)
         {
             if (ReferenceEquals(null, obj)) throw new ArgumentNullException(nameof(obj));
 

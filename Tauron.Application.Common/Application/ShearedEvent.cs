@@ -8,7 +8,7 @@ namespace Tauron.Application
     [PublicAPI]
     public abstract class SharedEvent<TPayload>
     {
-        private readonly WeakActionEvent<TPayload> _handlerList = new WeakActionEvent<TPayload>();
+        private readonly WeakActionEvent<TPayload> _handlerList = new();
 
         public virtual void Publish(TPayload content)
         {
@@ -37,11 +37,11 @@ namespace Tauron.Application
     [PublicAPI]
     public sealed class EventAggregator : IEventAggregator
     {
-        private readonly Dictionary<Type, object> _events = new Dictionary<Type, object>();
+        private readonly Dictionary<Type, object> _events = new();
 
         public TEventType GetEvent<TEventType, TPayload>() where TEventType : SharedEvent<TPayload>, new()
         {
-            var t = typeof(TEventType);
+            var t                                   = typeof(TEventType);
             if (!_events.ContainsKey(t)) _events[t] = new TEventType();
 
             return (TEventType) _events[t];

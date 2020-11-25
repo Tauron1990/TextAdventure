@@ -1,4 +1,4 @@
-﻿    // The MIT License (MIT)
+﻿// The MIT License (MIT)
 //
 // Copyright (c) 2015-2020 Rasmus Mikkelsen
 // Copyright (c) 2015-2020 eBay Software Foundation
@@ -43,12 +43,12 @@ namespace Akkatecture.Core
         {
             var typeInfo = type.GetTypeInfo();
             var methods = typeInfo
-               .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-               .Where(m => m.Name == methodName);
+                         .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                         .Where(m => m.Name == methodName);
 
             var methodInfo = !methodSignature.Any()
-                ? methods.SingleOrDefault()
-                : methods.SingleOrDefault(m => m.GetParameters().Select(mp => mp.ParameterType).SequenceEqual(methodSignature));
+                                 ? methods.SingleOrDefault()
+                                 : methods.SingleOrDefault(m => m.GetParameters().Select(mp => mp.ParameterType).SequenceEqual(methodSignature));
 
             if (methodInfo == null) throw new ArgumentException($"Type '{type.PrettyPrint()}' doesn't have a method called '{methodName}'");
 
@@ -57,9 +57,9 @@ namespace Akkatecture.Core
 
         public static TResult CompileMethodInvocation<TResult>(MethodInfo methodInfo) where TResult : class
         {
-            var genericArguments = typeof(TResult).GetTypeInfo().GetGenericArguments();
+            var genericArguments   = typeof(TResult).GetTypeInfo().GetGenericArguments();
             var methodArgumentList = methodInfo.GetParameters().Select(p => p.ParameterType).ToList();
-            var funcArgumentList = genericArguments.Skip(1).Take(methodArgumentList.Count).ToList();
+            var funcArgumentList   = genericArguments.Skip(1).Take(methodArgumentList.Count).ToList();
 
             if (funcArgumentList.Count != methodArgumentList.Count) throw new ArgumentException("Incorrect number of arguments");
 
@@ -78,7 +78,7 @@ namespace Akkatecture.Core
                                      instanceArgument
                                  };
 
-            var type = methodInfo.DeclaringType ?? typeof(object);
+            var type             = methodInfo.DeclaringType ?? typeof(object);
             var instanceVariable = Expression.Variable(type);
             var blockVariables = new List<ParameterExpression>
                                  {
@@ -100,7 +100,7 @@ namespace Akkatecture.Core
                 }
                 else
                 {
-                    var sourceParameter = Expression.Parameter(a.Source);
+                    var sourceParameter     = Expression.Parameter(a.Source);
                     var destinationVariable = Expression.Variable(a.Destination);
                     var assignToDestination = Expression.Assign(destinationVariable, Expression.Convert(sourceParameter, a.Destination));
 

@@ -32,12 +32,9 @@ namespace Akkatecture.Specifications.Provided
 {
     public class AggregateIsNewSpecification : Specification<IAggregateRoot>
     {
-        public static readonly AggregateIsNewSpecification Instance = new AggregateIsNewSpecification();
+        public static readonly AggregateIsNewSpecification Instance = new();
 
-        private AggregateIsNewSpecification()
-        {
-            
-        }
+        private AggregateIsNewSpecification() { }
 
         protected override IEnumerable<string> IsNotSatisfiedBecause(IAggregateRoot aggregate)
         {

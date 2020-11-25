@@ -9,15 +9,12 @@ namespace Tauron.Akka
         private HookEvent(Delegate invoker, Type target)
         {
             Invoker = invoker;
-            Target = target;
+            Target  = target;
         }
 
         public Delegate Invoker { get; }
-        public Type Target { get; }
+        public Type     Target  { get; }
 
-        public static HookEvent Create<TType>(Action<TType> action)
-        {
-            return new HookEvent(action, typeof(TType));
-        }
+        public static HookEvent Create<TType>(Action<TType> action) => new(action, typeof(TType));
     }
 }

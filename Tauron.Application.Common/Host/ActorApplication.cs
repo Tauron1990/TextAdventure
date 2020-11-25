@@ -23,13 +23,13 @@ namespace Tauron.Host
         internal ActorApplication(IContainer continer, ActorSystem actorSystem)
         {
             _actorApplication = this;
-            Continer = continer;
-            ActorSystem = actorSystem;
+            Continer          = continer;
+            ActorSystem       = actorSystem;
         }
 
         public static ActorApplication Application => Argument.NotNull(_actorApplication, nameof(Application));
 
-        public IContainer Continer { get; }
+        public IContainer  Continer    { get; }
         public ActorSystem ActorSystem { get; }
 
         public void Dispose()
@@ -42,21 +42,18 @@ namespace Tauron.Host
             var builder = new Builder();
             builder.UseContentRoot(Directory.GetCurrentDirectory());
             builder
-                .ConfigureAkka(he => ConfigurationFactory.ParseString(" akka { loggers =[\"Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog\"] \n  scheduler { implementation = \"Tauron.Akka.TimerScheduler, Tauron.Application.Common\" } }"))
-                .ConfigureAutoFac(cb => cb.RegisterModule<CommonModule>())
-                .Configuration(cb =>
-                {
-                    cb.AddEnvironmentVariables("DOTNET_");
-                })
-                .ConfigureAppConfiguration((hostingContext, config) =>
-                {
-                    IHostEnvironment hostEnvironment = hostingContext.HostEnvironment;
-                    var value = hostingContext.Configuration.GetValue("hostBuilder:reloadConfigOnChange", true);
-                    config.AddJsonFile("appsettings." + hostEnvironment.EnvironmentName + ".json", true, value);
-                    config.AddEnvironmentVariables();
-                    if (args != null)
-                        config.AddCommandLine(args);
-                })
+               .ConfigureAkka(he => ConfigurationFactory.ParseString(" akka { loggers =[\"Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog\"] \n  scheduler { implementation = \"Tauron.Akka.TimerScheduler, Tauron.Application.Common\" } }"))
+               .ConfigureAutoFac(cb => cb.RegisterModule<CommonModule>())
+               .Configuration(cb => { cb.AddEnvironmentVariables("DOTNET_"); })
+               .ConfigureAppConfiguration((hostingContext, config) =>
+                                          {
+                                              IHostEnvironment hostEnvironment = hostingContext.HostEnvironment;
+                                              var              value           = hostingContext.Configuration.GetValue("hostBuilder:reloadConfigOnChange", true);
+                                              config.AddJsonFile("appsettings." + hostEnvironment.EnvironmentName + ".json", true, value);
+                                              config.AddEnvironmentVariables();
+                                              if (args != null)
+                                                  config.AddCommandLine(args);
+                                          })
                .Configuration(cb => cb.AddJsonFile("appsettings.json", true, true));
 
             return builder;
@@ -64,7 +61,7 @@ namespace Tauron.Host
 
         public async Task Run()
         {
-            var lifeTime = Continer.Resolve<IHostLifetime>();
+            var lifeTime        = Continer.Resolve<IHostLifetime>();
             var hostAppLifetime = (ApplicationLifetime) Continer.Resolve<IHostApplicationLifetime>();
             await using (hostAppLifetime.ApplicationStopping.Register(() => ActorSystem.Terminate()))
             {
@@ -80,12 +77,12 @@ namespace Tauron.Host
 
         private sealed class Builder : IApplicationBuilder
         {
-            private readonly List<Action<HostBuilderContext, ActorSystem>> _actorSystemConfig = new List<Action<HostBuilderContext, ActorSystem>>();
-            private readonly List<Func<HostBuilderContext, Config>> _akkaConfig = new List<Func<HostBuilderContext, Config>>();
-            private readonly List<Action<HostBuilderContext, IConfigurationBuilder>> _appConfigs = new List<Action<HostBuilderContext, IConfigurationBuilder>>();
-            private readonly List<Action<IConfigurationBuilder>> _configurationBuilders = new List<Action<IConfigurationBuilder>>();
-            private readonly List<Action<ContainerBuilder>> _containerBuilder = new List<Action<ContainerBuilder>>();
-            private readonly List<Action<HostBuilderContext, LoggerConfiguration>> _logger = new List<Action<HostBuilderContext, LoggerConfiguration>>();
+            private readonly List<Action<HostBuilderContext, ActorSystem>>           _actorSystemConfig     = new();
+            private readonly List<Func<HostBuilderContext, Config>>                  _akkaConfig            = new();
+            private readonly List<Action<HostBuilderContext, IConfigurationBuilder>> _appConfigs            = new();
+            private readonly List<Action<IConfigurationBuilder>>                     _configurationBuilders = new();
+            private readonly List<Action<ContainerBuilder>>                          _containerBuilder      = new();
+            private readonly List<Action<HostBuilderContext, LoggerConfiguration>>   _logger                = new();
 
             public IApplicationBuilder ConfigureLogging(Action<HostBuilderContext, LoggerConfiguration> config)
             {
@@ -125,14 +122,14 @@ namespace Tauron.Host
 
             public ActorApplication Build()
             {
-                var config = CreateHostConfiguration();
+                var config            = CreateHostConfiguration();
                 var hostingEnwiroment = CreateHostingEnvironment(config);
-                var context = CreateHostBuilderContext(hostingEnwiroment, config);
+                var context           = CreateHostBuilderContext(hostingEnwiroment, config);
                 ConfigureLogging(context);
-                config = BuildAppConfiguration(hostingEnwiroment, config, context);
+                config                = BuildAppConfiguration(hostingEnwiroment, config, context);
                 context.Configuration = config;
                 var akkaConfig = CreateAkkaConfig(context);
-                var system = ActorSystem.Create(GetActorSystemName(context.Configuration, context.HostEnvironment), akkaConfig);
+                var system     = ActorSystem.Create(GetActorSystemName(context.Configuration, context.HostEnvironment), akkaConfig);
 
                 var continer = CreateServiceProvider(hostingEnwiroment, context, config, system);
 
@@ -146,9 +143,9 @@ namespace Tauron.Host
             private string GetActorSystemName(IConfiguration config, IHostEnvironment environment)
             {
                 var name = config["actorsystem"];
-                return !string.IsNullOrWhiteSpace(name) 
-                    ? name 
-                    : environment.ApplicationName.Replace('.', '-');
+                return !string.IsNullOrWhiteSpace(name)
+                           ? name
+                           : environment.ApplicationName.Replace('.', '-');
             }
 
             private void ConfigureLogging(HostBuilderContext context)
@@ -173,11 +170,11 @@ namespace Tauron.Host
             private IHostEnvironment CreateHostingEnvironment(IConfiguration hostConfiguration)
             {
                 var hostingEnvironment = new HostEnviroment
-                {
-                    ApplicationName = hostConfiguration[HostDefaults.ApplicationKey],
-                    EnvironmentName = hostConfiguration[HostDefaults.EnvironmentKey] ?? Environments.Production,
-                    ContentRootPath = ResolveContentRootPath(hostConfiguration[HostDefaults.ContentRootKey], AppContext.BaseDirectory)
-                };
+                                         {
+                                             ApplicationName = hostConfiguration[HostDefaults.ApplicationKey],
+                                             EnvironmentName = hostConfiguration[HostDefaults.EnvironmentKey] ?? Environments.Production,
+                                             ContentRootPath = ResolveContentRootPath(hostConfiguration[HostDefaults.ContentRootKey], AppContext.BaseDirectory)
+                                         };
                 if (string.IsNullOrEmpty(hostingEnvironment.ApplicationName))
                     hostingEnvironment.ApplicationName = Assembly.GetEntryAssembly()?.GetName().Name ?? string.Empty;
 
@@ -187,17 +184,14 @@ namespace Tauron.Host
             private IConfiguration BuildAppConfiguration(IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, HostBuilderContext hostBuilderContext)
             {
                 IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
-                    .SetBasePath(hostEnvironment.ContentRootPath)
-                    .AddConfiguration(hostConfiguration, true);
+                                                            .SetBasePath(hostEnvironment.ContentRootPath)
+                                                            .AddConfiguration(hostConfiguration, true);
                 foreach (Action<HostBuilderContext, IConfigurationBuilder> configureAppConfigAction in _appConfigs)
                     configureAppConfigAction(hostBuilderContext, configurationBuilder);
                 return configurationBuilder.Build();
             }
 
-            private HostBuilderContext CreateHostBuilderContext(IHostEnvironment environment, IConfiguration configuration)
-            {
-                return new HostBuilderContext(new Dictionary<object, object>(), configuration, environment);
-            }
+            private HostBuilderContext CreateHostBuilderContext(IHostEnvironment environment, IConfiguration configuration) => new(new Dictionary<object, object>(), configuration, environment);
 
             private Config CreateAkkaConfig(HostBuilderContext context)
             {

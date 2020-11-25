@@ -7,16 +7,16 @@ using TextAdventures.Engine;
 
 namespace Playground
 {
-    class Program
+    internal class Program
     {
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             var save = Path.GetFullPath("test");
 
             var world = World.Create(save, "Test");
             world.GetRoom(new Name("Start"));
 
-            var game = Game.Create(world, false);
+            var game   = Game.Create(world, false);
             var master = game.Start(null, Console.WriteLine);
 
             //var builder = new SqliteConnectionStringBuilder {DataSource = "data.db", Mode = SqliteOpenMode.ReadWriteCreate, Cache = SqliteCacheMode.Shared};

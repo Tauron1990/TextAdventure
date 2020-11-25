@@ -9,22 +9,18 @@ namespace Tauron.Akka
 {
     public interface IExposedReceiveActor
     {
-        IActorDsl Exposed { get; }
+        IActorDsl            Exposed        { get; }
         IUntypedActorContext ExposedContext { get; }
     }
 
     [PublicAPI]
     public class ExposedReceiveActor : ReceiveActor, IActorDsl, IExposedReceiveActor
     {
-        private Action<Exception, IActorContext>? _onPostRestart;
-        private Action<IActorContext>? _onPostStop;
+        private Action<Exception, IActorContext>?         _onPostRestart;
+        private Action<IActorContext>?                    _onPostStop;
         private Action<Exception, object, IActorContext>? _onPreRestart;
-        private Action<IActorContext>? _onPreStart;
-        private SupervisorStrategy? _strategy;
-
-        public IActorDsl Exposed => this;
-
-        public IUntypedActorContext ExposedContext => Context;
+        private Action<IActorContext>?                    _onPreStart;
+        private SupervisorStrategy?                       _strategy;
 
         protected internal ILoggingAdapter Log { get; } = Context.GetLogger();
 
@@ -87,6 +83,10 @@ namespace Tauron.Akka
             get => _strategy;
             set => _strategy = value;
         }
+
+        public IActorDsl Exposed => this;
+
+        public IUntypedActorContext ExposedContext => Context;
 
         protected override void PostRestart(Exception reason)
         {

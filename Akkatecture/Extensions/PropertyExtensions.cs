@@ -6,17 +6,48 @@ namespace Akkatecture.Extensions
 {
     public static class PropertyExtensions
     {
+        private static readonly ConcurrentDictionary<CacheKey, Func<object?, object[], object?>> _propertys = new();
+
+
+        public static object? GetPropertyValue(this object data, string name)
+        {
+            var key = new CacheKey(name, data.GetType());
+            return _propertys.GetOrAdd(key, c =>
+                                            {
+                                                var fac = c.Type.GetProperty(c.Name)?.GetPropertyAccessor(Array.Empty<Type>);
+
+                                                if (fac == null)
+                                                    throw new InvalidOperationException("no Factory Created");
+
+                                                return fac;
+                                            })(data, Array.Empty<object>());
+        }
+
+        public static TReturn GetPropertyValue<TReturn>(this object data, string name)
+        {
+            var key = new CacheKey(name, data.GetType());
+            return (TReturn) _propertys.GetOrAdd(key, c =>
+                                                      {
+                                                          var fac = c.Type.GetProperty(c.Name)?.GetPropertyAccessor(Array.Empty<Type>);
+
+                                                          if (fac == null)
+                                                              throw new InvalidOperationException("no Factory Created");
+
+                                                          return fac;
+                                                      })(data, Array.Empty<object>())!;
+        }
+
         private sealed class CacheKey : IEquatable<CacheKey>
         {
-            public string Name { get; }
-
-            public Type Type { get; }
-
             public CacheKey(string name, Type type)
             {
                 Name = name;
                 Type = type;
             }
+
+            public string Name { get; }
+
+            public Type Type { get; }
 
             public bool Equals(CacheKey? other)
             {
@@ -32,37 +63,6 @@ namespace Akkatecture.Extensions
             public static bool operator ==(CacheKey? left, CacheKey? right) => Equals(left, right);
 
             public static bool operator !=(CacheKey? left, CacheKey? right) => !Equals(left, right);
-        }
-
-        private static ConcurrentDictionary<CacheKey, Func<object?, object[], object?>> _propertys = new ConcurrentDictionary<CacheKey, Func<object?, object[], object?>>();
-
-
-        public static object? GetPropertyValue(this object data, string name)
-        {
-            var key = new CacheKey(name, data.GetType()); 
-            return _propertys.GetOrAdd(key, c =>
-            {
-                var fac = c.Type.GetProperty(c.Name)?.GetPropertyAccessor(Array.Empty<Type>);
-
-                if(fac == null)
-                    throw new InvalidOperationException("no Factory Created");
-
-                return fac;
-            })(data, Array.Empty<object>());
-        }
-
-        public static TReturn GetPropertyValue<TReturn>(this object data, string name)
-        {
-            var key = new CacheKey(name, data.GetType());
-            return (TReturn) _propertys.GetOrAdd(key, c =>
-            {
-                var fac = c.Type.GetProperty(c.Name)?.GetPropertyAccessor(Array.Empty<Type>);
-
-                if (fac == null)
-                    throw new InvalidOperationException("no Factory Created");
-
-                return fac;
-            })(data, Array.Empty<object>())!;
         }
     }
 }

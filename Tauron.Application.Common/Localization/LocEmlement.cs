@@ -4,7 +4,7 @@
     {
         protected LocEmlement(string key, TValue value)
         {
-            Key = key;
+            Key   = key;
             Value = value;
         }
 

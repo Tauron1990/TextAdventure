@@ -21,35 +21,26 @@ namespace Tauron.Application
 
         private Type? _genericTemp;
 
-        public GroupDictionary(Type listType)
-        {
-            _listType = Argument.NotNull(listType, nameof(listType));
-        }
+        public GroupDictionary(Type listType) => _listType = Argument.NotNull(listType, nameof(listType));
 
-        public GroupDictionary()
-        {
-            _listType = typeof(List<TValue>);
-        }
+        public GroupDictionary() => _listType = typeof(List<TValue>);
 
-        public GroupDictionary(bool singleList)
-        {
-            _listType = singleList ? typeof(HashSet<TValue>) : typeof(List<TValue>);
-        }
+        public GroupDictionary(bool singleList) => _listType = singleList ? typeof(HashSet<TValue>) : typeof(List<TValue>);
 
         public GroupDictionary(GroupDictionary<TKey, TValue> groupDictionary)
             : base(groupDictionary)
         {
-            _listType = groupDictionary._listType;
+            _listType    = groupDictionary._listType;
             _genericTemp = groupDictionary._genericTemp;
         }
 
-#pragma warning disable 628
+        #pragma warning disable 628
         [SuppressMessage("Microsoft.Design", "CA1047:DoNotDeclareProtectedMembersInSealedTypes")]
         protected GroupDictionary(SerializationInfo info, StreamingContext context)
-#pragma warning restore 628
+            #pragma warning restore 628
             : base(info, context)
         {
-            _info = info;
+            _info     = info;
             _listType = (Type) info.GetValue("listType", typeof(Type));
         }
 
@@ -86,7 +77,7 @@ namespace Tauron.Application
                 if (generic.Length == 0) _genericTemp = _listType;
 
                 if (_genericTemp == null && generic[0] == typeof(TValue)) _genericTemp = _listType;
-                else _genericTemp = _listType.GetGenericTypeDefinition().MakeGenericType(typeof(TValue));
+                else _genericTemp                                                      = _listType.GetGenericTypeDefinition().MakeGenericType(typeof(TValue));
             }
 
             if (_genericTemp == null) throw new InvalidOperationException();
@@ -127,25 +118,13 @@ namespace Tauron.Application
         }
 
 
-        public bool RemoveValue(TValue value)
-        {
-            return RemoveImpl(default!, value, false, true);
-        }
+        public bool RemoveValue(TValue value) => RemoveImpl(default!, value, false, true);
 
-        public bool Remove(TValue value, bool removeEmptyLists)
-        {
-            return RemoveImpl(default!, value, removeEmptyLists, true);
-        }
+        public bool Remove(TValue value, bool removeEmptyLists) => RemoveImpl(default!, value, removeEmptyLists, true);
 
-        public bool Remove(TKey key, TValue value)
-        {
-            return RemoveImpl(key, value, false, false);
-        }
+        public bool Remove(TKey key, TValue value) => RemoveImpl(key, value, false, false);
 
-        public bool Remove(TKey key, TValue value, bool removeListIfEmpty)
-        {
-            return RemoveImpl(key, value, removeListIfEmpty, false);
-        }
+        public bool Remove(TKey key, TValue value, bool removeListIfEmpty) => RemoveImpl(key, value, removeListIfEmpty, false);
 
         private bool RemoveImpl(TKey key, TValue val, bool removeEmpty, bool removeAll)
         {
@@ -157,7 +136,7 @@ namespace Tauron.Application
                 var vals = Values.ToArray().GetEnumerator();
                 while (keys.MoveNext() && vals.MoveNext())
                 {
-                    var coll = (ICollection<TValue>) vals.Current;
+                    var coll    = (ICollection<TValue>) vals.Current;
                     var currkey = (TKey) keys.Current;
                     ok |= RemoveList(coll, val);
 
@@ -184,7 +163,7 @@ namespace Tauron.Application
 
         private static bool RemoveList(ICollection<TValue> vals, TValue val)
         {
-            var ok = false;
+            var ok                      = false;
             while (vals.Remove(val)) ok = true;
 
             return ok;
@@ -201,17 +180,11 @@ namespace Tauron.Application
         {
             private readonly GroupDictionary<TKey, TValue> _list;
 
-            public AllValueCollection(GroupDictionary<TKey, TValue> list)
-            {
-                _list = Argument.NotNull(list, nameof(list));
-            }
+            public AllValueCollection(GroupDictionary<TKey, TValue> list) => _list = Argument.NotNull(list, nameof(list));
 
             private IEnumerable<TValue> GetAll => _list.SelectMany(pair => pair.Value);
 
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             public int Count => GetAll.Count();
 
@@ -227,25 +200,16 @@ namespace Tauron.Application
                 throw new NotSupportedException();
             }
 
-            public bool Contains(TValue item)
-            {
-                return GetAll.Contains(item);
-            }
+            public bool Contains(TValue item) => GetAll.Contains(item);
 
             public void CopyTo(TValue[] array, int arrayIndex)
             {
                 GetAll.ToArray().CopyTo(array, arrayIndex);
             }
 
-            public IEnumerator<TValue> GetEnumerator()
-            {
-                return GetAll.GetEnumerator();
-            }
+            public IEnumerator<TValue> GetEnumerator() => GetAll.GetEnumerator();
 
-            public bool Remove(TValue item)
-            {
-                throw new NotSupportedException();
-            }
+            public bool Remove(TValue item) => throw new NotSupportedException();
         }
     }
 }

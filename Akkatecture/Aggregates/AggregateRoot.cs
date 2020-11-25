@@ -50,20 +50,12 @@ namespace Akkatecture.Aggregates
         where TAggregateState : AggregateState<TAggregate, TIdentity, IMessageApplier<TAggregate, TIdentity>>
         where TIdentity : IIdentity
     {
-        private static readonly IReadOnlyDictionary<Type, Action<TAggregateState, IAggregateEvent>> ApplyMethodsFromState = typeof(TAggregateState).GetAggregateStateEventApplyMethods<TAggregate, TIdentity, TAggregateState>()!;
+        private static readonly IReadOnlyDictionary<Type, Action<TAggregateState, IAggregateEvent>>    ApplyMethodsFromState   = typeof(TAggregateState).GetAggregateStateEventApplyMethods<TAggregate, TIdentity, TAggregateState>()!;
         private static readonly IReadOnlyDictionary<Type, Action<TAggregateState, IAggregateSnapshot>> HydrateMethodsFromState = typeof(TAggregateState).GetAggregateSnapshotHydrateMethods<TAggregate, TIdentity, TAggregateState>()!;
-        private static readonly IAggregateName AggregateName = typeof(TAggregate).GetAggregateName();
-        private readonly IEventDefinitionService _eventDefinitionService;
-        private readonly ISnapshotDefinitionService _snapshotDefinitionService;
-        private CircularBuffer<ISourceId> _previousSourceIds = new CircularBuffer<ISourceId>(100);
-
-        private ICommand<TAggregate, TIdentity> PinnedCommand { get; set; }
-        private object? PinnedReply { get; set; }
-        private ISnapshotStrategy SnapshotStrategy { get; set; } = SnapshotNeverStrategy.Instance;
-        public TAggregateState? State { get; }
-        public override string PersistenceId { get; }
-        public override Recovery Recovery => new Recovery(SnapshotSelectionCriteria.Latest);
-        private AggregateRootSettings Settings { get; }
+        private static readonly IAggregateName                                                         AggregateName           = typeof(TAggregate).GetAggregateName();
+        private readonly        IEventDefinitionService                                                _eventDefinitionService;
+        private readonly        ISnapshotDefinitionService                                             _snapshotDefinitionService;
+        private                 CircularBuffer<ISourceId>                                              _previousSourceIds = new(100);
 
         protected AggregateRoot(TIdentity id)
         {
@@ -74,8 +66,7 @@ namespace Akkatecture.Aggregates
 
             if (!(this is TAggregate))
             {
-                throw new InvalidOperationException(
-                    $"Aggregate {Name} specifies Type={typeof(TAggregate).PrettyPrint()} as generic argument, it should be its own type.");
+                throw new InvalidOperationException($"Aggregate {Name} specifies Type={typeof(TAggregate).PrettyPrint()} as generic argument, it should be its own type.");
             }
 
             if (State == null)
@@ -90,11 +81,11 @@ namespace Akkatecture.Aggregates
                 }
             }
 
-            PinnedCommand = null!;
-            _eventDefinitionService = new EventDefinitionService(Context.GetLogger());
+            PinnedCommand              = null!;
+            _eventDefinitionService    = new EventDefinitionService(Context.GetLogger());
             _snapshotDefinitionService = new SnapshotDefinitionService(Context.GetLogger());
-            Id = id;
-            PersistenceId = id.Value;
+            Id                         = id;
+            PersistenceId              = id.Value;
             SetSourceIdHistory(100);
 
             if (Settings.UseDefaultSnapshotRecover) Recover<SnapshotOffer>(Recover);
@@ -113,17 +104,25 @@ namespace Akkatecture.Aggregates
             Command<ReceiveTimeout>(Timeout);
         }
 
-        public IAggregateName Name => AggregateName;
-        public TIdentity Id { get; }
-        public long Version { get; protected set; }
-        public bool IsNew => Version <= 0;
+        private         ICommand<TAggregate, TIdentity> PinnedCommand    { get; set; }
+        private         object?                         PinnedReply      { get; set; }
+        private         ISnapshotStrategy               SnapshotStrategy { get; set; } = SnapshotNeverStrategy.Instance;
+        public          TAggregateState?                State            { get; }
+        public override string                          PersistenceId    { get; }
+        public override Recovery                        Recovery         => new(SnapshotSelectionCriteria.Latest);
+        private         AggregateRootSettings           Settings         { get; }
+
+        public IAggregateName Name    => AggregateName;
+        public TIdentity      Id      { get; }
+        public long           Version { get; protected set; }
+        public bool           IsNew   => Version <= 0;
 
         public bool HasSourceId(ISourceId sourceId) => !sourceId.IsNone() && _previousSourceIds.Any(s => s.Value == sourceId.Value);
 
         public IIdentity GetIdentity() => Id;
 
 
-        protected void SetSourceIdHistory(int count) 
+        protected void SetSourceIdHistory(int count)
             => _previousSourceIds = new CircularBuffer<ISourceId>(count);
 
         public virtual void Emit<TAggregateEvent>(TAggregateEvent aggregateEvent, IMetadata? metadata = null)
@@ -155,34 +154,32 @@ namespace Akkatecture.Aggregates
             if (aggregateEvent is IAggregateEvent)
             {
                 _eventDefinitionService.Load(aggregateEvent.GetType());
-                var eventDefinition = _eventDefinitionService.GetDefinition(aggregateEvent.GetType());
+                var eventDefinition         = _eventDefinitionService.GetDefinition(aggregateEvent.GetType());
                 var aggregateSequenceNumber = version + 1;
-                var eventId = EventId.NewDeterministic(
-                    GuidFactories.Deterministic.Namespaces.Events,
-                    $"{Id.Value}-v{aggregateSequenceNumber}");
+                var eventId = EventId.NewDeterministic(GuidFactories.Deterministic.Namespaces.Events,
+                                                       $"{Id.Value}-v{aggregateSequenceNumber}");
                 var now = DateTimeOffset.UtcNow;
                 var eventMetadata = new Metadata
                                     {
-                                        Timestamp = now,
+                                        Timestamp               = now,
                                         AggregateSequenceNumber = aggregateSequenceNumber,
-                                        AggregateName = Name.Value,
-                                        AggregateId = Id.Value,
-                                        SourceId = PinnedCommand.SourceId,
-                                        EventId = eventId,
-                                        EventName = eventDefinition.Name,
-                                        EventVersion = eventDefinition.Version
+                                        AggregateName           = Name.Value,
+                                        AggregateId             = Id.Value,
+                                        SourceId                = PinnedCommand.SourceId,
+                                        EventId                 = eventId,
+                                        EventName               = eventDefinition.Name,
+                                        EventVersion            = eventDefinition.Version
                                     };
                 eventMetadata.Add(MetadataKeys.TimestampEpoch, now.ToUnixTime().ToString());
                 if (metadata != null) eventMetadata.AddRange(metadata);
                 var genericType = typeof(CommittedEvent<,,>)
                    .MakeGenericType(typeof(TAggregate), typeof(TIdentity), aggregateEvent.GetType());
 
-                var committedEvent = genericType.FastCreateInstance(
-                    Id,
-                    aggregateEvent,
-                    eventMetadata,
-                    now,
-                    aggregateSequenceNumber);
+                var committedEvent = genericType.FastCreateInstance(Id,
+                                                                    aggregateEvent,
+                                                                    eventMetadata,
+                                                                    now,
+                                                                    aggregateSequenceNumber);
 
                 return committedEvent ?? throw new InvalidOperationException($"No Commited Event Created {aggregateEvent} ");
             }
@@ -191,27 +188,26 @@ namespace Akkatecture.Aggregates
         }
 
         public virtual CommittedEvent<TAggregate, TIdentity, TAggregateEvent> From<TAggregateEvent>(TAggregateEvent aggregateEvent,
-            long version, IMetadata? metadata = null)
+                                                                                                    long            version, IMetadata? metadata = null)
             where TAggregateEvent : class, IAggregateEvent<TAggregate, TIdentity>
         {
             if (aggregateEvent == null) throw new ArgumentNullException(nameof(aggregateEvent));
             _eventDefinitionService.Load(aggregateEvent.GetType());
-            var eventDefinition = _eventDefinitionService.GetDefinition(aggregateEvent.GetType());
+            var eventDefinition         = _eventDefinitionService.GetDefinition(aggregateEvent.GetType());
             var aggregateSequenceNumber = version + 1;
-            var eventId = EventId.NewDeterministic(
-                GuidFactories.Deterministic.Namespaces.Events,
-                $"{Id.Value}-v{aggregateSequenceNumber}");
+            var eventId = EventId.NewDeterministic(GuidFactories.Deterministic.Namespaces.Events,
+                                                   $"{Id.Value}-v{aggregateSequenceNumber}");
             var now = DateTimeOffset.UtcNow;
             var eventMetadata = new Metadata
                                 {
-                                    Timestamp = now,
+                                    Timestamp               = now,
                                     AggregateSequenceNumber = aggregateSequenceNumber,
-                                    AggregateName = Name.Value,
-                                    AggregateId = Id.Value,
-                                    SourceId = PinnedCommand.SourceId,
-                                    EventId = eventId,
-                                    EventName = eventDefinition.Name,
-                                    EventVersion = eventDefinition.Version
+                                    AggregateName           = Name.Value,
+                                    AggregateId             = Id.Value,
+                                    SourceId                = PinnedCommand.SourceId,
+                                    EventId                 = eventId,
+                                    EventName               = eventDefinition.Name,
+                                    EventVersion            = eventDefinition.Version
                                 };
             eventMetadata.Add(MetadataKeys.TimestampEpoch, now.ToUnixTime().ToString());
             if (metadata != null) eventMetadata.AddRange(metadata);
@@ -237,31 +233,30 @@ namespace Akkatecture.Aggregates
             Version++;
 
             var domainEvent = new DomainEvent<TAggregate, TIdentity, TAggregateEvent>(Id, committedEvent.AggregateEvent, committedEvent.Metadata, committedEvent.Timestamp, Version);
-            
+
             Publish(domainEvent);
             ReplyIfAvailable();
 
             if (!SnapshotStrategy.ShouldCreateSnapshot(this)) return;
             var aggregateSnapshot = CreateSnapshot();
-            
+
             if (aggregateSnapshot == null) return;
             _snapshotDefinitionService.Load(aggregateSnapshot.GetType());
             var snapshotDefinition = _snapshotDefinitionService.GetDefinition(aggregateSnapshot.GetType());
             var snapshotMetadata = new SnapshotMetadata
-            {
-                AggregateId = Id.Value,
-                AggregateName = Name.Value,
-                AggregateSequenceNumber = Version,
-                SnapshotName = snapshotDefinition.Name,
-                SnapshotVersion = snapshotDefinition.Version
-            };
+                                   {
+                                       AggregateId             = Id.Value,
+                                       AggregateName           = Name.Value,
+                                       AggregateSequenceNumber = Version,
+                                       SnapshotName            = snapshotDefinition.Name,
+                                       SnapshotVersion         = snapshotDefinition.Version
+                                   };
 
             var committedSnapshot =
-                new CommittedSnapshot<TAggregate, TIdentity, IAggregateSnapshot<TAggregate, TIdentity>>(
-                    Id,
-                    aggregateSnapshot,
-                    snapshotMetadata,
-                    committedEvent.Timestamp, Version);
+                new CommittedSnapshot<TAggregate, TIdentity, IAggregateSnapshot<TAggregate, TIdentity>>(Id,
+                                                                                                        aggregateSnapshot,
+                                                                                                        snapshotMetadata,
+                                                                                                        committedEvent.Timestamp, Version);
 
             SaveSnapshot(committedSnapshot);
         }
@@ -271,9 +266,9 @@ namespace Akkatecture.Aggregates
             try
             {
                 var method = GetType()
-                   .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
-                   .Where(m => m.IsFamily || m.IsPublic)
-                   .Single(m => m.Name.Equals("ApplyCommittedEvent"));
+                            .GetMethods(BindingFlags.Instance | BindingFlags.Public | BindingFlags.NonPublic)
+                            .Where(m => m.IsFamily || m.IsPublic)
+                            .Single(m => m.Name.Equals("ApplyCommittedEvent"));
 
                 var genericMethod = method.MakeGenericMethod(committedEvent.GetType().GenericTypeArguments[2]);
 
@@ -316,7 +311,7 @@ namespace Akkatecture.Aggregates
             if (PinnedReply != null)
                 Sender.Tell(PinnedReply);
 
-            PinnedReply = null;
+            PinnedReply   = null;
             PinnedCommand = null!;
         }
 
@@ -407,7 +402,7 @@ namespace Akkatecture.Aggregates
             return true;
         }
 
-        protected virtual void SetSnapshotStrategy(ISnapshotStrategy snapshotStrategy) 
+        protected virtual void SetSnapshotStrategy(ISnapshotStrategy snapshotStrategy)
             => SnapshotStrategy = snapshotStrategy;
 
         protected virtual bool SnapshotStatus(SaveSnapshotSuccess snapshotSuccess)
@@ -470,37 +465,36 @@ namespace Akkatecture.Aggregates
                    .GetAggregateExecuteTypes();
 
             var methods = type
-               .GetTypeInfo()
-               .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-               .Where(mi =>
-                {
-                    if (mi.Name != "Execute") return false;
-                    var parameters = mi.GetParameters();
-                    return
-                        parameters.Length == 1;
-                })
-               .ToDictionary(
-                    mi => mi.GetParameters()[0].ParameterType,
-                    mi => mi);
+                         .GetTypeInfo()
+                         .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                         .Where(mi =>
+                                {
+                                    if (mi.Name != "Execute") return false;
+                                    var parameters = mi.GetParameters();
+                                    return
+                                        parameters.Length == 1;
+                                })
+                         .ToDictionary(mi => mi.GetParameters()[0].ParameterType,
+                                       mi => mi);
 
             var method = type
-               .GetBaseType("ReceivePersistentActor")
-               .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
-               .Where(mi =>
-                {
-                    if (mi.Name != "Command") return false;
-                    var parameters = mi.GetParameters();
-                    return
-                        parameters.Length == 1
-                     && parameters[0].ParameterType.Name.Contains("Func");
-                })
-               .First();
+                        .GetBaseType("ReceivePersistentActor")
+                        .GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Instance)
+                        .Where(mi =>
+                               {
+                                   if (mi.Name != "Command") return false;
+                                   var parameters = mi.GetParameters();
+                                   return
+                                       parameters.Length == 1
+                                    && parameters[0].ParameterType.Name.Contains("Func");
+                               })
+                        .First();
 
             foreach (var subscriptionType in subscriptionTypes)
             {
-                var funcType = typeof(Func<,>).MakeGenericType(subscriptionType, typeof(bool));
+                var funcType             = typeof(Func<,>).MakeGenericType(subscriptionType, typeof(bool));
                 var subscriptionFunction = Delegate.CreateDelegate(funcType, this, methods[subscriptionType]);
-                var actorReceiveMethod = method.MakeGenericMethod(subscriptionType);
+                var actorReceiveMethod   = method.MakeGenericMethod(subscriptionType);
 
                 actorReceiveMethod.InvokeFast(this, subscriptionFunction);
             }

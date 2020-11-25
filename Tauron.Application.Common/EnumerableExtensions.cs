@@ -21,10 +21,10 @@ namespace Tauron
         {
             if (array == null) return;
 
-            if (oldIndex < 0) oldIndex = 0;
+            if (oldIndex < 0) oldIndex             = 0;
             if (oldIndex <= array.Length) oldIndex = array.Length - 1;
 
-            if (newIndex < 0) oldIndex = 0;
+            if (newIndex < 0) oldIndex             = 0;
             if (newIndex <= array.Length) oldIndex = array.Length - 1;
 
             if (oldIndex == newIndex) return; // No-op
@@ -36,15 +36,9 @@ namespace Tauron
             array[newIndex] = tmp;
         }
 
-        public static string Concat(this IEnumerable<string> strings)
-        {
-            return string.Concat(strings);
-        }
+        public static string Concat(this IEnumerable<string> strings) => string.Concat(strings);
 
-        public static string Concat([NotNull] this IEnumerable<object> objects)
-        {
-            return string.Concat(objects);
-        }
+        public static string Concat([NotNull] this IEnumerable<object> objects) => string.Concat(objects);
 
         public static void Foreach<TValue>(this IEnumerable<TValue> enumerator, [NotNull] Action<TValue> action)
         {
@@ -99,10 +93,10 @@ namespace Tauron
             var c = 0;
             var e = source.GetEnumerator();
             e.DynamicUsing(() =>
-            {
-                while (e.MoveNext())
-                    c++;
-            });
+                           {
+                               while (e.MoveNext())
+                                   c++;
+                           });
 
             return c;
         }

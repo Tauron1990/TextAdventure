@@ -8,7 +8,7 @@ namespace Tauron.Localization.Actor
 {
     public sealed class LocCoordinator : ReceiveActor, IWithTimers
     {
-        private readonly Dictionary<string, Request> _requests = new Dictionary<string, Request>();
+        private readonly Dictionary<string, Request> _requests = new();
 
         public LocCoordinator(IEnumerable<ILocStoreProducer> producers)
         {
@@ -17,6 +17,8 @@ namespace Tauron.Localization.Actor
             Receive<LocStoreActorBase.QueryResponse>(QueryResponseHandler);
             Receive<SendInvalidate>(Invalidate);
         }
+
+        public ITimerScheduler Timers { get; set; } = null!;
 
         private void QueryResponseHandler(LocStoreActorBase.QueryResponse obj)
         {
@@ -28,7 +30,7 @@ namespace Tauron.Localization.Actor
         private void RequestLocValueHandler(RequestLocValue msg)
         {
             var request = new Request(Context.Sender, msg.key);
-            var opId = Guid.NewGuid().ToString();
+            var opId    = Guid.NewGuid().ToString();
 
             _requests[opId] = request;
 
@@ -47,18 +49,17 @@ namespace Tauron.Localization.Actor
 
         private sealed class SendInvalidate
         {
+            public SendInvalidate(string opId)
+                => OpId = opId;
 
             public string OpId { get; }
-
-            public SendInvalidate(string opId) 
-                => OpId = opId;
         }
 
         public sealed class RequestLocValue
         {
             public RequestLocValue(string name, CultureInfo lang)
             {
-                key = name;
+                key  = name;
                 Lang = lang;
             }
 
@@ -72,7 +73,7 @@ namespace Tauron.Localization.Actor
             public ResponseLocValue(object? result, string key)
             {
                 Result = result;
-                Key = key;
+                Key    = key;
             }
 
             public object? Result { get; }
@@ -85,14 +86,12 @@ namespace Tauron.Localization.Actor
             public Request(IActorRef sender, string key)
             {
                 Sender = sender;
-                Key = key;
+                Key    = key;
             }
 
             public IActorRef Sender { get; }
 
             public string Key { get; }
         }
-
-        public ITimerScheduler Timers { get; set; } = null!;
     }
 }

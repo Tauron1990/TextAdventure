@@ -7,27 +7,21 @@ namespace Tauron
 {
     public class ProgressEventArgs : EventArgs
     {
-        public ProgressEventArgs(ProgressStatistic progressStatistic)
-        {
-            ProgressStatistic = progressStatistic;
-        }
+        public ProgressEventArgs(ProgressStatistic progressStatistic) => ProgressStatistic = progressStatistic;
 
-        [PublicAPI] public ProgressStatistic ProgressStatistic { get; }
+        [PublicAPI]
+        public ProgressStatistic ProgressStatistic { get; }
     }
 
     [Serializable]
     public class OperationAlreadyStartedException : Exception
     {
-        public OperationAlreadyStartedException()
-        {
-        }
+        public OperationAlreadyStartedException() { }
 
         protected OperationAlreadyStartedException(
             SerializationInfo info,
-            StreamingContext context)
-            : base(info, context)
-        {
-        }
+            StreamingContext  context)
+            : base(info, context) { }
     }
 
     /// <summary>
@@ -39,7 +33,7 @@ namespace Tauron
     {
         public ProgressStatistic()
         {
-            StartingTime = DateTime.MinValue;
+            StartingTime  = DateTime.MinValue;
             FinishingTime = DateTime.MinValue;
 
             _progressChangedArgs = new ProgressEventArgs(this); //Event args can be cached
@@ -94,11 +88,11 @@ namespace Tauron
             if (!HasStarted)
             {
                 StartingTime = DateTime.Now;
-                HasStarted = true;
+                HasStarted   = true;
                 OnStarted();
             }
 
-            BytesRead = bytesRead;
+            BytesRead        = bytesRead;
             TotalBytesToRead = totalBytesToRead;
 
             ProcessSample(bytesRead);

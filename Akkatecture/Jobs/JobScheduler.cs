@@ -40,29 +40,23 @@ namespace Akkatecture.Jobs
         where TJob : IJob
         where TIdentity : IJobId
     {
-        private static readonly IJobName JobName = typeof(TJob).GetJobName();
-        private readonly IJobDefinitionService _jobDefinitionService;
-        private readonly ICancelable _tickerTask;
-
-        public IJobName Name => JobName;
-        protected SchedulerState<TJob, TIdentity> State { get; private set; }
-        protected JobSchedulerSettings Settings { get; }
-        public override string PersistenceId { get; }
+        private static readonly IJobName              JobName = typeof(TJob).GetJobName();
+        private readonly        IJobDefinitionService _jobDefinitionService;
+        private readonly        ICancelable           _tickerTask;
 
         public JobScheduler()
         {
             if (this as TJobScheduler == null)
             {
-                throw new InvalidOperationException(
-                    $"JobScheduler for Job of Name={Name} specifies Type={typeof(TJobScheduler).PrettyPrint()} as generic argument, it should be its own type.");
+                throw new InvalidOperationException($"JobScheduler for Job of Name={Name} specifies Type={typeof(TJobScheduler).PrettyPrint()} as generic argument, it should be its own type.");
             }
 
             Settings = new JobSchedulerSettings(Context.System.Settings.Config);
-            State = SchedulerState<TJob, TIdentity>.New;
+            State    = SchedulerState<TJob, TIdentity>.New;
 
 
-            PersistenceId = $"{Name}-scheduler";
-            JournalPluginId = Settings.JournalPluginId;
+            PersistenceId    = $"{Name}-scheduler";
+            JournalPluginId  = Settings.JournalPluginId;
             SnapshotPluginId = Settings.SnapshotPluginId;
 
             _tickerTask =
@@ -87,6 +81,11 @@ namespace Akkatecture.Jobs
             Command<DeleteMessagesSuccess>(Execute);
             Command<DeleteMessagesFailure>(Execute);
         }
+
+        public          IJobName                        Name          => JobName;
+        protected       SchedulerState<TJob, TIdentity> State         { get; private set; }
+        protected       JobSchedulerSettings            Settings      { get; }
+        public override string                          PersistenceId { get; }
 
         private bool Execute(Tick<TJob, TIdentity> tick)
         {
@@ -119,13 +118,13 @@ namespace Akkatecture.Jobs
             try
             {
                 Emit(new Scheduled<TJob, TIdentity>(command.WithOutAcks()), e =>
-                {
-                    ApplySchedulerEvent(e);
+                                                                            {
+                                                                                ApplySchedulerEvent(e);
 
-                    if (!sender.IsNobody() && command.Ack != null) sender.Tell(command.Ack);
+                                                                                if (!sender.IsNobody() && command.Ack != null) sender.Tell(command.Ack);
 
-                    Log.Info("JobScheduler for Job of Name={0}, Definition={1}, and Id={2}; has been successfully scheduled to run at TriggerDate={3}.", Name, jobDefinition, e.Entry.JobId, e.Entry.TriggerDate);
-                });
+                                                                                Log.Info("JobScheduler for Job of Name={0}, Definition={1}, and Id={2}; has been successfully scheduled to run at TriggerDate={3}.", Name, jobDefinition, e.Entry.JobId, e.Entry.TriggerDate);
+                                                                            });
             }
             catch (Exception error)
             {
@@ -140,16 +139,16 @@ namespace Akkatecture.Jobs
         protected bool Execute(Cancel<TJob, TIdentity> command)
         {
             var sender = Sender;
-            var jobId = command.JobId;
-            var now = Context.System.Scheduler.Now.UtcDateTime;
+            var jobId  = command.JobId;
+            var now    = Context.System.Scheduler.Now.UtcDateTime;
             try
             {
                 Emit(new Cancelled<TJob, TIdentity>(command.JobId, now), e =>
-                {
-                    ApplySchedulerEvent(e);
-                    if (!sender.IsNobody() && command.Ack != null) sender.Tell(command.Ack);
-                    Log.Info("JobScheduler for Job of Name={0}, and Id={1}; has been successfully cancelled.", Name, e.JobId);
-                });
+                                                                         {
+                                                                             ApplySchedulerEvent(e);
+                                                                             if (!sender.IsNobody() && command.Ack != null) sender.Tell(command.Ack);
+                                                                             Log.Info("JobScheduler for Job of Name={0}, and Id={1}; has been successfully cancelled.", Name, e.JobId);
+                                                                         });
             }
             catch (Exception error)
             {

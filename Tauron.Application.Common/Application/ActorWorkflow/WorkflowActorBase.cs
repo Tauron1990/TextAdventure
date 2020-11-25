@@ -24,21 +24,23 @@ namespace Tauron.Application.ActorWorkflow
     public abstract class WorkflowActorBase<TStep, TContext> : ActorBase, IWithTimers
         where TStep : IStep<TContext> where TContext : IWorkflowContext
     {
-        protected ILoggingAdapter Log { get; } = Context.GetLogger();
-        protected TContext RunContext { get; private set; } = default!;
+        private readonly Dictionary<Type, Delegate> _signals = new();
+        private readonly Dictionary<Type, Delegate> _starter = new();
 
-        private readonly Dictionary<StepId, StepRev<TStep, TContext>> _steps = new Dictionary<StepId, StepRev<TStep, TContext>>();
-        private readonly Dictionary<Type, Delegate> _starter = new Dictionary<Type, Delegate>();
-        private readonly Dictionary<Type, Delegate> _signals = new Dictionary<Type, Delegate>();
+        private readonly Dictionary<StepId, StepRev<TStep, TContext>> _steps = new();
+
+        private string                            _errorMessage = string.Empty;
+        private ChainCall?                        _lastCall;
         private Action<WorkflowResult<TContext>>? _onFinish;
-        
-        private bool _running;
-        private bool _waiting;
-        private object _timeout = new object();
-        private ChainCall? _lastCall;
-        private IActorRef? _starterSender;
 
-        private string _errorMessage = string.Empty;
+        private   bool            _running;
+        private   IActorRef?      _starterSender;
+        private   object          _timeout = new();
+        private   bool            _waiting;
+        protected ILoggingAdapter Log        { get; }              = Context.GetLogger();
+        protected TContext        RunContext { get; private set; } = default!;
+
+        public ITimerScheduler Timers { get; set; } = default!;
 
         protected void SetError(string error)
             => _errorMessage = error;
@@ -64,7 +66,7 @@ namespace Tauron.Application.ActorWorkflow
                 if (!_signals.TryGetValue(msg.GetType(), out var del)) return false;
                 Timers.Cancel(_timeout);
 
-                var id = (StepId)del.DynamicInvoke(RunContext, msg);
+                var id = (StepId) del.DynamicInvoke(RunContext, msg);
                 Self.Tell(new ChainCall(id).WithBase(_lastCall), _starterSender);
 
                 _lastCall = null;
@@ -91,13 +93,12 @@ namespace Tauron.Application.ActorWorkflow
             if (!_starter.TryGetValue(msg.GetType(), out var del)) return false;
             del.DynamicInvoke(msg);
             return true;
-
         }
 
         protected void Signal<TMessage>(Func<TContext, TMessage, StepId> signal)
             => _signals[typeof(TMessage)] = signal;
 
-        protected void StartMessage<TType>(Action<TType> msg) 
+        protected void StartMessage<TType>(Action<TType> msg)
             => _starter[typeof(TType)] = msg;
 
         protected virtual bool Running(object msg)
@@ -143,7 +144,7 @@ namespace Tauron.Application.ActorWorkflow
                                 break;
                             case "Waiting":
                                 _waiting = true;
-                                if (rev.Step is IHasTimeout timeout && timeout.Timeout != null) 
+                                if (rev.Step is IHasTimeout timeout && timeout.Timeout != null)
                                     Timers.StartSingleTimer(_timeout, new TimeoutMarker(), timeout.Timeout.Value);
                                 _lastCall = chain;
                                 return true;
@@ -151,7 +152,8 @@ namespace Tauron.Application.ActorWorkflow
                                 Self.Forward(new ChainCall(sId).WithBase(chain));
                                 return true;
                         }
-                        if(_running)
+
+                        if (_running)
                             Self.Forward(chain.Next());
 
                         return true;
@@ -159,7 +161,7 @@ namespace Tauron.Application.ActorWorkflow
                     case LoopElement loop:
                     {
                         var loopId = loop.Rev.Step.NextElement(RunContext);
-                        if (loopId != StepId.LoopEnd) 
+                        if (loopId != StepId.LoopEnd)
                             Self.Forward(new LoopElement(loop.Rev, loop.Call));
 
                         if (loopId == StepId.LoopContinue)
@@ -171,7 +173,7 @@ namespace Tauron.Application.ActorWorkflow
                             return true;
                         }
 
-                        ProgressConditions(loop.Rev, baseCall:loop.Call);
+                        ProgressConditions(loop.Rev, baseCall: loop.Call);
                         return true;
                     }
                     default:
@@ -190,9 +192,9 @@ namespace Tauron.Application.ActorWorkflow
         private void ProgressConditions(StepRev<TStep, TContext> rev, bool finish = false, ChainCall? baseCall = null)
         {
             var std = (from con in rev.Conditions
-                let stateId = con.Select(rev.Step, RunContext)
-                where stateId.Name != StepId.None.Name
-                select stateId).ToArray();
+                       let stateId = con.Select(rev.Step, RunContext)
+                       where stateId.Name != StepId.None.Name
+                       select stateId).ToArray();
 
             if (std.Length != 0)
             {
@@ -202,36 +204,36 @@ namespace Tauron.Application.ActorWorkflow
 
             if (rev.GenericCondition == null)
             {
-                if(finish)
+                if (finish)
                     Finish(false);
             }
             else
             {
                 var cid = rev.GenericCondition.Select(rev.Step, RunContext);
-                if(cid.Name != StepId.None.Name)
+                if (cid.Name != StepId.None.Name)
                     Self.Forward(new ChainCall(cid).WithBase(baseCall));
             }
         }
 
-        protected void OnFinish(Action<WorkflowResult<TContext>> con) 
+        protected void OnFinish(Action<WorkflowResult<TContext>> con)
             => _onFinish = _onFinish.Combine(con);
 
         private void Finish(bool isok, StepRev<TStep, TContext>? rev = null)
         {
             _starterSender = null;
-            _running = false;
-            if(isok)
+            _running       = false;
+            if (isok)
                 rev?.Step.OnExecuteFinish(RunContext);
             Self.Forward(new WorkflowResult<TContext>(isok, _errorMessage, RunContext));
-            RunContext = default!;
+            RunContext    = default!;
             _errorMessage = string.Empty;
         }
 
         public void Start(TContext context)
         {
             _starterSender = Sender;
-            _running = true;
-            RunContext = context;
+            _running       = true;
+            RunContext     = context;
             Self.Forward(new ChainCall(StepId.Start));
         }
 
@@ -242,50 +244,47 @@ namespace Tauron.Application.ActorWorkflow
             return new StepConfiguration<TStep, TContext>(rev);
         }
 
-        private sealed class TimeoutMarker
-        {
-            
-        }
+        private sealed class TimeoutMarker { }
 
         private sealed class LoopElement
         {
-            public StepRev<TStep, TContext> Rev { get; }
-            public ChainCall Call { get; }
-
             public LoopElement(StepRev<TStep, TContext> rev, ChainCall call)
             {
-                Rev = rev;
+                Rev  = rev;
                 Call = call;
             }
+
+            public StepRev<TStep, TContext> Rev  { get; }
+            public ChainCall                Call { get; }
         }
 
         private sealed class ChainCall
         {
-            private ChainCall? BaseCall { get; }
-
-            private StepId[] StepIds { get; }
-
-            private int Position { get; }
-
             private ChainCall(StepId[] stepIds, int position, ChainCall? baseCall = null)
             {
                 BaseCall = baseCall;
-                StepIds = stepIds;
+                StepIds  = stepIds;
                 Position = position;
             }
 
             public ChainCall(StepId id, ChainCall? baseCall = null)
             {
                 BaseCall = baseCall;
-                StepIds = new[] { id };
+                StepIds  = new[] {id};
                 Position = 0;
             }
 
             public ChainCall(StepId[] ids)
             {
-                StepIds = ids;
+                StepIds  = ids;
                 Position = 0;
             }
+
+            private ChainCall? BaseCall { get; }
+
+            private StepId[] StepIds { get; }
+
+            private int Position { get; }
 
             public StepId Id => Position >= StepIds.Length ? BaseCall?.Id ?? StepId.Fail : StepIds[Position];
 
@@ -300,14 +299,9 @@ namespace Tauron.Application.ActorWorkflow
             {
                 if (call == null)
                     return this;
-                else
-                {
-                    call = call.Next();
-                    return new ChainCall(call.StepIds, call.Position, this);
-                }
+                call = call.Next();
+                return new ChainCall(call.StepIds, call.Position, this);
             }
         }
-
-        public ITimerScheduler Timers { get; set; } = default!;
     }
 }

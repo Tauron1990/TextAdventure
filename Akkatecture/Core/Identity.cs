@@ -42,12 +42,11 @@ namespace Akkatecture.Core
         where T : Identity<T>
     {
         // ReSharper disable StaticMemberInGenericType
-        private static readonly Regex NameReplace = new Regex("Id$");
-        private static readonly string Name = NameReplace.Replace(typeof(T).Name, string.Empty).ToLowerInvariant();
+        private static readonly Regex  NameReplace = new("Id$");
+        private static readonly string Name        = NameReplace.Replace(typeof(T).Name, string.Empty).ToLowerInvariant();
 
-        private static readonly Regex ValueValidation = new Regex(
-            @"^[a-z0-9]+\-(?<guid>[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12})$",
-            RegexOptions.Compiled);
+        private static readonly Regex ValueValidation = new(@"^[a-z0-9]+\-(?<guid>[a-f0-9]{8}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{4}\-[a-f0-9]{12})$",
+                                                            RegexOptions.Compiled);
         // ReSharper enable StaticMemberInGenericType
 
         public static T New => With(Guid.NewGuid());

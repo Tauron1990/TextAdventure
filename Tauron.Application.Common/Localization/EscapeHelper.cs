@@ -6,18 +6,24 @@ namespace Tauron.Localization
 {
     public class EscapeHelper
     {
+        public static string Ecode(string input)
+            => Coder.Encode(input);
+
+        public static string Decode(string input)
+            => Coder.Decode(input);
+
         private static class Coder
         {
-            private static readonly Dictionary<string, char> Parts
-                = new Dictionary<string, char>
-                {
-                    {"001", '\r'},
-                    {"002", '\t'},
-                    {"003", '\n'},
-                    {"004", ':'}
-                };
-
             private const char EscapeStart = '@';
+
+            private static readonly Dictionary<string, char> Parts
+                = new()
+                  {
+                      {"001", '\r'},
+                      {"002", '\t'},
+                      {"003", '\n'},
+                      {"004", ':'}
+                  };
 
             private static string? GetPartforChar(char @char) => Parts.FirstOrDefault(ep => ep.Value == @char).Key;
 
@@ -46,11 +52,11 @@ namespace Tauron.Localization
             {
                 var builder = new StringBuilder();
 
-                var flag = false;
-                var flag2 = false;
-                var pos = 0;
+                var flag     = false;
+                var flag2    = false;
+                var pos      = 0;
                 var sequence = string.Empty;
-                var temp = string.Empty;
+                var temp     = string.Empty;
 
                 foreach (var @char in toDecode)
                 {
@@ -65,11 +71,11 @@ namespace Tauron.Localization
                         if (part == null) builder.Append(temp).Append(sequence);
                         else builder.Append(part);
 
-                        flag = false;
-                        flag2 = false;
-                        pos = 0;
+                        flag     = false;
+                        flag2    = false;
+                        pos      = 0;
                         sequence = string.Empty;
-                        temp = string.Empty;
+                        temp     = string.Empty;
                     }
                     else if (flag)
                     {
@@ -86,9 +92,7 @@ namespace Tauron.Localization
                         flag = @char == EscapeStart;
 
                         if (!flag)
-                        {
                             builder.Append(@char);
-                        }
                         else temp += @char;
                     }
                 }
@@ -96,11 +100,5 @@ namespace Tauron.Localization
                 return builder.ToString();
             }
         }
-
-        public static string Ecode(string input)
-            => Coder.Encode(input);
-
-        public static string Decode(string input)
-            => Coder.Decode(input);
     }
 }

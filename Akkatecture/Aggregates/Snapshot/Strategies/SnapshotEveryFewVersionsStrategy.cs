@@ -30,13 +30,13 @@ namespace Akkatecture.Aggregates.Snapshot.Strategies
     {
         public const int DefautSnapshotAfterVersions = 50;
 
-        public int SnapshotAfterVersions { get; }
-
-        public static ISnapshotStrategy Default { get; } = With();
-
         public SnapshotEveryFewVersionsStrategy(
             int snapshotAfterVersions) =>
             SnapshotAfterVersions = snapshotAfterVersions;
+
+        public int SnapshotAfterVersions { get; }
+
+        public static ISnapshotStrategy Default { get; } = With();
 
 
         public bool ShouldCreateSnapshot(IAggregateRoot snapshotAggregateRoot)
@@ -44,7 +44,6 @@ namespace Akkatecture.Aggregates.Snapshot.Strategies
 
         public static SnapshotEveryFewVersionsStrategy With(
             int snapshotAfterVersions = DefautSnapshotAfterVersions) =>
-            new SnapshotEveryFewVersionsStrategy(
-                snapshotAfterVersions);
+            new(snapshotAfterVersions);
     }
 }

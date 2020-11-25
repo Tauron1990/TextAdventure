@@ -21,7 +21,6 @@
 // IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
 // CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 
-using System;
 using Akka.Persistence.Query;
 using Akkatecture.Aggregates;
 using Akkatecture.Extensions;
@@ -38,28 +37,25 @@ namespace Akkatecture.Events
             if (!(evt is ICommittedEvent) || eventType.GenericTypeArguments.Length != 3) return evt;
 
             var genericType = typeof(DomainEvent<,,>)
-                .MakeGenericType(eventType.GetGenericArguments()[0], eventType.GetGenericArguments()[1], eventType.GetGenericArguments()[2]);
+               .MakeGenericType(eventType.GetGenericArguments()[0], eventType.GetGenericArguments()[1], eventType.GetGenericArguments()[2]);
 
-            var domainEvent = genericType.FastCreateInstance(
-                evt.GetPropertyValue("AggregateIdentity")!,
-                evt.GetPropertyValue("AggregateEvent")!,
-                evt.GetPropertyValue("Metadata")!,
-                evt.GetPropertyValue("Timestamp")!,
-                evt.GetPropertyValue("AggregateSequenceNumber")!)!;
+            var domainEvent = genericType.FastCreateInstance(evt.GetPropertyValue("AggregateIdentity")!,
+                                                             evt.GetPropertyValue("AggregateEvent")!,
+                                                             evt.GetPropertyValue("Metadata")!,
+                                                             evt.GetPropertyValue("Timestamp")!,
+                                                             evt.GetPropertyValue("AggregateSequenceNumber")!)!;
 
             return domainEvent;
-
         }
 
         public static EventEnvelope FromEnvelope(EventEnvelope eventEnvelope)
         {
             var domainEvent = FromCommittedEvent(eventEnvelope.Event);
 
-            var newEventEnvelope = new EventEnvelope(
-                eventEnvelope.Offset,
-                eventEnvelope.PersistenceId,
-                eventEnvelope.SequenceNr,
-                domainEvent);
+            var newEventEnvelope = new EventEnvelope(eventEnvelope.Offset,
+                                                     eventEnvelope.PersistenceId,
+                                                     eventEnvelope.SequenceNr,
+                                                     domainEvent);
 
             return newEventEnvelope;
         }

@@ -33,30 +33,30 @@ namespace Akkatecture.Aggregates.Snapshot
         where TIdentity : IIdentity
         where TAggregateSnapshot : IAggregateSnapshot<TAggregate, TIdentity>
     {
-        public TIdentity AggregateIdentity { get; }
-        public TAggregateSnapshot AggregateSnapshot { get; }
-        public SnapshotMetadata Metadata { get; }
-        public long AggregateSequenceNumber { get; }
-        public DateTimeOffset Timestamp { get; }
-
         public CommittedSnapshot(
-            TIdentity aggregateIdentity,
+            TIdentity          aggregateIdentity,
             TAggregateSnapshot aggregateSnapshot,
-            SnapshotMetadata metadata,
-            DateTimeOffset timestamp,
-            long aggregateSequenceNumber)
+            SnapshotMetadata   metadata,
+            DateTimeOffset     timestamp,
+            long               aggregateSequenceNumber)
         {
             if (aggregateSnapshot == null) throw new ArgumentNullException(nameof(aggregateSnapshot));
             if (timestamp         == default) throw new ArgumentNullException(nameof(timestamp));
             if (aggregateIdentity == null || string.IsNullOrEmpty(aggregateIdentity.Value)) throw new ArgumentNullException(nameof(aggregateIdentity));
             if (aggregateSequenceNumber <= 0) throw new ArgumentOutOfRangeException(nameof(aggregateSequenceNumber));
 
-            AggregateIdentity = aggregateIdentity;
+            AggregateIdentity       = aggregateIdentity;
             AggregateSequenceNumber = aggregateSequenceNumber;
-            AggregateIdentity = aggregateIdentity;
-            AggregateSnapshot = aggregateSnapshot;
-            Metadata = metadata ?? throw new ArgumentNullException(nameof(metadata));
-            Timestamp = timestamp;
+            AggregateIdentity       = aggregateIdentity;
+            AggregateSnapshot       = aggregateSnapshot;
+            Metadata                = metadata ?? throw new ArgumentNullException(nameof(metadata));
+            Timestamp               = timestamp;
         }
+
+        public TIdentity          AggregateIdentity       { get; }
+        public TAggregateSnapshot AggregateSnapshot       { get; }
+        public SnapshotMetadata   Metadata                { get; }
+        public long               AggregateSequenceNumber { get; }
+        public DateTimeOffset     Timestamp               { get; }
     }
 }

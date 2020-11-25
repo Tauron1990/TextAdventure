@@ -37,28 +37,28 @@ namespace Akkatecture.Aggregates
         where TAggregateEvent : class, IAggregateEvent<TAggregate, TIdentity>
     {
         public CommittedEvent(
-            TIdentity aggregateIdentity,
+            TIdentity       aggregateIdentity,
             TAggregateEvent aggregateEvent,
-            Metadata metadata,
-            DateTimeOffset timestamp,
-            long aggregateSequenceNumber)
+            Metadata        metadata,
+            DateTimeOffset  timestamp,
+            long            aggregateSequenceNumber)
         {
             if (timestamp == default) throw new ArgumentNullException(nameof(timestamp));
             if (aggregateIdentity == null || string.IsNullOrEmpty(aggregateIdentity.Value)) throw new ArgumentNullException(nameof(aggregateIdentity));
             if (aggregateSequenceNumber <= 0) throw new ArgumentOutOfRangeException(nameof(aggregateSequenceNumber));
 
-            AggregateIdentity = aggregateIdentity;
+            AggregateIdentity       = aggregateIdentity;
             AggregateSequenceNumber = aggregateSequenceNumber;
-            AggregateEvent = aggregateEvent ?? throw new ArgumentNullException(nameof(aggregateEvent));
-            Metadata = metadata             ?? throw new ArgumentNullException(nameof(metadata));
-            Timestamp = timestamp;
+            AggregateEvent          = aggregateEvent ?? throw new ArgumentNullException(nameof(aggregateEvent));
+            Metadata                = metadata       ?? throw new ArgumentNullException(nameof(metadata));
+            Timestamp               = timestamp;
         }
 
-        public TIdentity AggregateIdentity { get; }
-        public TAggregateEvent AggregateEvent { get; }
-        public Metadata Metadata { get; }
-        public long AggregateSequenceNumber { get; }
-        public DateTimeOffset Timestamp { get; }
+        public TIdentity       AggregateIdentity       { get; }
+        public TAggregateEvent AggregateEvent          { get; }
+        public Metadata        Metadata                { get; }
+        public long            AggregateSequenceNumber { get; }
+        public DateTimeOffset  Timestamp               { get; }
 
         public IIdentity GetIdentity() => AggregateIdentity;
 

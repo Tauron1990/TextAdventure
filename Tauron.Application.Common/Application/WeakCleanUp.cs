@@ -24,7 +24,7 @@ namespace Tauron.Application
 
         public WeakDelegate(MethodInfo methodInfo, object target)
         {
-            _method = Argument.NotNull(methodInfo, nameof(methodInfo));
+            _method    = Argument.NotNull(methodInfo, nameof(methodInfo));
             _reference = new WeakReference(Argument.NotNull(target, nameof(target)));
         }
 
@@ -67,7 +67,7 @@ namespace Tauron.Application
             {
                 object? target;
                 return (((target = _reference?.Target) != null ? target.GetHashCode() : 0) * 397)
-                       ^ _method.GetHashCode();
+                     ^ _method.GetHashCode();
             }
         }
 
@@ -91,10 +91,7 @@ namespace Tauron.Application
 
         public static void RegisterAction([NotNull] Action action)
         {
-            lock (Actions)
-            {
-                Actions.Add(new WeakDelegate(Argument.NotNull(action, nameof(action))));
-            }
+            lock (Actions) Actions.Add(new WeakDelegate(Argument.NotNull(action, nameof(action))));
         }
 
         private static List<WeakDelegate> Initialize()
@@ -109,16 +106,18 @@ namespace Tauron.Application
             {
                 var dead = new List<WeakDelegate>();
                 foreach (var weakDelegate in Actions.ToArray())
+                {
                     if (weakDelegate.IsAlive)
+                    {
                         try
                         {
                             weakDelegate.Invoke();
                         }
-                        catch (ApplicationException)
-                        {
-                        }
+                        catch (ApplicationException) { }
+                    }
                     else
                         dead.Add(weakDelegate);
+                }
 
                 dead.ForEach(del => Actions.Remove(del));
             }

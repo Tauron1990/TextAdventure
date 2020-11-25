@@ -31,21 +31,21 @@ namespace Akkatecture.Jobs.Commands
         where TJob : IJob
         where TIdentity : IJobId
     {
-        public TimeSpan Interval { get; }
-
         public ScheduleRepeatedly(
             TIdentity jobId,
-            TJob job,
-            TimeSpan interval,
-            DateTime triggerDate,
-            object? ack = null,
-            object? nack = null)
+            TJob      job,
+            TimeSpan  interval,
+            DateTime  triggerDate,
+            object?   ack  = null,
+            object?   nack = null)
             : base(jobId, job, triggerDate, ack, nack)
         {
             if (interval == default) throw new ArgumentException(nameof(interval));
 
             Interval = interval;
         }
+
+        public TimeSpan Interval { get; }
 
         public override Schedule<TJob, TIdentity> WithNextTriggerDate(DateTime utcDate) => new ScheduleRepeatedly<TJob, TIdentity>(JobId, Job, Interval, TriggerDate + Interval);
 

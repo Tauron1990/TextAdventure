@@ -1,11 +1,7 @@
 ﻿namespace TextAdventures.Engine.Querys.Result
 {
-    public sealed class QueryCompled : QueryResult
+    public sealed record QueryCompled(object Result) : QueryResult
     {
         public override bool Compled => true;
-
-        public object Result { get; }
-
-        public QueryCompled(object result) => Result = result;
     }
 }

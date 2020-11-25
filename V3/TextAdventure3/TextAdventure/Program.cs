@@ -1,12 +1,11 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Windows;
 
 namespace TextAdventure
 {
-    class Program
+    internal class Program
     {
         [STAThread]
-        static int Main(string[] args) => new Application().Run(new MainWindow());
+        private static int Main(string[] args) => new Application().Run(new MainWindow());
     }
 }

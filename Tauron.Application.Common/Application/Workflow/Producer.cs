@@ -18,10 +18,7 @@ namespace Tauron.Application.Workflow
 
         private StepId _lastId;
 
-        protected Producer()
-        {
-            _states = new Dictionary<StepId, StepRev<TState, TContext>>();
-        }
+        protected Producer() => _states = new Dictionary<StepId, StepRev<TState, TContext>>();
 
         public void Begin(StepId id, [NotNull] TContext context)
         {
@@ -49,7 +46,7 @@ namespace Tauron.Application.Workflow
             if (!_states.TryGetValue(id, out var rev))
                 return SetLastId(StepId.Fail);
 
-            var sId = rev.Step.OnExecute(context);
+            var sId    = rev.Step.OnExecute(context);
             var result = false;
 
             switch (sId.Name)
@@ -96,9 +93,9 @@ namespace Tauron.Application.Workflow
         private bool ProgressConditions([NotNull] StepRev<TState, TContext> rev, TContext context)
         {
             var std = (from con in rev.Conditions
-                let stateId = con.Select(rev.Step, context)
-                where stateId.Name != StepId.None.Name
-                select stateId).ToArray();
+                       let stateId = con.Select(rev.Step, context)
+                       where stateId.Name != StepId.None.Name
+                       select stateId).ToArray();
 
             if (std.Length != 0) return std.Any(id => Process(id, context));
 
@@ -119,10 +116,7 @@ namespace Tauron.Application.Workflow
         }
 
         [NotNull]
-        public StepConfiguration<TState, TContext> GetStateConfiguration(StepId id)
-        {
-            return new StepConfiguration<TState, TContext>(_states[id]);
-        }
+        public StepConfiguration<TState, TContext> GetStateConfiguration(StepId id) => new(_states[id]);
     }
 
     [PublicAPI]
@@ -130,10 +124,7 @@ namespace Tauron.Application.Workflow
     {
         private readonly StepRev<TState, TContext> _context;
 
-        internal StepConfiguration([NotNull] StepRev<TState, TContext> context)
-        {
-            _context = context;
-        }
+        internal StepConfiguration([NotNull] StepRev<TState, TContext> context) => _context = context;
 
         [NotNull]
         public StepConfiguration<TState, TContext> WithCondition([NotNull] ICondition<TContext> condition)
@@ -147,8 +138,8 @@ namespace Tauron.Application.Workflow
         [NotNull]
         public ConditionConfiguration<TState, TContext> WithCondition(Func<TContext, IStep<TContext>, bool>? guard = null)
         {
-            var con = new SimpleCondition<TContext> { Guard = guard };
-            if (guard != null) return new ConditionConfiguration<TState, TContext> (WithCondition(con), con);
+            var con = new SimpleCondition<TContext> {Guard = guard};
+            if (guard != null) return new ConditionConfiguration<TState, TContext>(WithCondition(con), con);
 
             _context.GenericCondition = con;
             return new ConditionConfiguration<TState, TContext>(this, con);
@@ -158,7 +149,7 @@ namespace Tauron.Application.Workflow
     [PublicAPI]
     public class ConditionConfiguration<TState, TContext>
     {
-        private readonly SimpleCondition<TContext> _condition;
+        private readonly SimpleCondition<TContext>           _condition;
         private readonly StepConfiguration<TState, TContext> _config;
 
         public ConditionConfiguration([NotNull] StepConfiguration<TState, TContext> config, [NotNull] SimpleCondition<TContext> condition)
@@ -166,7 +157,7 @@ namespace Tauron.Application.Workflow
             Argument.NotNull(config, nameof(config));
             Argument.NotNull(condition, nameof(condition));
 
-            _config = config;
+            _config    = config;
             _condition = condition;
         }
 
@@ -183,13 +174,14 @@ namespace Tauron.Application.Workflow
     {
         public StepRev(TState step)
         {
-            Step = step;
+            Step       = step;
             Conditions = new List<ICondition<TContext>>();
         }
 
         public TState Step { get; }
 
-        [NotNull] public List<ICondition<TContext>> Conditions { get; }
+        [NotNull]
+        public List<ICondition<TContext>> Conditions { get; }
 
         public ICondition<TContext>? GenericCondition { get; set; }
 

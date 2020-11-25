@@ -33,11 +33,11 @@ namespace Akkatecture.Aggregates
     [PublicAPI]
     public interface IAggregateRoot
     {
-        IAggregateName Name { get; }
-        long Version { get; }
-        bool IsNew { get; }
-        bool HasSourceId(ISourceId sourceId);
-        IIdentity GetIdentity();
+        IAggregateName Name    { get; }
+        long           Version { get; }
+        bool           IsNew   { get; }
+        bool           HasSourceId(ISourceId sourceId);
+        IIdentity      GetIdentity();
     }
 
     [PublicAPI]

@@ -37,7 +37,7 @@ namespace Akkatecture.ValueObjects
     [PublicAPI]
     public class SingleValueObjectConverter : JsonConverter
     {
-        private static readonly ConcurrentDictionary<Type, Type> ConstructorArgumenTypes = new ConcurrentDictionary<Type, Type>();
+        private static readonly ConcurrentDictionary<Type, Type> ConstructorArgumenTypes = new();
 
         public override void WriteJson(JsonWriter writer, object? value, JsonSerializer serializer)
         {
@@ -47,14 +47,13 @@ namespace Akkatecture.ValueObjects
 
         public override object ReadJson(JsonReader reader, Type objectType, object? existingValue, JsonSerializer serializer)
         {
-            var parameterType = ConstructorArgumenTypes.GetOrAdd(
-                objectType,
-                t =>
-                {
-                    var constructorInfo = objectType.GetTypeInfo().GetConstructors(BindingFlags.Public | BindingFlags.Instance).Single();
-                    var parameterInfo = constructorInfo.GetParameters().Single();
-                    return parameterInfo.ParameterType;
-                });
+            var parameterType = ConstructorArgumenTypes.GetOrAdd(objectType,
+                                                                 t =>
+                                                                 {
+                                                                     var constructorInfo = objectType.GetTypeInfo().GetConstructors(BindingFlags.Public | BindingFlags.Instance).Single();
+                                                                     var parameterInfo   = constructorInfo.GetParameters().Single();
+                                                                     return parameterInfo.ParameterType;
+                                                                 });
 
             var value = serializer.Deserialize(reader, parameterType);
             return Activator.CreateInstance(objectType, value);

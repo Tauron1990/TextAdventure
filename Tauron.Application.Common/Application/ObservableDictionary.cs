@@ -18,24 +18,29 @@ namespace Tauron.Application
     {
         private Entry[] _entrys;
 
-        [NonSerialized] private BlockHelper _helper;
+        [NonSerialized]
+        private BlockHelper _helper;
 
-        [NonSerialized] private IEqualityComparer<TKey> _keyEquals;
+        [NonSerialized]
+        private IEqualityComparer<TKey> _keyEquals;
 
-        [NonSerialized] private KeyCollection _keys;
+        [NonSerialized]
+        private KeyCollection _keys;
 
-        [NonSerialized] private ValueCollection _values;
+        [NonSerialized]
+        private ValueCollection _values;
 
-        [NonSerialized] private int _version;
+        [NonSerialized]
+        private int _version;
 
         public ObservableDictionary()
         {
-            _helper = new BlockHelper();
-            _version = 1;
-            _entrys = new Entry[4];
+            _helper    = new BlockHelper();
+            _version   = 1;
+            _entrys    = new Entry[4];
             _keyEquals = EqualityComparer<TKey>.Default;
-            _keys = new KeyCollection(this);
-            _values = new ValueCollection(this);
+            _keys      = new KeyCollection(this);
+            _values    = new ValueCollection(this);
         }
 
         bool ICollection<KeyValuePair<TKey, TValue>>.IsReadOnly => false;
@@ -55,9 +60,7 @@ namespace Tauron.Application
                 var entry = FindEntry(key, out var index);
 
                 if (entry == null)
-                {
                     AddCore(key, value);
-                }
                 else
                 {
                     var temp = Entry.Construct(entry);
@@ -89,10 +92,7 @@ namespace Tauron.Application
             OnCollectionReset();
         }
 
-        public bool ContainsKey(TKey key)
-        {
-            return FindEntry(key, out _) != null;
-        }
+        public bool ContainsKey(TKey key) => FindEntry(key, out _) != null;
 
         public IEnumerator<KeyValuePair<TKey, TValue>> GetEnumerator()
         {
@@ -158,15 +158,9 @@ namespace Tauron.Application
             }
         }
 
-        IEnumerator IEnumerable.GetEnumerator()
-        {
-            return GetEnumerator();
-        }
+        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
-        bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item)
-        {
-            return Remove(item.Key);
-        }
+        bool ICollection<KeyValuePair<TKey, TValue>>.Remove(KeyValuePair<TKey, TValue> item) => Remove(item.Key);
 
         public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
@@ -234,9 +228,8 @@ namespace Tauron.Application
         {
             using (BlockCollection())
             {
-                InvokeCollectionChanged(
-                    new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, changed,
-                        index));
+                InvokeCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Add, changed,
+                                                                             index));
                 _keys.OnCollectionAdd(changed.Key, index);
                 _values.OnCollectionAdd(changed.Value, index);
                 InvokePropertyChanged();
@@ -247,9 +240,8 @@ namespace Tauron.Application
         {
             using (BlockCollection())
             {
-                InvokeCollectionChanged(
-                    new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove,
-                        changed, index));
+                InvokeCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Remove,
+                                                                             changed, index));
                 _keys.OnCollectionRemove(changed.Key, index);
                 _values.OnCollectionRemove(changed.Value, index);
                 InvokePropertyChanged();
@@ -260,9 +252,8 @@ namespace Tauron.Application
         {
             using (BlockCollection())
             {
-                InvokeCollectionChanged(
-                    new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace,
-                        newItem, oldItem, index));
+                InvokeCollectionChanged(new NotifyCollectionChangedEventArgs(NotifyCollectionChangedAction.Replace,
+                                                                             newItem, oldItem, index));
                 _values.OnCollectionReplace(newItem.Value, oldItem.Value, index);
                 InvokePropertyChanged();
             }
@@ -282,11 +273,11 @@ namespace Tauron.Application
         [OnDeserialized]
         private void OnDeserialized(StreamingContext context)
         {
-            _helper = new BlockHelper();
-            _version = 1;
+            _helper    = new BlockHelper();
+            _version   = 1;
             _keyEquals = EqualityComparer<TKey>.Default;
-            _keys = new KeyCollection(this);
-            _values = new ValueCollection(this);
+            _keys      = new KeyCollection(this);
+            _values    = new ValueCollection(this);
         }
 
         [DebuggerNonUserCode]
@@ -307,14 +298,13 @@ namespace Tauron.Application
         [DebuggerNonUserCode]
         private class Entry
         {
-            [AllowNull] public TKey Key = default!;
+            [AllowNull]
+            public TKey Key = default!;
 
-            [AllowNull] public TValue Value = default!;
+            [AllowNull]
+            public TValue Value = default!;
 
-            public static KeyValuePair<TKey, TValue> Construct(TKey key, TValue value)
-            {
-                return new KeyValuePair<TKey, TValue>(key, value);
-            }
+            public static KeyValuePair<TKey, TValue> Construct(TKey key, TValue value) => new(key, value);
 
             public static KeyValuePair<TKey, TValue> Construct(Entry entry)
             {
@@ -328,23 +318,15 @@ namespace Tauron.Application
         private class KeyCollection : NotifyCollectionChangedBase<TKey>
         {
             public KeyCollection(ObservableDictionary<TKey, TValue> collection)
-                : base(collection)
-            {
-            }
+                : base(collection) { }
 
             [SuppressMessage("Microsoft.Design", "CA1062:Argumente von öffentlichen Methoden validieren",
-                MessageId = "0")]
-            protected override bool Contains(Entry entry, TKey target)
-            {
-                return entry != null && Dictionary._keyEquals.Equals(entry.Key, target);
-            }
+                             MessageId = "0")]
+            protected override bool Contains(Entry entry, TKey target) => entry != null && Dictionary._keyEquals.Equals(entry.Key, target);
 
             [SuppressMessage("Microsoft.Design", "CA1062:Argumente von öffentlichen Methoden validieren",
-                MessageId = "0")]
-            protected override TKey Select(Entry entry)
-            {
-                return entry.Key;
-            }
+                             MessageId = "0")]
+            protected override TKey Select(Entry entry) => entry.Key;
         }
 
         [Serializable]
@@ -353,15 +335,9 @@ namespace Tauron.Application
         {
             protected readonly ObservableDictionary<TKey, TValue> Dictionary;
 
-            protected NotifyCollectionChangedBase(ObservableDictionary<TKey, TValue> dictionary)
-            {
-                Dictionary = Argument.NotNull(dictionary, nameof(dictionary));
-            }
+            protected NotifyCollectionChangedBase(ObservableDictionary<TKey, TValue> dictionary) => Dictionary = Argument.NotNull(dictionary, nameof(dictionary));
 
-            IEnumerator IEnumerable.GetEnumerator()
-            {
-                return GetEnumerator();
-            }
+            IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
 
             public int Count => Dictionary.Count;
 
@@ -397,7 +373,7 @@ namespace Tauron.Application
 
             public IEnumerator<TTarget> GetEnumerator()
             {
-                var ver = Dictionary._version;
+                var ver   = Dictionary._version;
                 var count = 0;
                 foreach (var entry in Dictionary._entrys)
                 {
@@ -409,10 +385,7 @@ namespace Tauron.Application
                 }
             }
 
-            public bool Remove(TTarget item)
-            {
-                throw new NotSupportedException();
-            }
+            public bool Remove(TTarget item) => throw new NotSupportedException();
 
             public event NotifyCollectionChangedEventHandler? CollectionChanged;
 
@@ -460,23 +433,15 @@ namespace Tauron.Application
         private class ValueCollection : NotifyCollectionChangedBase<TValue>
         {
             public ValueCollection(ObservableDictionary<TKey, TValue> collection)
-                : base(collection)
-            {
-            }
+                : base(collection) { }
 
             [SuppressMessage("Microsoft.Design", "CA1062:Argumente von öffentlichen Methoden validieren",
-                MessageId = "0")]
-            protected override bool Contains(Entry entry, TValue target)
-            {
-                return EqualityComparer<TValue>.Default.Equals(entry.Value, target);
-            }
+                             MessageId = "0")]
+            protected override bool Contains(Entry entry, TValue target) => EqualityComparer<TValue>.Default.Equals(entry.Value, target);
 
             [SuppressMessage("Microsoft.Design", "CA1062:Argumente von öffentlichen Methoden validieren",
-                MessageId = "0")]
-            protected override TValue Select(Entry entry)
-            {
-                return entry.Value;
-            }
+                             MessageId = "0")]
+            protected override TValue Select(Entry entry) => entry.Value;
         }
     }
 }

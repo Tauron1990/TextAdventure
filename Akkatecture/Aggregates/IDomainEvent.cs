@@ -34,14 +34,14 @@ namespace Akkatecture.Aggregates
     [PublicAPI]
     public interface IDomainEvent
     {
-        Type AggregateType { get; }
-        Type IdentityType { get; }
-        Type EventType { get; }
-        long AggregateSequenceNumber { get; }
-        Metadata Metadata { get; }
-        DateTimeOffset Timestamp { get; }
+        Type           AggregateType           { get; }
+        Type           IdentityType            { get; }
+        Type           EventType               { get; }
+        long           AggregateSequenceNumber { get; }
+        Metadata       Metadata                { get; }
+        DateTimeOffset Timestamp               { get; }
 
-        IIdentity GetIdentity();
+        IIdentity       GetIdentity();
         IAggregateEvent GetAggregateEvent();
     }
 

@@ -19,13 +19,10 @@ namespace Adventure.Ui.Internal
                     _ => throw new ArgumentOutOfRangeException()
                 };
             }
-            else
-                throw new NotSupportedException();
-        }
 
-        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
-        {
             throw new NotSupportedException();
         }
+
+        public object ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => throw new NotSupportedException();
     }
 }

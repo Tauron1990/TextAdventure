@@ -34,22 +34,22 @@ namespace Akkatecture.Jobs.Commands
     {
         private readonly CronExpression _expression;
 
-        public string CronExpression { get; }
-
         public ScheduleCron(
             TIdentity jobId,
-            TJob job,
-            string cronExpression,
-            DateTime triggerDate,
-            object? ack = null,
-            object? nack = null)
+            TJob      job,
+            string    cronExpression,
+            DateTime  triggerDate,
+            object?   ack  = null,
+            object?   nack = null)
             : base(jobId, job, triggerDate, ack, nack)
         {
             if (string.IsNullOrWhiteSpace(cronExpression)) throw new ArgumentNullException(nameof(cronExpression));
 
             CronExpression = cronExpression;
-            _expression = Cronos.CronExpression.Parse(cronExpression);
+            _expression    = Cronos.CronExpression.Parse(cronExpression);
         }
+
+        public string CronExpression { get; }
 
         public override Schedule<TJob, TIdentity>? WithNextTriggerDate(DateTime utcDate)
         {

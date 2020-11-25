@@ -31,9 +31,7 @@ namespace Akkatecture.Jobs
     {
         public JobVersionAttribute(
             string name,
-            int version)
-            : base(name, version)
-        {
-        }
+            int    version)
+            : base(name, version) { }
     }
 }

@@ -14,13 +14,13 @@ using TextAdventures.Engine.Internal.Data.Aggregates;
 namespace Adventure.Ui
 {
     /// <summary>
-    /// Interaktionslogik für MainContent.xaml
+    ///     Interaktionslogik für MainContent.xaml
     /// </summary>
     [PublicAPI]
     public partial class MainContent
     {
-        private Paragraph _description = new Paragraph();
-        private Paragraph _content = new Paragraph();
+        private Paragraph   _content     = new();
+        private Paragraph   _description = new();
         private GameMaster? _gameMaster;
 
         public MainContent()
@@ -34,28 +34,28 @@ namespace Adventure.Ui
             game.Add(Props.Create(() => new MainContentSubscriber(GameLoaded, UpdateCommands, UpdateContent)), "Main_Content_Subscriber");
 
             Dispatcher.Invoke(() =>
-            {
-                var document = new FlowDocument();
+                              {
+                                  var document = new FlowDocument();
 
-                _description = new Paragraph();
-                _content = new Paragraph();
+                                  _description = new Paragraph();
+                                  _content     = new Paragraph();
 
-                document.Blocks.Add(_description);
-                document.Blocks.Add(_content);
+                                  document.Blocks.Add(_description);
+                                  document.Blocks.Add(_content);
 
-                TextContent.Document = document;
-            });
+                                  TextContent.Document = document;
+                              });
         }
 
         private void GameLoaded(GameLoaded loaded)
         {
             _gameMaster = loaded.Master;
             loaded.Master
-               .WhenTerminated
-               .ContinueWith(_ => CommandBox.UnloadGame());
+                  .WhenTerminated
+                  .ContinueWith(_ => CommandBox.UnloadGame());
         }
 
-        private void UpdateCommands(CommandsUpdatedEvent update) 
+        private void UpdateCommands(CommandsUpdatedEvent update)
             => CommandBox.Update(update.Commands.Select(c => (c as ICommandMetadata, c)));
 
         private void UpdateContent(UpdateTextContent update)
@@ -72,21 +72,21 @@ namespace Adventure.Ui
                 _content.Inlines.Add(new Run(update.Content));
             }
         }
-        
+
         public void Display(string content) => Dispatcher.Invoke(() => UpdateContent(new UpdateTextContent(string.Empty, content)));
 
         private sealed class MainContentSubscriber : DomainEventSubscriber, ISubscribeTo<GameInfo, GameInfoId, CommandsUpdatedEvent>,
                                                      ISubscribeTo<GameInfo, GameInfoId, GameLoaded>, ISubscribeTo<GameInfo, GameInfoId, UpdateTextContent>
         {
-            private readonly Action<GameLoaded> _loaded;
+            private readonly Action<GameLoaded>           _loaded;
             private readonly Action<CommandsUpdatedEvent> _updateCommand;
-            private readonly Action<UpdateTextContent> _updateText;
+            private readonly Action<UpdateTextContent>    _updateText;
 
             public MainContentSubscriber(Action<GameLoaded> loaded, Action<CommandsUpdatedEvent> updateCommand, Action<UpdateTextContent> updateText)
             {
-                _loaded = loaded;
+                _loaded        = loaded;
                 _updateCommand = updateCommand;
-                _updateText = updateText;
+                _updateText    = updateText;
             }
 
             public bool Handle(IDomainEvent<GameInfo, GameInfoId, CommandsUpdatedEvent> domainEvent)

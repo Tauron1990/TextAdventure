@@ -29,8 +29,8 @@ namespace Akkatecture.Subscribers
     public class DomainEventSubscriberSettings
     {
         private static readonly string _section = "akkatecture.domain-event-subscriber";
-        public readonly bool AutoReceive;
-        public readonly bool AutoSubscribe;
+        public readonly         bool   AutoReceive;
+        public readonly         bool   AutoSubscribe;
 
         public DomainEventSubscriberSettings(Config config)
         {
@@ -38,7 +38,7 @@ namespace Akkatecture.Subscribers
             domainEventSubscriberConfig = domainEventSubscriberConfig.GetConfig(_section);
 
             AutoSubscribe = domainEventSubscriberConfig.GetBoolean("auto-subscribe", true);
-            AutoReceive = domainEventSubscriberConfig.GetBoolean("auto-receive", true);
+            AutoReceive   = domainEventSubscriberConfig.GetBoolean("auto-receive", true);
         }
     }
 }

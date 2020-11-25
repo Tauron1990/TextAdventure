@@ -15,14 +15,11 @@ namespace Tauron.Localization.Actor
     {
         private static readonly char[] Sep = {'.'};
 
-        private readonly JsonConfiguration? _configuration;
-        private readonly Dictionary<string, Dictionary<string, JToken>> _files = new Dictionary<string, Dictionary<string, JToken>>();
-        private bool _isInitialized;
+        private readonly JsonConfiguration?                             _configuration;
+        private readonly Dictionary<string, Dictionary<string, JToken>> _files = new();
+        private          bool                                           _isInitialized;
 
-        public JsonLocLocStoreActor(ILifetimeScope scope)
-        {
-            _configuration = scope.ResolveOptional<JsonConfiguration>();
-        }
+        public JsonLocLocStoreActor(ILifetimeScope scope) => _configuration = scope.ResolveOptional<JsonConfiguration>();
 
         protected override object? TryQuery(string name, CultureInfo target)
         {
@@ -59,7 +56,7 @@ namespace Tauron.Localization.Actor
             };
 
             if (_files.TryGetValue(language, out var entrys) &&
-                entrys.TryGetValue(name, out var entry) && entry is JValue value)
+                entrys.TryGetValue(name, out var entry)      && entry is JValue value)
             {
                 if (value.Type == JTokenType.String)
                     return EscapeHelper.Decode(value.Value<string>());
@@ -80,8 +77,8 @@ namespace Tauron.Localization.Actor
             {
                 //var text = File.ReadAllText(file, Encoding.UTF8);
                 using var stream = new FileStream(file, FileMode.Open);
-                var text = new StreamReader(stream, Encoding.UTF8).ReadToEnd();
-                var name = GetName(file);
+                var       text   = new StreamReader(stream, Encoding.UTF8).ReadToEnd();
+                var       name   = GetName(file);
                 if (string.IsNullOrWhiteSpace(name)) return;
 
                 _files[name] = JsonConvert.DeserializeObject<Dictionary<string, JToken>>(text);

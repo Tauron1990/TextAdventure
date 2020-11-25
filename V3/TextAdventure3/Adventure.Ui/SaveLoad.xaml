@@ -1,34 +1,36 @@
 ﻿<Menu x:Class="Adventure.Ui.SaveLoad"
       xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
       xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
-      xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+      xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+      xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
       xmlns:local="clr-namespace:Adventure.Ui"
       xmlns:internal="clr-namespace:Adventure.Ui.Internal"
-      xmlns:data="clr-namespace:TextAdventures.Engine.Internal.Data;assembly=TextAdventures.Engine"
       mc:Ignorable="d" d:DataContext="{d:DesignInstance local:SaveLoadModel}"
       d:DesignHeight="450" d:DesignWidth="800" Name="RootMenu" Background="Transparent" Foreground="White">
     <Menu.Resources>
-        <internal:NameInfoValueConverter x:Key="NameInfoConv"/>
+        <internal:NameInfoValueConverter x:Key="NameInfoConv" />
     </Menu.Resources>
     <MenuItem Header="Neu">
-        <TextBox MinWidth="120" MaxWidth="120" Text="{Binding NewNameText, UpdateSourceTrigger=PropertyChanged, Delay=100}"/>
-        <Rectangle Width="15" Height="15" RadiusX="20" RadiusY="20" Fill="{Binding IsNewNameOk, Converter={StaticResource NameInfoConv}}"/>
-        <MenuItem Header="Neues Spiel" Command="{Binding NewName}"/>
+        <TextBox MinWidth="120" MaxWidth="120"
+                 Text="{Binding NewNameText, UpdateSourceTrigger=PropertyChanged, Delay=100}" />
+        <Rectangle Width="15" Height="15" RadiusX="20" RadiusY="20"
+                   Fill="{Binding IsNewNameOk, Converter={StaticResource NameInfoConv}}" />
+        <MenuItem Header="Neues Spiel" Command="{Binding NewName}" />
     </MenuItem>
     <MenuItem Header="Laden" ItemsSource="{Binding Profiles}">
         <MenuItem.ItemContainerStyle>
             <Style TargetType="MenuItem">
-                <Setter Property="Header" Value="{Binding Name}"/>
-                <Setter Property="Command" Value="{Binding DataContext.GenericLoadGame, ElementName=RootMenu}"/>
-                <Setter Property="ItemsSource" Value="{Binding Saves}"/>
-                <Setter Property="CommandParameter" Value="{Binding}"/>
+                <Setter Property="Header" Value="{Binding Name}" />
+                <Setter Property="Command" Value="{Binding DataContext.GenericLoadGame, ElementName=RootMenu}" />
+                <Setter Property="ItemsSource" Value="{Binding Saves}" />
+                <Setter Property="CommandParameter" Value="{Binding}" />
                 <Setter Property="ItemContainerStyle">
                     <Setter.Value>
                         <Style TargetType="MenuItem">
-                            <Setter Property="Header" Value="{Binding Name}"/>
-                            <Setter Property="Command" Value="{Binding DataContext.GenericLoadGame, ElementName=RootMenu}"/>
-                            <Setter Property="CommandParameter" Value="{Binding}"/>
+                            <Setter Property="Header" Value="{Binding Name}" />
+                            <Setter Property="Command"
+                                    Value="{Binding DataContext.GenericLoadGame, ElementName=RootMenu}" />
+                            <Setter Property="CommandParameter" Value="{Binding}" />
                         </Style>
                     </Setter.Value>
                 </Setter>
@@ -36,15 +38,17 @@
         </MenuItem.ItemContainerStyle>
     </MenuItem>
     <MenuItem Header="Speichern" IsEnabled="{Binding IsGameRunning}">
-        <TextBox MinWidth="120" MaxWidth="120" Text="{Binding SaveGameName, UpdateSourceTrigger=PropertyChanged, Delay=100}"/>
-        <Rectangle Width="15" Height="15" RadiusX="20" RadiusY="20" Fill="{Binding IsSaveGameNameOk, Converter={StaticResource NameInfoConv}}"/>
-        <MenuItem Header="Speichern" Command="{Binding GenericSvaeGame}"/>
-        <Separator/>
+        <TextBox MinWidth="120" MaxWidth="120"
+                 Text="{Binding SaveGameName, UpdateSourceTrigger=PropertyChanged, Delay=100}" />
+        <Rectangle Width="15" Height="15" RadiusX="20" RadiusY="20"
+                   Fill="{Binding IsSaveGameNameOk, Converter={StaticResource NameInfoConv}}" />
+        <MenuItem Header="Speichern" Command="{Binding GenericSvaeGame}" />
+        <Separator />
         <MenuItem Header="Speicher Stände" ItemsSource="{Binding Profile.Saves}">
             <MenuItem.ItemContainerStyle>
                 <Style TargetType="MenuItem">
-                    <Setter Property="Header" Value="{Binding Name}"/>
-                    <Setter Property="Command" Value="{Binding DataContext.GenericSvaeGame, ElementName=RootMenu}"/>
+                    <Setter Property="Header" Value="{Binding Name}" />
+                    <Setter Property="Command" Value="{Binding DataContext.GenericSvaeGame, ElementName=RootMenu}" />
                 </Style>
             </MenuItem.ItemContainerStyle>
         </MenuItem>

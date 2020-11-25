@@ -14,17 +14,18 @@ namespace TextAdventures.Engine
     [PublicAPI]
     public sealed class Game
     {
-        public static Game Create(World world, bool newGame)
-            => new Game(world, newGame);
+        private readonly bool _newGame;
 
         private readonly WorldImpl _world;
-        private readonly bool _newGame;
 
         private Game(World world, bool newGame)
         {
-            _world = (WorldImpl)world;
+            _world   = (WorldImpl) world;
             _newGame = newGame;
         }
+
+        public static Game Create(World world, bool newGame)
+            => new(world, newGame);
 
         public GameMaster Start(string? saveGameName, Action<Exception> fail)
         {
@@ -33,15 +34,15 @@ namespace TextAdventures.Engine
 
             var connectionString = info.GetConnectionString();
 
-            var connectionConfig = 
+            var connectionConfig =
                 $"akka.persistence.journal.sqlite.connection-string : \"{connectionString}\"\n" +
                 $"akka.persistence.snapshot-store.sqlite.connection-string : \"{connectionString}\"";
 
             var system = ActorSystem.Create("TextAdventures",
-                ConfigurationFactory.ParseString(connectionConfig).WithFallback(ConfigurationFactory.FromResource<Game>("TextAdventures.Engine.akka.conf")));
+                                            ConfigurationFactory.ParseString(connectionConfig).WithFallback(ConfigurationFactory.FromResource<Game>("TextAdventures.Engine.akka.conf")));
             var gameMaster = system.ActorOf(Props.Create(() => new GameMasterActor(fail)), "GameMaster");
 
-            if (_newGame) 
+            if (_newGame)
                 info.ClearSaves();
 
             gameMaster.Tell(new StartGame(_world, _newGame || !File.Exists(Path.Combine(_world.DataPath, SaveProfile.ProfileFile)), info, info.GetSave(saveGameName)));

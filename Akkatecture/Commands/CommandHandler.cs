@@ -42,9 +42,9 @@ namespace Akkatecture.Commands
         where TCommand : ICommand<TAggregate, TIdentity>
     {
         public abstract TResult HandleCommand(
-            TAggregate aggregate,
+            TAggregate    aggregate,
             IActorContext context,
-            TCommand command);
+            TCommand      command);
     }
 
     [PublicAPI]
@@ -55,9 +55,9 @@ namespace Akkatecture.Commands
         where TCommand : ICommand<TAggregate, TIdentity>
     {
         public override bool HandleCommand(
-            TAggregate aggregate,
+            TAggregate    aggregate,
             IActorContext context,
-            TCommand command)
+            TCommand      command)
         {
             var logger = context.GetLogger();
             Handle(aggregate, context, command);
@@ -66,8 +66,8 @@ namespace Akkatecture.Commands
         }
 
         public abstract void Handle(
-            TAggregate aggregate,
+            TAggregate    aggregate,
             IActorContext context,
-            TCommand command);
+            TCommand      command);
     }
 }

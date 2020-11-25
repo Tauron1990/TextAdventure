@@ -19,11 +19,11 @@ namespace Tauron.Application
                 TargetObject = new WeakReference(target);
 
             MethodInfo = Argument.NotNull(method, nameof(method));
-            _parames = new[] {parameterType};
+            _parames   = new[] {parameterType};
 
             _delegateType = parameterType == null
-                ? typeof(Action)
-                : typeof(Action<>).MakeGenericType(parameterType);
+                                ? typeof(Action)
+                                : typeof(Action<>).MakeGenericType(parameterType);
 
             ParameterCount = parameterType == null ? 0 : 1;
         }
@@ -37,8 +37,8 @@ namespace Tauron.Application
             _parames = method.GetParameters().OrderBy(parm => parm.Position).Select(parm => parm.ParameterType).ToArray();
             var returntype = method.ReturnType;
             _delegateType = returntype == typeof(void)
-                ? FactoryDelegateType("System.Action", _parames.ToArray())
-                : FactoryDelegateType("System.Func", _parames.Concat(new[] {returntype}).ToArray());
+                                ? FactoryDelegateType("System.Action", _parames.ToArray())
+                                : FactoryDelegateType("System.Func", _parames.Concat(new[] {returntype}).ToArray());
 
             ParameterCount = _parames.Length;
         }
@@ -49,16 +49,13 @@ namespace Tauron.Application
 
         public WeakReference? TargetObject { get; }
 
-        private bool Equals(WeakAction other)
-        {
-            return Equals(MethodInfo, other.MethodInfo) && Equals(TargetObject?.Target, other.TargetObject?.Target);
-        }
+        private bool Equals(WeakAction other) => Equals(MethodInfo, other.MethodInfo) && Equals(TargetObject?.Target, other.TargetObject?.Target);
 
         public override int GetHashCode()
         {
             unchecked
             {
-                int? value = TargetObject?.Target.GetHashCode();
+                var value = TargetObject?.Target.GetHashCode();
 
                 return ((MethodInfo != null ? MethodInfo.GetHashCode() : 0) * 397) ^ (value == null ? 0 : value.Value);
             }
@@ -81,8 +78,8 @@ namespace Tauron.Application
         {
             target = TargetObject?.Target;
             return target != null
-                ? MethodInfo.GetMethodInvoker(() => _parames)
-                : null;
+                       ? MethodInfo.GetMethodInvoker(() => _parames)
+                       : null;
         }
 
         [NotNull]
@@ -102,7 +99,7 @@ namespace Tauron.Application
     [PublicAPI]
     public class WeakActionEvent<T>
     {
-        private readonly List<WeakAction> _delegates = new List<WeakAction>();
+        private readonly List<WeakAction> _delegates = new();
 
         public WeakActionEvent()
         {
@@ -117,10 +114,7 @@ namespace Tauron.Application
 
                 var dead = _delegates.Where(item => item.TargetObject?.IsAlive == false).ToList();
 
-                lock (this)
-                {
-                    dead.ForEach(ac => _delegates.Remove(ac));
-                }
+                lock (this) dead.ForEach(ac => _delegates.Remove(ac));
             }
         }
 
@@ -133,17 +127,14 @@ namespace Tauron.Application
             lock (this)
             {
                 if (_delegates.Where(del => del.MethodInfo == handler.Method)
-                    .Select(weakAction => weakAction.TargetObject?.Target)
-                    .Any(weakTarget => weakTarget == handler.Target))
+                              .Select(weakAction => weakAction.TargetObject?.Target)
+                              .Any(weakTarget => weakTarget == handler.Target))
                     return this;
             }
 
             var parameterType = parameters[0].ParameterType;
 
-            lock (this)
-            {
-                _delegates.Add(new WeakAction(handler.Target, handler.Method, parameterType));
-            }
+            lock (this) _delegates.Add(new WeakAction(handler.Target, handler.Method, parameterType));
 
             return this;
         }

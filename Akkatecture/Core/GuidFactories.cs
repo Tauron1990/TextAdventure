@@ -43,12 +43,12 @@ namespace Akkatecture.Core
             public static Guid Create()
             {
                 var destinationArray = Guid.NewGuid().ToByteArray();
-                var time = new DateTime(0x76c, 1, 1);
-                var now = DateTime.Now;
-                var span = new TimeSpan(now.Ticks - time.Ticks);
-                var timeOfDay = now.TimeOfDay;
-                var bytes = BitConverter.GetBytes(span.Days);
-                var array = BitConverter.GetBytes((long) (timeOfDay.TotalMilliseconds / 3.333333));
+                var time             = new DateTime(0x76c, 1, 1);
+                var now              = DateTime.Now;
+                var span             = new TimeSpan(now.Ticks - time.Ticks);
+                var timeOfDay        = now.TimeOfDay;
+                var bytes            = BitConverter.GetBytes(span.Days);
+                var array            = BitConverter.GetBytes((long) (timeOfDay.TotalMilliseconds / 3.333333));
 
                 Array.Reverse(bytes);
                 Array.Reverse(array);
@@ -151,16 +151,16 @@ namespace Akkatecture.Core
             private static void SwapBytes(byte[] guid, int left, int right)
             {
                 var temp = guid[left];
-                guid[left] = guid[right];
+                guid[left]  = guid[right];
                 guid[right] = temp;
             }
 
             [PublicAPI]
             public static class Namespaces
             {
-                public static readonly Guid Events = Guid.Parse("387F5B61-9E98-439A-BFF1-15AD0EA91EA0");
+                public static readonly Guid Events    = Guid.Parse("387F5B61-9E98-439A-BFF1-15AD0EA91EA0");
                 public static readonly Guid Snapshots = Guid.Parse("B61D4D52-B546-43C2-A67F-754DCBD31586");
-                public static readonly Guid Commands = Guid.Parse("4286D89F-7F92-430B-8E00-E468FE3C3F59");
+                public static readonly Guid Commands  = Guid.Parse("4286D89F-7F92-430B-8E00-E468FE3C3F59");
             }
         }
     }

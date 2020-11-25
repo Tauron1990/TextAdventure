@@ -14,15 +14,15 @@ using TextAdventures.Engine;
 namespace TextAdventure
 {
     /// <summary>
-    /// Interaktionslogik für MainWindow.xaml
+    ///     Interaktionslogik für MainWindow.xaml
     /// </summary>
     public partial class MainWindow
     {
-        private static readonly Guid ProfileNameBase = new Guid("c8e4ac50-0015-4677-83b3-e729d8716bd1");
+        private static readonly Guid ProfileNameBase = new("c8e4ac50-0015-4677-83b3-e729d8716bd1");
 
         private GameMaster? _gameMaster;
 
-        public MainWindow() 
+        public MainWindow()
             => InitializeComponent();
 
         protected override void OnClosing(CancelEventArgs e)
@@ -33,39 +33,38 @@ namespace TextAdventure
 
         private void MainWindow_OnKeyDown(object sender, KeyEventArgs e)
         {
-            if(e.Key == Key.Escape)
+            if (e.Key == Key.Escape)
                 Close();
         }
 
         private void MainWindow_OnLoaded(object sender, RoutedEventArgs e)
         {
-            var savePath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
-                "Tauron", "TextAdventure", "Saves");
+            var savePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments),
+                                        "Tauron", "TextAdventure", "Saves");
 
             Saves.Init(savePath);
             Saves.NewGame += (profileName, saveName, newGame) =>
-            {
-                try
-                {
-                    string profileDic = Path.Combine(savePath, GuidFactories.Deterministic.Create(ProfileNameBase, profileName).ToString("D"));
+                             {
+                                 try
+                                 {
+                                     string profileDic = Path.Combine(savePath, GuidFactories.Deterministic.Create(ProfileNameBase, profileName).ToString("D"));
 
-                    var world = World.Create(profileDic, profileName);
+                                     var world = World.Create(profileDic, profileName);
 
-                    world.Add(Props.Create(() => new MainWindowSubscriber()), "Main_Window_Subscriber");
-                    Saves.Prepare(world);
-                    MainContent.PrepareGame(world);
+                                     world.Add(Props.Create(() => new MainWindowSubscriber()), "Main_Window_Subscriber");
+                                     Saves.Prepare(world);
+                                     MainContent.PrepareGame(world);
 
-                    GameWorld.ConfigurateWorld(world);
+                                     GameWorld.ConfigurateWorld(world);
 
-                    _gameMaster = Game.Create(world, newGame)
-                       .Start(saveName, Fail);
-                }
-                catch (Exception exception)
-                {
-                    Fail(exception);
-                }
-            };
+                                     _gameMaster = Game.Create(world, newGame)
+                                                       .Start(saveName, Fail);
+                                 }
+                                 catch (Exception exception)
+                                 {
+                                     Fail(exception);
+                                 }
+                             };
         }
 
         private void Fail(Exception e)
@@ -79,8 +78,6 @@ namespace TextAdventure
             _gameMaster?.Stop();
         }
 
-        private sealed class MainWindowSubscriber : DomainEventSubscriber
-        {
-        }
+        private sealed class MainWindowSubscriber : DomainEventSubscriber { }
     }
 }

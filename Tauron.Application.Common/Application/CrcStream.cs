@@ -10,21 +10,6 @@ namespace Tauron.Application
     {
         private readonly uint[] _table;
 
-        [DebuggerStepThrough]
-        public uint ComputeChecksum(byte[] bytes)
-        {
-            var crc = 0xffffffff;
-            foreach (var t in bytes)
-            {
-                var index = (byte)(((crc) & 0xff) ^ t);
-                crc = (crc >> 8) ^ _table[index];
-            }
-            return ~crc;
-        }
-
-        public byte[] ComputeChecksumBytes(byte[] bytes) 
-            => BitConverter.GetBytes(ComputeChecksum(bytes));
-
         public Crc32()
         {
             const uint poly = 0xedb88320;
@@ -35,17 +20,30 @@ namespace Tauron.Application
                 for (var j = 8; j > 0; --j)
                 {
                     if ((temp & 1) == 1)
-                    {
                         temp = (temp >> 1) ^ poly;
-                    }
                     else
-                    {
                         temp >>= 1;
-                    }
                 }
+
                 _table[i] = temp;
             }
         }
+
+        [DebuggerStepThrough]
+        public uint ComputeChecksum(byte[] bytes)
+        {
+            var crc = 0xffffffff;
+            foreach (var t in bytes)
+            {
+                var index = (byte) ((crc & 0xff) ^ t);
+                crc = (crc >> 8) ^ _table[index];
+            }
+
+            return ~crc;
+        }
+
+        public byte[] ComputeChecksumBytes(byte[] bytes)
+            => BitConverter.GetBytes(ComputeChecksum(bytes));
     }
 
     /// <summary>
@@ -64,7 +62,7 @@ namespace Tauron.Application
         ///     Encapsulate a <see cref="System.IO.Stream" />.
         /// </summary>
         /// <param name="stream">The stream to calculate the checksum for.</param>
-        public CrcStream(Stream stream) 
+        public CrcStream(Stream stream)
             => Stream = stream;
 
         /// <summary>
@@ -101,10 +99,7 @@ namespace Tauron.Application
             Stream.Flush();
         }
 
-        public override long Seek(long offset, SeekOrigin origin)
-        {
-            return Stream.Seek(offset, origin);
-        }
+        public override long Seek(long offset, SeekOrigin origin) => Stream.Seek(offset, origin);
 
         public override void SetLength(long value)
         {
@@ -113,7 +108,7 @@ namespace Tauron.Application
 
         public override int Read(byte[] buffer, int offset, int count)
         {
-            count = Stream.Read(buffer, offset, count);
+            count    = Stream.Read(buffer, offset, count);
             _readCrc = CalculateCrc(_readCrc, buffer, offset, count);
             return count;
         }
@@ -148,10 +143,12 @@ namespace Tauron.Application
                 {
                     var crc = i;
                     for (var j = 8; j > 0; j--)
+                    {
                         if ((crc & 1) == 1)
                             crc = (crc >> 1) ^ poly;
                         else
                             crc >>= 1;
+                    }
 
                     table[i] = crc;
                 }
@@ -165,7 +162,7 @@ namespace Tauron.Application
         /// </summary>
         public void ResetChecksum()
         {
-            _readCrc = 0xFFFFFFFF;
+            _readCrc  = 0xFFFFFFFF;
             _writeCrc = 0xFFFFFFFF;
         }
 

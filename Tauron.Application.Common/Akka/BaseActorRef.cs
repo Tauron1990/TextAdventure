@@ -10,10 +10,7 @@ namespace Tauron.Akka
     {
         private readonly ActorRefFactory<TActor> _builder;
 
-        protected BaseActorRef(ActorRefFactory<TActor> actorBuilder)
-        {
-            _builder = actorBuilder;
-        }
+        protected BaseActorRef(ActorRefFactory<TActor> actorBuilder) => _builder = actorBuilder;
 
         public bool IsInitialized { get; private set; }
 
@@ -30,25 +27,16 @@ namespace Tauron.Akka
             Actor.Tell(message, sender);
         }
 
-        public bool Equals(IActorRef? other)
-        {
-            return Actor.Equals(other);
-        }
+        public bool Equals(IActorRef? other) => Actor.Equals(other);
 
-        public int CompareTo(IActorRef? other)
-        {
-            return Actor.CompareTo(other);
-        }
+        public int CompareTo(IActorRef? other) => Actor.CompareTo(other);
 
-        public int CompareTo(object? obj)
-        {
-            return Actor.CompareTo(obj);
-        }
+        public int CompareTo(object? obj) => Actor.CompareTo(obj);
 
         public virtual void Init(string? name = null)
         {
             CheckIsInit();
-            Actor = _builder.Create(IsSync, name);
+            Actor         = _builder.Create(IsSync, name);
             IsInitialized = true;
             Initialized?.Invoke();
         }
@@ -56,7 +44,7 @@ namespace Tauron.Akka
         public virtual void Init(IActorRefFactory factory, string? name = null)
         {
             CheckIsInit();
-            Actor = factory.ActorOf(_builder.CreateProps(IsSync), name);
+            Actor         = factory.ActorOf(_builder.CreateProps(IsSync), name);
             IsInitialized = true;
             Initialized?.Invoke();
         }
@@ -64,7 +52,7 @@ namespace Tauron.Akka
         protected void ResetInternal()
         {
             Actor.Tell(PoisonPill.Instance);
-            Actor = ActorRefs.Nobody;
+            Actor         = ActorRefs.Nobody;
             IsInitialized = false;
         }
 

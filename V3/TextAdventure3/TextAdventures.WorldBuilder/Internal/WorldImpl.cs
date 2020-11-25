@@ -1,58 +1,44 @@
 ﻿using System.Collections.Generic;
+using System.Collections.Immutable;
 using System.Linq;
 using Akka.Actor;
-using JetBrains.Annotations;
 using TextAdventures.Builder.Builder;
-using TextAdventures.Builder.Commands;
 using TextAdventures.Builder.Data;
 using TextAdventures.Builder.Data.Actor;
+using TextAdventures.Builder.Data.Commands;
 using TextAdventures.Builder.Data.Rooms;
 
 namespace TextAdventures.Builder.Internal
 {
     public sealed class WorldImpl : World
     {
-        public string DataPath { get; }
-        public string ProfileName { get; }
-
-        public Dictionary<Name, RoomBuilder> Rooms { get; } = new Dictionary<Name, RoomBuilder>();
-
-        public Dictionary<GameActorId, ActorBuilder> Actors { get; } = new Dictionary<GameActorId, ActorBuilder>();
-
-        public List<object> GameMasterMessages { get; } = new List<object>();
-
-        public Dictionary<string, Props> ActorProps { get; } = new Dictionary<string, Props>(); 
-
-        public override void Add(Props props, string name) => ActorProps.Add(name, props);
-
-        public override void Add(params INewAggregate[] aggregates) => GameMasterMessages.AddRange(aggregates);
-
-        public override void Add(params INewProjector[] projectors) => GameMasterMessages.AddRange(projectors);
-
-        public override void Add(params INewQueryHandler[] handlers) => GameMasterMessages.AddRange(handlers);
-
-        public override void Add(params INewSaga[] sagas) => GameMasterMessages.AddRange(sagas);
-
-        public override RoomBuilder GetRoom(Name name)
-        {
-            if (Rooms.TryGetValue(name, out var room))
-                return room;
-            
-            room = new RoomBuilder(this, RoomId.FromName(name), name);
-            Rooms.Add(name, room);
-            return room;
-        }
-
-        public override void AddActor(ActorBuilder builder) 
-            => Actors.Add(GameActorId.FromName(builder.Name, builder.PlayerType.Value != Player.Player), builder);
-
-        internal RoomBuilder FindById(RoomId id)
-            => Rooms.First(b => b.Value.Self == id).Value;
-
         public WorldImpl(string dataPath, string profileName)
         {
-            DataPath = dataPath;
+            DataPath    = dataPath;
             ProfileName = profileName;
+        }
+
+        public string DataPath    { get; }
+        public string ProfileName { get; }
+
+        public ImmutableList<object> GameMasterMessages { get; private set; } = ImmutableList<object>.Empty;
+
+        public ImmutableDictionary<string, Props> ActorProps { get; private set; } = ImmutableDictionary<string, Props>.Empty;
+
+        public ImmutableList<GameObjectBlueprint> GameObjects { get; private set; } = ImmutableList<GameObjectBlueprint>.Empty;
+
+        public override void Add(Props props, string name) => ActorProps = ActorProps.Add(name, props);
+
+        public override void Add(params INewAggregate[] aggregates) => GameMasterMessages = GameMasterMessages.AddRange(aggregates);
+
+        public override void Add(params INewProjector[] projectors) => GameMasterMessages = GameMasterMessages.AddRange(projectors);
+
+        public override void Add(params INewQueryHandler[] handlers) => GameMasterMessages = GameMasterMessages.AddRange(handlers);
+
+        public override void Add(params            INewSaga[]            sagas)   => GameMasterMessages = GameMasterMessages.AddRange(sagas);
+        public override void AddGameObjects(params GameObjectBlueprint[] objects)
+        {
+            
         }
     }
 }

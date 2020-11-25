@@ -38,11 +38,6 @@ namespace Akkatecture.Sagas.AggregateSaga
         where TIdentity : SagaId<TIdentity>
         where TSagaLocator : class, ISagaLocator<TIdentity>, new()
     {
-        private IReadOnlyList<Type> _subscriptionTypes { get; }
-        protected ILoggingAdapter Logger { get; }
-        protected TSagaLocator SagaLocator { get; }
-        public AggregateSagaManagerSettings Settings { get; }
-
         protected AggregateSagaManager(Expression<Func<TAggregateSaga>> sagaFactory)
         {
             Logger = Context.GetLogger();
@@ -51,7 +46,7 @@ namespace Akkatecture.Sagas.AggregateSaga
 
             SagaLocator = new TSagaLocator();
             SagaFactory = sagaFactory;
-            Settings = new AggregateSagaManagerSettings(Context.System.Settings.Config);
+            Settings    = new AggregateSagaManagerSettings(Context.System.Settings.Config);
 
             var sagaType = typeof(TAggregateSaga);
 
@@ -81,6 +76,11 @@ namespace Akkatecture.Sagas.AggregateSaga
             Receive<Terminated>(Terminate);
         }
 
+        private   IReadOnlyList<Type>          _subscriptionTypes { get; }
+        protected ILoggingAdapter              Logger             { get; }
+        protected TSagaLocator                 SagaLocator        { get; }
+        public    AggregateSagaManagerSettings Settings           { get; }
+
         public Expression<Func<TAggregateSaga>> SagaFactory { get; }
 
         protected virtual bool Handle(UnsubscribeFromAll command)
@@ -98,7 +98,7 @@ namespace Akkatecture.Sagas.AggregateSaga
         protected virtual bool Handle(IDomainEvent domainEvent)
         {
             var sagaId = SagaLocator.LocateSaga(domainEvent);
-            var saga = FindOrSpawn(sagaId);
+            var saga   = FindOrSpawn(sagaId);
             saga.Tell(domainEvent, Sender);
             return true;
         }
@@ -112,15 +112,14 @@ namespace Akkatecture.Sagas.AggregateSaga
 
         protected override SupervisorStrategy SupervisorStrategy()
         {
-            return new OneForOneStrategy(
-                3,
-                3000,
-                x =>
-                {
-                    Logger.Warning("{0} will supervise Exception={1} to be decided as {2}.",
-                        GetType().PrettyPrint(), x.ToString(), Directive.Restart);
-                    return Directive.Restart;
-                });
+            return new OneForOneStrategy(3,
+                                         3000,
+                                         x =>
+                                         {
+                                             Logger.Warning("{0} will supervise Exception={1} to be decided as {2}.",
+                                                            GetType().PrettyPrint(), x.ToString(), Directive.Restart);
+                                             return Directive.Restart;
+                                         });
         }
 
         protected IActorRef FindOrSpawn(TIdentity sagaId)

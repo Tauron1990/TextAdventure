@@ -29,11 +29,9 @@ namespace Akkatecture.Aggregates.Snapshot
     public class SnapshotDefinition : VersionedTypeDefinition
     {
         public SnapshotDefinition(
-            int version,
-            Type type,
+            int    version,
+            Type   type,
             string name)
-            : base(version, type, name)
-        {
-        }
+            : base(version, type, name) { }
     }
 }
