@@ -25,10 +25,4 @@
     <ProjectReference Include="..\TextAdventures.WorldBuilder\TextAdventures.WorldBuilder.csproj" />
   </ItemGroup>
 
-  <ItemGroup>
-    <EmbeddedResource Include="akka.conf">
-      <CopyToOutputDirectory>Never</CopyToOutputDirectory>
-    </EmbeddedResource>
-  </ItemGroup>
-
 </Project>

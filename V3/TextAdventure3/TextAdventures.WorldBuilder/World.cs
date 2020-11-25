@@ -1,23 +1,26 @@
-﻿using Akka.Actor;
-using JetBrains.Annotations;
-using TextAdventures.Builder.Data;
-using TextAdventures.Builder.Data.Commands;
-using TextAdventures.Builder.Internal;
+﻿using System;
+using System.Collections.Immutable;
+using Akka.Actor;
 
 namespace TextAdventures.Builder
 {
-    [PublicAPI]
-    public abstract class World
+    public sealed class World
     {
-        public static World Create(string saveDataPath, string profileName)
-            => new WorldImpl(saveDataPath, profileName);
+        private ImmutableList<GameObjectBlueprint> _gameObjectBlueprints;
 
-        public abstract void Add(Props                     props, string name);
-        public abstract void Add(params INewAggregate[]    aggregates);
-        public abstract void Add(params INewProjector[]    projectors);
-        public abstract void Add(params INewQueryHandler[] handlers);
-        public abstract void Add(params INewSaga[]         sagas);
+        private ImmutableDictionary<string, Props> _gameProcesses;
 
-        public abstract void AddGameObjects(params GameObjectBlueprint[] objects);
+        private Action<Exception>? _error; 
+
+        public GameSetup CreateSetup()
+        {
+            return new(_gameObjectBlueprints, _gameProcesses, _error ?? (_ => {}));
+        }
+
+        public World()
+        {
+            _gameObjectBlueprints = ImmutableList<GameObjectBlueprint>.Empty;
+            _gameProcesses = ImmutableDictionary<string, Props>.Empty;
+        }
     }
 }
