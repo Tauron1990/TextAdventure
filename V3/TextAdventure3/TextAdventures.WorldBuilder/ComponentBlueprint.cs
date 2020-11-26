@@ -1,7 +1,11 @@
-﻿namespace TextAdventures.Builder
+﻿using System;
+
+namespace TextAdventures.Builder
 {
-    public class ComponentBlueprint
+    public sealed class ComponentBlueprint
     {
-        
+        public Type ComponentType { get; }
+
+        public ComponentBlueprint(Type componentType) => ComponentType = componentType;
     }
 }

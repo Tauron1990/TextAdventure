@@ -1,7 +1,9 @@
 ﻿namespace TextAdventures.Builder
 {
-    public class GameObjectBlueprint
+    public sealed class GameObjectBlueprint
     {
-        
+        public string Name { get; }
+
+        public GameObjectBlueprint(string name) => Name = name;
     }
 }
