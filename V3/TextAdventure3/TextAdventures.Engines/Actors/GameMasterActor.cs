@@ -22,13 +22,14 @@ namespace TextAdventures.Engine.Actors
             Receive<RequestEventSource>(r => eventDispatcher.Forward(r));
             Receive<GameObjectBlueprint>(p => _gameObjectManager.Forward(p));
 
-            Receive<LoadingCompled>(CompledLoading);
+            Receive<string>(CompledLoading);
             Receive<GameSetup>(SetupGame);
         }
 
-        private void CompledLoading(LoadingCompled obj)
+        private void CompledLoading(string obj)
         {
-            
+            foreach (var child in Context.GetChildren())
+                child.Tell(new LoadingCompled());
         }
 
         private void SetupGame(GameSetup obj)
@@ -37,11 +38,14 @@ namespace TextAdventures.Engine.Actors
 
             _isRunning = true;
 
+            _errorHandler = obj.Error;
+
             foreach (var (name, process) in obj.GameProcesses) 
                 Context.ActorOf(process, name);
 
-            Context.ActorOf(Props.Create(() => new LoadCoordinator(_gameObjectManager))).Tell(obj);
+            Context.ActorOf(Props.Create(() => new LoadCoordinator(_gameObjectManager, Self))).Tell(obj);
         }
+
 
         protected override SupervisorStrategy SupervisorStrategy()
         {
@@ -58,10 +62,12 @@ namespace TextAdventures.Engine.Actors
         private sealed class LoadCoordinator : FSM<LoadCoordinator.LoadStep, LoadCoordinator.LoadCoordinatorState>
         {
             private readonly IActorRef         _objectManager;
+            private readonly IActorRef _master;
 
-            public LoadCoordinator(IActorRef objectManager)
+            public LoadCoordinator(IActorRef objectManager, IActorRef master)
             {
                 _objectManager = objectManager;
+                _master = master;
 
                 InitFsm();
             }
@@ -80,8 +86,13 @@ namespace TextAdventures.Engine.Actors
                 When(LoadStep.StartingFinish,
                      evt =>
                      {
-                         Context.Parent.Tell(new LoadingCompled());
-                         Context.Stop(Self);
+                         if (evt.FsmEvent is LoadingCompled)
+                         {
+                             Context.Stop(Self);
+                             return Stay();
+                         }
+
+                         _master.Tell("new LoadingCompled()", ActorRefs.NoSender);
                          return Stay();
                      });
                 
@@ -97,7 +108,7 @@ namespace TextAdventures.Engine.Actors
                 StartingFinish
             }
         }
-
-        private sealed record LoadingCompled;
     }
+
+    public sealed record LoadingCompled;
 }

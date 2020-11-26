@@ -11,7 +11,7 @@ namespace TextAdventures.Engine
         public static GameMaster Create(string gameName, World world)
         {
             var system = ActorSystem.Create(gameName);
-            var gameMaster = system.ActorOf(Props.Create(() => new GameMasterActor()));
+            var gameMaster = system.ActorOf(Props.Create(() => new GameMasterActor()), "GameMaster");
             gameMaster.Tell(world.CreateSetup());
             
             return new GameMaster(gameMaster, system);
