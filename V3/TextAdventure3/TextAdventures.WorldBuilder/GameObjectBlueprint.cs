@@ -13,6 +13,7 @@ namespace TextAdventures.Builder
         public GameObjectBlueprint(string name) => Name = name;
 
         public GameObjectBlueprint WithComponent<TType>()
+            where TType : IComponent
         {
             ComponentBlueprints.Add(new ComponentBlueprint(typeof(TType)));
             return this;

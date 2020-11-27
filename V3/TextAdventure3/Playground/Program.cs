@@ -41,7 +41,7 @@ namespace Playground
                                     .WithComponent<TestComponent>());
 
 
-            await Game.Create("TestGame", world).System.WhenTerminated;
+            await Game.Create("TestGame", "", world).System.WhenTerminated;
         }
     }
 }
