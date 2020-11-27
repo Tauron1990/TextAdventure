@@ -29,7 +29,7 @@ namespace Playground
             }
         }
 
-        private static async Task Main(string[] args)
+        private static async Task Main()
         {
             World world = new();
 

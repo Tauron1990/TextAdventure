@@ -8,11 +8,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Akkatecture\Akkatecture.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Akka.Streams" Version="1.4.12" />
+    <PackageReference Include="Be.Vlaanderen.Basisregisters.Generators.Guid.Deterministic" Version="2.2.7" />
     <PackageReference Include="JetBrains.Annotations" Version="2020.2.0-eap" />
   </ItemGroup>
 

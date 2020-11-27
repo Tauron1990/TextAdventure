@@ -12,16 +12,11 @@
   </ItemGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.Persistence.Query" Version="1.4.10" />
-    <PackageReference Include="Akka.Persistence.Query.Sql" Version="1.4.10" />
-    <PackageReference Include="Akka.Persistence.Sqlite" Version="1.4.10" />
     <PackageReference Include="ConcurrentHashSet" Version="1.1.0" />
-    <PackageReference Include="LiquidProjections" Version="3.2.0" />
+    <PackageReference Include="LiteDB" Version="5.0.9" />
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\..\Akkatecture\Akkatecture.csproj" />
-    <ProjectReference Include="..\..\..\Tauron.Application.Common\Tauron.Application.Common.csproj" />
     <ProjectReference Include="..\TextAdventures.WorldBuilder\TextAdventures.WorldBuilder.csproj" />
   </ItemGroup>
 

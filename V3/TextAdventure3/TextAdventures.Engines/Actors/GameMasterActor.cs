@@ -15,9 +15,11 @@ namespace TextAdventures.Engine.Actors
         
         public GameMasterActor()
         {
-            IActorRef eventDispatcher = Context.ActorOf(Props.Create(() => new EventDispatcher()));
-            _gameObjectManager = Context.ActorOf(Props.Create(() => new GameObjectManager()));
-            
+            IActorRef eventDispatcher = Context.ActorOf(Props.Create(() => new EventDispatcherActor()));
+            _gameObjectManager = Context.ActorOf(Props.Create(() => new GameObjectManagerActor()));
+
+            Context.System.RegisterExtension(new GameCore.GameCoreId(new EventDispatcher(eventDispatcher), new GameObjectManager(_gameObjectManager)));
+
             Receive<GameEvent>(evt => eventDispatcher.Forward(evt));
             Receive<RequestEventSource>(r => eventDispatcher.Forward(r));
             Receive<GameObjectBlueprint>(p => _gameObjectManager.Forward(p));
