@@ -1,7 +1,4 @@
 ﻿namespace TextAdventures.Builder
 {
-    public interface IComponent
-    {
-        
-    }
+    public interface IComponent { }
 }

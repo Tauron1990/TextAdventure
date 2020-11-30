@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using TextAdventures.Builder.Data.Command;
 
 namespace Adventure.Ui.CommandDisplay
 {
@@ -15,7 +14,7 @@ namespace Adventure.Ui.CommandDisplay
         {
             InitializeComponent();
 
-            _model      = new CommandViewModel(c => CommandSelect?.Invoke(c));
+            _model = new CommandViewModel(c => CommandSelect?.Invoke(c));
             DataContext = _model;
         }
 

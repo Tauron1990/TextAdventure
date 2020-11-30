@@ -22,6 +22,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Adventure.Ui", "Adventure.U
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextAdventure", "TextAdventure\TextAdventure.csproj", "{02321C1E-37C6-4511-946C-D24616B2118C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "TestApp", "TestApp\TestApp.csproj", "{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -48,12 +50,17 @@ Global
 		{02321C1E-37C6-4511-946C-D24616B2118C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{02321C1E-37C6-4511-946C-D24616B2118C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{02321C1E-37C6-4511-946C-D24616B2118C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
 	EndGlobalSection
 	GlobalSection(NestedProjects) = preSolution
 		{2FCD2880-2918-4D6A-AA3F-AA5D822711F2} = {C5CDFA52-7974-4219-B903-6001444B98E3}
+		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72} = {C5CDFA52-7974-4219-B903-6001444B98E3}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E01EB3F-480B-47D1-ADF1-F830E279C7F7}

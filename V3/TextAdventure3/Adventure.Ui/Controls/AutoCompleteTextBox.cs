@@ -35,17 +35,12 @@ namespace Adventure.Ui.Controls
     {
         // Binding hack - not really necessary.
         //DependencyObject dummy = new DependencyObject();
-        private readonly FrameworkElement            _dummy = new();
-        private          Func<object, string, bool>? _filter;
-        private          ListBox?                    _listBox;
-        private          Popup?                      _popup;
-        private          bool                        _suppressEvent;
-        private          string                      _textCache = "";
-
-        static AutoCompleteTextBox()
-        {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(AutoCompleteTextBox), new FrameworkPropertyMetadata(typeof(AutoCompleteTextBox)));
-        }
+        private readonly FrameworkElement _dummy = new();
+        private Func<object, string, bool>? _filter;
+        private ListBox? _listBox;
+        private Popup? _popup;
+        private bool _suppressEvent;
+        private string _textCache = "";
 
         [PublicAPI]
         public Func<object, string, bool>? Filter
@@ -61,6 +56,11 @@ namespace Adventure.Ui.Controls
                 else
                     _listBox.Items.Filter = null;
             }
+        }
+
+        static AutoCompleteTextBox()
+        {
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(AutoCompleteTextBox), new FrameworkPropertyMetadata(typeof(AutoCompleteTextBox)));
         }
 
         private void InternalClosePopup()
@@ -124,7 +124,7 @@ namespace Adventure.Ui.Controls
             _suppressEvent = true;
 
             // Get the binding's resulting value.
-            Text           = _dummy.GetValue(TextProperty).ToString();
+            Text = _dummy.GetValue(TextProperty).ToString();
             _suppressEvent = false;
             if (_listBox != null)
                 _listBox.SelectedIndex = -1;
@@ -158,12 +158,12 @@ namespace Adventure.Ui.Controls
         public override void OnApplyTemplate()
         {
             base.OnApplyTemplate();
-            _popup   = Template.FindName("PART_Popup", this) as Popup;
+            _popup = Template.FindName("PART_Popup", this) as Popup;
             _listBox = Template.FindName("PART_ListBox", this) as ListBox;
             if (_listBox == null) return;
 
             _listBox.PreviewMouseDown += listBox_MouseUp;
-            _listBox.KeyDown          += listBox_KeyDown;
+            _listBox.KeyDown += listBox_KeyDown;
             OnItemsSourceChanged(ItemsSource);
             OnItemTemplateChanged(ItemTemplate);
             OnItemContainerStyleChanged(ItemContainerStyle);
@@ -184,7 +184,7 @@ namespace Adventure.Ui.Controls
         {
             base.OnPreviewKeyDown(e);
             var fs = FocusManager.GetFocusScope(this);
-            var o  = FocusManager.GetFocusedElement(fs);
+            var o = FocusManager.GetFocusedElement(fs);
             switch (e.Key)
             {
                 case Key.Escape:
@@ -207,7 +207,7 @@ namespace Adventure.Ui.Controls
 
         private void listBox_MouseUp(object sender, MouseButtonEventArgs e)
         {
-            var dep                                          = (DependencyObject) e.OriginalSource;
+            var dep = (DependencyObject) e.OriginalSource;
             while (dep != null && !(dep is ListBoxItem)) dep = VisualTreeHelper.GetParent(dep);
             if (dep == null) return;
             var item = _listBox?.ItemContainerGenerator.ItemFromContainer(dep);

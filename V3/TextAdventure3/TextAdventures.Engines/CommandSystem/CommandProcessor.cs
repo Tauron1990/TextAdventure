@@ -1,5 +1,4 @@
 ﻿using System;
-using Akka.Actor;
 using JetBrains.Annotations;
 using TextAdventures.Engine.Data;
 
@@ -23,7 +22,7 @@ namespace TextAdventures.Engine.CommandSystem
         public abstract CommandProcessorBase CreateProcessor();
     }
 
-    public sealed record RegisterCommandProcessor<TCommand, TComponent>(RunCommand<TCommand, TComponent> Processor) : RegisterCommandProcessorBase 
+    public sealed record RegisterCommandProcessor<TCommand, TComponent>(RunCommand<TCommand, TComponent> Processor) : RegisterCommandProcessorBase
         where TCommand : IGameCommand
     {
         public override Type CommandType => typeof(TCommand);
@@ -34,37 +33,67 @@ namespace TextAdventures.Engine.CommandSystem
         {
             private readonly RunCommand<TCommand, TComponent> _processor;
 
-            public ProcessorImpl(RunCommand<TCommand, TComponent> processor) 
+            public override Type Component => typeof(TComponent);
+
+            public ProcessorImpl(RunCommand<TCommand, TComponent> processor)
                 => _processor = processor;
 
-            public override Type Component => typeof(TCommand);
-         
-            public override bool CanProcess(object component) => component is TCommand;
+            public override bool CanProcess(object component) => component is TComponent;
 
-            public override void Run(GameCore core, object component, GameObject gameObject, IGameCommand command) 
+            public override void Run(GameCore core, object component, GameObject gameObject, IGameCommand command)
                 => _processor(new Context(core, (TComponent) component, gameObject), (TCommand) command);
 
             private sealed class Context : ICommandContext<TComponent>
             {
-                public GameCore Game { get; }
-                public TComponent Component { get; }
-                public GameObject Object { get; }
-
                 public Context(GameCore game, TComponent component, GameObject o)
                 {
                     Game = game;
                     Component = component;
                     Object = o;
                 }
+
+                public GameCore Game { get; }
+                public TComponent Component { get; }
+                public GameObject Object { get; }
+
+                public void EmitEvents(params object[] events)
+                {
+                    var comp = Component as ComponentBase;
+
+                    foreach (var @event in events)
+                    {
+                        comp?.ApplyEvent(@event);
+                        Game.EventDispatcher.Send(@event);
+                    }
+                }
             }
+        }
+    }
+
+    public interface ICommandProcessorRegistrar
+    {
+        RegisterCommandProcessorBase CreateRegistration();
+    }
+
+    public abstract class CommandProcessor<TCommand, TComponent> : ICommandProcessorRegistrar
+        where TCommand : IGameCommand
+    {
+        protected abstract void RunCommand(ICommandContext<TComponent> commandContext, TCommand command);
+
+        RegisterCommandProcessorBase ICommandProcessorRegistrar.CreateRegistration()
+        {
+            return CommandProcessor.RegistrationFor<TCommand, TComponent>(RunCommand);
         }
     }
 
     [PublicAPI]
     public static class CommandProcessor
     {
-        public static RegisterCommandProcessorBase RegistrationFor<TCommand, TComponent>(RunCommand<TCommand, TComponent> processor) 
+        public static RegisterCommandProcessorBase RegistrationFor<TCommand, TComponent>(RunCommand<TCommand, TComponent> processor)
             where TCommand : IGameCommand
             => new RegisterCommandProcessor<TCommand, TComponent>(processor);
+
+        public static RegisterCommandProcessorBase RegistrationFor<TType>()
+            where TType : ICommandProcessorRegistrar, new() => new TType().CreateRegistration();
     }
 }

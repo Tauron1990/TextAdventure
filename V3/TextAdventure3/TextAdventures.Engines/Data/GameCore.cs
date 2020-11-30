@@ -1,34 +1,20 @@
-﻿using System;
-using Akka.Actor;
+﻿using Akka.Actor;
 using JetBrains.Annotations;
 using TextAdventures.Engine.EventSystem;
 
 namespace TextAdventures.Engine.Data
 {
     [PublicAPI]
-    public sealed class GameCore : IExtension
+    public sealed record GameCore(EventDispatcher EventDispatcher, GameObjectManager ObjectManager, GameMaster GameMaster) : IExtension
     {
-        public EventDispatcher EventDispatcher { get; }
-
-        public GameObjectManager ObjectManager { get; }
-
-        public GameMaster GameMaster { get; }
-
-        private GameCore(EventDispatcher eventDispatcher, GameObjectManager objectManager, GameMaster gameMaster)
-        {
-            EventDispatcher = eventDispatcher;
-            ObjectManager = objectManager;
-            GameMaster = gameMaster;
-        }
-
         public static GameCore Get(ActorSystem system)
             => system.GetExtension<GameCore>();
 
         internal sealed class GameCoreId : ExtensionIdProvider<GameCore>
         {
             private readonly EventDispatcher _eventDispatcher;
-            private readonly GameObjectManager _objectManager;
             private readonly GameMaster _gameMaster;
+            private readonly GameObjectManager _objectManager;
 
             public GameCoreId(EventDispatcher eventDispatcher, GameObjectManager objectManager, GameMaster gameMaster)
             {
@@ -38,6 +24,7 @@ namespace TextAdventures.Engine.Data
             }
 
             public override GameCore CreateExtension(ExtendedActorSystem system) => new(_eventDispatcher, _objectManager, _gameMaster);
+
         }
     }
 }

@@ -6,13 +6,13 @@ namespace Adventure.Ui.Controls
 {
     public class LimitedCollectionView : CollectionView, IEnumerable
     {
-        public LimitedCollectionView(IEnumerable? list)
-            : base(list ?? Array.Empty<object>()) =>
-            Limit = int.MaxValue;
-
         public int Limit { get; set; }
 
         public override int Count => Math.Min(base.Count, Limit);
+
+        public LimitedCollectionView(IEnumerable? list)
+            : base(list ?? Array.Empty<object>()) =>
+            Limit = int.MaxValue;
 
         #region IEnumerable Members
 

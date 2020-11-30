@@ -9,14 +9,15 @@ namespace TextAdventures.Builder
         public string Name { get; }
 
         public List<ComponentBlueprint> ComponentBlueprints { get; } = new();
-        
+
         public GameObjectBlueprint(string name) => Name = name;
 
-        public GameObjectBlueprint WithComponent<TType>()
+        public ComponentBlueprint WithComponent<TType>()
             where TType : IComponent
         {
-            ComponentBlueprints.Add(new ComponentBlueprint(typeof(TType)));
-            return this;
+            var blue = new ComponentBlueprint(typeof(TType), this);
+            ComponentBlueprints.Add(blue);
+            return blue;
         }
     }
 }

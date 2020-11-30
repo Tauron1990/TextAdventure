@@ -1,15 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Windows.Documents;
 using Akka.Actor;
-using Akkatecture.Aggregates;
-using Akkatecture.Subscribers;
 using JetBrains.Annotations;
 using TextAdventures.Builder;
-using TextAdventures.Builder.Data.Command;
 using TextAdventures.Engine;
-using TextAdventures.Engine.Events;
-using TextAdventures.Engine.Internal.Data.Aggregates;
 
 namespace Adventure.Ui
 {
@@ -19,8 +13,8 @@ namespace Adventure.Ui
     [PublicAPI]
     public partial class MainContent
     {
-        private Paragraph   _content     = new();
-        private Paragraph   _description = new();
+        private Paragraph _content = new();
+        private Paragraph _description = new();
         private GameMaster? _gameMaster;
 
         public MainContent()
@@ -38,7 +32,7 @@ namespace Adventure.Ui
                                   var document = new FlowDocument();
 
                                   _description = new Paragraph();
-                                  _content     = new Paragraph();
+                                  _content = new Paragraph();
 
                                   document.Blocks.Add(_description);
                                   document.Blocks.Add(_content);
@@ -78,15 +72,15 @@ namespace Adventure.Ui
         private sealed class MainContentSubscriber : DomainEventSubscriber, ISubscribeTo<GameInfo, GameInfoId, CommandsUpdatedEvent>,
                                                      ISubscribeTo<GameInfo, GameInfoId, GameLoaded>, ISubscribeTo<GameInfo, GameInfoId, UpdateTextContent>
         {
-            private readonly Action<GameLoaded>           _loaded;
+            private readonly Action<GameLoaded> _loaded;
             private readonly Action<CommandsUpdatedEvent> _updateCommand;
-            private readonly Action<UpdateTextContent>    _updateText;
+            private readonly Action<UpdateTextContent> _updateText;
 
             public MainContentSubscriber(Action<GameLoaded> loaded, Action<CommandsUpdatedEvent> updateCommand, Action<UpdateTextContent> updateText)
             {
-                _loaded        = loaded;
+                _loaded = loaded;
                 _updateCommand = updateCommand;
-                _updateText    = updateText;
+                _updateText = updateText;
             }
 
             public bool Handle(IDomainEvent<GameInfo, GameInfoId, CommandsUpdatedEvent> domainEvent)

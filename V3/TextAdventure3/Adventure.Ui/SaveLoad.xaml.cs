@@ -10,18 +10,9 @@ using System.Windows.Threading;
 using Adventure.Ui.Internal;
 using Adventure.Ui.WpfCommands;
 using Akka.Actor;
-using Akkatecture.Aggregates;
-using Akkatecture.Subscribers;
 using JetBrains.Annotations;
-using Tauron;
-using Tauron.Application;
 using TextAdventures.Builder;
 using TextAdventures.Engine;
-using TextAdventures.Engine.Commands;
-using TextAdventures.Engine.Events;
-using TextAdventures.Engine.Internal.Data;
-using TextAdventures.Engine.Internal.Data.Aggregates;
-using TextAdventures.Engine.Querys.Result;
 
 namespace Adventure.Ui
 {
@@ -35,7 +26,7 @@ namespace Adventure.Ui
         public SaveLoad()
         {
             InitializeComponent();
-            _model      = new SaveLoadModel((s1, s2, b) => NewGame?.Invoke(s1, s2, b), Dispatcher.CurrentDispatcher);
+            _model = new SaveLoadModel((s1, s2, b) => NewGame?.Invoke(s1, s2, b), Dispatcher.CurrentDispatcher);
             DataContext = _model;
         }
 
@@ -62,13 +53,13 @@ namespace Adventure.Ui
               .ContinueWith(t =>
                             {
                                 _model.IsGameRunning = false;
-                                _model.GameMaster    = null;
-                                _model.Profile       = null;
+                                _model.GameMaster = null;
+                                _model.Profile = null;
                             });
 
-            _model.GameMaster    = gl.Master;
+            _model.GameMaster = gl.Master;
             _model.IsGameRunning = true;
-            _model.Profile       = gl.Info;
+            _model.Profile = gl.Info;
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
@@ -89,28 +80,19 @@ namespace Adventure.Ui
 
     internal sealed class SaveLoadModel : ObservableObject
     {
-        private static readonly char[]     InvalidChars = Path.GetInvalidFileNameChars();
-        private readonly        Dispatcher _dispatcher;
+        private static readonly char[] InvalidChars = Path.GetInvalidFileNameChars();
+        private readonly Dispatcher _dispatcher;
 
         private readonly Action<string, string?, bool> _starter;
-        private          List<string>?                 _blockedNames;
-        private          GameMaster?                   _gameMaster;
-        private          bool                          _isGameRunning;
-        private          NameInfo                      _isNewNameOk;
-        private          NameInfo                      _isSaveGameNameOk;
-        private          string                        _newNameText = string.Empty;
-        private          SaveProfile?                  _profile;
-        private          string?                       _saveGameName;
-        private          string                        _saveGmeLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
-
-        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher)
-        {
-            _starter        = starter;
-            _dispatcher     = dispatcher;
-            NewName         = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
-            GenericLoadGame = new SimpleCommand(ExcuteLoad);
-            GenericSvaeGame = new SimpleCommand(_ => IsGameRunning && IsSaveGameNameOk != NameInfo.Error, ExcuteSave);
-        }
+        private List<string>? _blockedNames;
+        private GameMaster? _gameMaster;
+        private bool _isGameRunning;
+        private NameInfo _isNewNameOk;
+        private NameInfo _isSaveGameNameOk;
+        private string _newNameText = string.Empty;
+        private SaveProfile? _profile;
+        private string? _saveGameName;
+        private string _saveGmeLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
 
         public GameMaster? GameMaster
         {
@@ -209,6 +191,15 @@ namespace Adventure.Ui
         }
 
         public ICommand GenericSvaeGame { get; }
+
+        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher)
+        {
+            _starter = starter;
+            _dispatcher = dispatcher;
+            NewName = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
+            GenericLoadGame = new SimpleCommand(ExcuteLoad);
+            GenericSvaeGame = new SimpleCommand(_ => IsGameRunning && IsSaveGameNameOk != NameInfo.Error, ExcuteSave);
+        }
 
         private NameInfo ValidateNewName()
         {

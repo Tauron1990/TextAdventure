@@ -20,15 +20,12 @@ namespace TextAdventures.Engine.Storage
             return this with{ Saves = Saves.Add(name, Path.Combine(RootPath, $"{Name}-Saves", name + SaveExtension))};
         }
 
-        public static GameProfile Read(string path)
-        {
-            return File.Exists(path)
-                       ? JsonConvert.DeserializeObject<GameProfile>(path)
-                       : new GameProfile(ImmutableDictionary<string, string>.Empty,
-                                         Path.GetFileNameWithoutExtension(path),
-                                         ImmutableDictionary<string, string>.Empty,
-                                         Path.GetDirectoryName(path) ?? throw new InvalidOperationException("No valid Profile Path"));
-        }
+        public static GameProfile Read(string path) => File.Exists(path)
+                                                           ? JsonConvert.DeserializeObject<GameProfile>(path)
+                                                           : new GameProfile(ImmutableDictionary<string, string>.Empty,
+                                                                             Path.GetFileNameWithoutExtension(path),
+                                                                             ImmutableDictionary<string, string>.Empty,
+                                                                             Path.GetDirectoryName(path) ?? throw new InvalidOperationException("No valid Profile Path"));
 
         public void Save()
         {

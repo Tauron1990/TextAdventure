@@ -15,7 +15,7 @@ namespace TextAdventures.Engine.EventSystem
         public EventDispatcherActor()
         {
             ActorMaterializer materializer = Context.Materializer();
-            
+
             var source = Source.ActorPublisher<GameEvent>(Props.Create(() => new EventSender()));
             var sink = BroadcastHub.Sink<GameEvent>();
 
@@ -25,12 +25,11 @@ namespace TextAdventures.Engine.EventSystem
             Receive<RequestEventSource>(r => Sender.Tell(r.Create(broadcastSource)));
             ReceiveAny(o => publisher.Forward(o));
         }
-        
+
         private sealed class EventSender : ActorPublisher<GameEvent>, IWithTimers
         {
-            public ITimerScheduler Timers { get; set; } = null!;
-            
             private readonly Queue<GameEvent> _pendingEvents = new();
+            public ITimerScheduler Timers { get; set; } = null!;
 
             protected override bool Receive(object message)
             {
@@ -46,7 +45,7 @@ namespace TextAdventures.Engine.EventSystem
                 else
                     gameEvent = new GameEvent(message);
 
-                if(TotalDemand > 0)
+                if (TotalDemand > 0)
                     OnNext(gameEvent);
                 else
                 {
@@ -59,7 +58,7 @@ namespace TextAdventures.Engine.EventSystem
 
             private void TrySendImpl()
             {
-                if(_pendingEvents.Count == 0)
+                if (_pendingEvents.Count == 0)
                     return;
 
                 if (TotalDemand == 0)
@@ -69,22 +68,22 @@ namespace TextAdventures.Engine.EventSystem
                 }
 
                 var demand = TotalDemand;
-                for (int i = 0; i < demand && _pendingEvents.Count != 0; i++) 
+                for (var i = 0; i < demand && _pendingEvents.Count != 0; i++)
                     OnNext(_pendingEvents.Dequeue());
-                
-                if(_pendingEvents.Count != 0)
+
+                if (_pendingEvents.Count != 0)
                     StartTimer();
             }
-            
+
             private void StartTimer() => Timers.StartSingleTimer(nameof(TrySend), TrySend.Instance, TimeSpan.FromSeconds(1));
 
-            private sealed record TrySend()
+            private sealed record TrySend
             {
                 public static readonly TrySend Instance = new();
             }
         }
     }
-    
+
     public sealed record GameEvent(object ActualEvent);
 
     public abstract record RequestEventSource
@@ -95,7 +94,8 @@ namespace TextAdventures.Engine.EventSystem
     public abstract record EventSourceResponse;
 
     [PublicAPI]
-    public sealed record GenericEventRequest<TEvent> : RequestEventSource {
+    public sealed record GenericEventRequest<TEvent> : RequestEventSource
+    {
         public override EventSourceResponse Create(Source<GameEvent, NotUsed> source)
         {
             return new GenericEventResponse<TEvent>(source
@@ -106,14 +106,14 @@ namespace TextAdventures.Engine.EventSystem
 
     [PublicAPI]
     public sealed record GenericEventResponse<TEvent>(Source<TEvent, NotUsed> Source) : EventSourceResponse;
-    
+
     [PublicAPI]
     public sealed record RequestAllEvents : RequestEventSource
     {
-        public override EventSourceResponse Create(Source<GameEvent, NotUsed> source) 
+        public override EventSourceResponse Create(Source<GameEvent, NotUsed> source)
             => new AllEventsResponse(source);
     }
-    
+
     [PublicAPI]
     public sealed record AllEventsResponse(Source<GameEvent, NotUsed> Events) : EventSourceResponse;
 }

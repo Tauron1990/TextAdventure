@@ -5,8 +5,6 @@ using System.Text;
 using System.Windows;
 using System.Windows.Input;
 using Akka.Actor;
-using Akkatecture.Core;
-using Akkatecture.Subscribers;
 using TextAdventure.GameFactory;
 using TextAdventures.Builder;
 using TextAdventures.Engine;

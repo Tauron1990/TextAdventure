@@ -4,13 +4,14 @@ using System.Collections.ObjectModel;
 using System.Windows;
 using System.Windows.Input;
 using Adventure.Ui.WpfCommands;
-using TextAdventures.Builder.Data.Command;
 
 namespace Adventure.Ui.CommandDisplay
 {
     public sealed class CommandViewModel
     {
         private readonly ICommand _executor;
+
+        public ObservableCollection<ICommandContent> Commands { get; } = new();
 
         public CommandViewModel(Action<IGameCommand> exec)
         {
@@ -22,8 +23,6 @@ namespace Adventure.Ui.CommandDisplay
                                                   MessageBox.Show("No Command", "Error", MessageBoxButton.OK, MessageBoxImage.Error);
                                           });
         }
-
-        public ObservableCollection<ICommandContent> Commands { get; } = new();
 
         public void Clear()
             => Commands.Clear();

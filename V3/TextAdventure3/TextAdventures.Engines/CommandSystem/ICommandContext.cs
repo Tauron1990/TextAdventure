@@ -11,5 +11,7 @@ namespace TextAdventures.Engine.CommandSystem
         TComponent Component { get; }
 
         GameObject Object { get; }
+
+        void EmitEvents(params object[] events);
     }
 }

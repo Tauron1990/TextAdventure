@@ -32,7 +32,7 @@ namespace Adventure.Ui.Controls
         {
             ListBoxItem lbi = (ListBoxItem) sender;
             lbi.IsSelected = true;
-            var              listBox        = ItemsControl.ItemsControlFromItemContainer(lbi);
+            var listBox = ItemsControl.ItemsControlFromItemContainer(lbi);
             FrameworkElement focusedElement = (FrameworkElement) FocusManager.GetFocusedElement(FocusManager.GetFocusScope(listBox));
             if (focusedElement != null && focusedElement.IsDescendantOf(listBox))
                 lbi.Focus();

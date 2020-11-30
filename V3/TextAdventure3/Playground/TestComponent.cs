@@ -1,12 +1,14 @@
 ﻿using System;
+using TextAdventures.Engine.Data;
 
 namespace Playground
 {
-    public class TestComponent
+    public class TestComponent : ComponentBase
     {
-        public TestComponent()
+        public string Message
         {
-            Console.WriteLine("Hallo from Component");
+            get => GetData(string.Empty);
+            set => SetData(value);
         }
     }
 }
