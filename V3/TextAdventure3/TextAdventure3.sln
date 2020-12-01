@@ -28,6 +28,8 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Runner", "Runner", "{2D4FA1
 EndProject
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "Editor", "Editor", "{395BB8AA-B8D8-4F8F-8A9F-DD6BD6563826}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "TextAdventure.Editor", "TextAdventure.Editor\TextAdventure.Editor.csproj", "{68058F54-FE40-4923-AD25-CED8A66D066D}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -58,6 +60,10 @@ Global
 		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72}.Release|Any CPU.Build.0 = Release|Any CPU
+		{68058F54-FE40-4923-AD25-CED8A66D066D}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{68058F54-FE40-4923-AD25-CED8A66D066D}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{68058F54-FE40-4923-AD25-CED8A66D066D}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{68058F54-FE40-4923-AD25-CED8A66D066D}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -69,6 +75,7 @@ Global
 		{3CC9ADF8-D906-4556-ACBB-BC4ED4566C72} = {C5CDFA52-7974-4219-B903-6001444B98E3}
 		{2D4FA1B8-2146-462F-87E4-B2530A50F117} = {1293960C-4B6A-46FF-B433-CE2C4BEA8470}
 		{395BB8AA-B8D8-4F8F-8A9F-DD6BD6563826} = {1293960C-4B6A-46FF-B433-CE2C4BEA8470}
+		{68058F54-FE40-4923-AD25-CED8A66D066D} = {395BB8AA-B8D8-4F8F-8A9F-DD6BD6563826}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {1E01EB3F-480B-47D1-ADF1-F830E279C7F7}
