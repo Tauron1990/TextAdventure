@@ -3,7 +3,6 @@
         xmlns:vm="clr-namespace:TextAdventure.Editor.ViewModels;assembly=TextAdventure.Editor"
         xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
         xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-        xmlns:dock="clr-namespace:Dock.Avalonia.Controls;assembly=Dock.Avalonia"
         mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
         x:Class="TextAdventure.Editor.Views.MainWindow"
         Icon="/Assets/avalonia-logo.ico"
@@ -12,7 +11,14 @@
     <Design.DataContext>
         <vm:MainWindowViewModel/>
     </Design.DataContext>
+    <DockPanel LastChildFill="True">
+        <Menu DockPanel.Dock="Top">
+            <MenuItem Header="Daten">
+                <MenuItem Header="Öffnen"></MenuItem>
+            </MenuItem>
+        </Menu>
+        <TabControl DockPanel.Dock="Top">
 
-    <dock:DockControl/>
-
+        </TabControl>
+    </DockPanel>
 </Window>
