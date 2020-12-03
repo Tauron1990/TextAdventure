@@ -1,10 +1,13 @@
 using Avalonia;
 using Avalonia.Controls;
 using Avalonia.Markup.Xaml;
+using Avalonia.ReactiveUI;
+using ReactiveUI;
+using TextAdventure.Editor.ViewModels;
 
 namespace TextAdventure.Editor.Views
 {
-    public class MainWindow : Window
+    public class MainWindow : ReactiveWindow<MainWindowViewModel>
     {
         public MainWindow()
         {
@@ -15,5 +18,6 @@ namespace TextAdventure.Editor.Views
         {
             AvaloniaXamlLoader.Load(this);
         }
+
     }
 }
