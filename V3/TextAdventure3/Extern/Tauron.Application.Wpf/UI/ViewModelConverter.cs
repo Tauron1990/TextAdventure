@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Globalization;
 using System.Windows.Data;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Application.Wpf.Converter;
 
@@ -10,7 +9,10 @@ namespace Tauron.Application.Wpf.UI
     [PublicAPI]
     public sealed class ViewModelConverterExtension : ValueConverterFactoryBase
     {
-        protected override IValueConverter Create() => new ViewModelConverter();
+        protected override IValueConverter Create()
+        {
+            return new ViewModelConverter();
+        }
     }
 
     public class ViewModelConverter : IValueConverter
@@ -25,12 +27,15 @@ namespace Tauron.Application.Wpf.UI
             //    return view;
 
             var manager = AutoViewLocation.Manager;
-            var view    = manager.ResolveView(model);
-            return view.OrElseDefault() ?? value;
+            var view = manager.ResolveView(model);
+            return view ?? value;
 
             //root.ViewManager.ThenRegister(model, view, root);
         }
 
-        public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture) => new FrameworkObject(value).DataContext;
+        public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        {
+            return new FrameworkObject(value).DataContext;
+        }
     }
 }

@@ -8,6 +8,5 @@ namespace Tauron.Akka
             : base(actorBuilder)
         {
         }
-        
     }
 }

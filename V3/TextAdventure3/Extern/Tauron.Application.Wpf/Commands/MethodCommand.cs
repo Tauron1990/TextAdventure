@@ -11,9 +11,9 @@ namespace Tauron.Application.Wpf.Commands
             EventArgs = Argument.NotNull(eventArgs, nameof(eventArgs));
         }
 
-        public object EventArgs { get; }
+        [NotNull] public object EventArgs { get; }
 
-        public object Sender { get; }
+        [NotNull] public object Sender { get; }
     }
 
     /// <summary>The method command.</summary>
@@ -34,13 +34,13 @@ namespace Tauron.Application.Wpf.Commands
 
         private object? Context { get; }
 
-        public override void Execute(object? parameter)
+        public override void Execute(object parameter)
         {
-            var temp = parameter as EventData;
+            var temp = (EventData) parameter;
             var args = _methodType switch
             {
                 MethodType.Zero => new object[0],
-                MethodType.One => new object?[] {temp},
+                MethodType.One => new object[] {temp},
                 MethodType.Two => new[] {temp?.Sender, temp?.EventArgs},
                 MethodType.EventArgs => new[] {temp?.EventArgs},
                 _ => new object[0]

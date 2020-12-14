@@ -9,17 +9,6 @@ namespace Tauron.Temp
     {
         private static TempStorage? _default;
 
-        public TempStorage()
-            : this(Path.GetRandomFileName, Path.GetTempPath(), false)
-        {
-        }
-
-        public TempStorage(Func<string> nameProvider, string basePath, bool deleteBasePath)
-            : base(basePath, null, nameProvider, deleteBasePath)
-        {
-            WireUp();
-        }
-
         public static TempStorage Default => _default ??= new TempStorage();
 
         public static TempStorage CleanAndCreate(string path)
@@ -28,7 +17,17 @@ namespace Tauron.Temp
             return new TempStorage(Path.GetRandomFileName, path, true);
         }
 
-        private void WireUp()
+        public TempStorage()
+            : this(Path.GetRandomFileName, Path.GetTempPath(), false)
+        { }
+
+        public TempStorage(Func<string> nameProvider, string basePath, bool deleteBasePath)
+            : base(basePath, null, nameProvider, deleteBasePath)
+        {
+            WireUp();
+        }
+
+        private void WireUp() 
             => AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
 
         private void OnProcessExit(object? sender, EventArgs e)

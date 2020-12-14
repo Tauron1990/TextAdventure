@@ -4,24 +4,20 @@ using Tauron.Application.Workflow;
 
 namespace Tauron.Application.ActorWorkflow
 {
-    public delegate StepId LambdaExecution<TContext>(LambdaStep<TContext> step, TContext context);
-
-    public delegate void LambdaFinish<in TContext>(TContext context);
-
     [PublicAPI]
     public sealed class LambdaStep<TContext> : IStep<TContext>, IHasTimeout
     {
-        private readonly LambdaExecution<TContext>? _onExecute;
-        private readonly LambdaExecution<TContext>? _onNextElement;
-        private readonly LambdaFinish<TContext>? _onFinish;
+        private readonly Func<TContext, LambdaStep<TContext>, StepId>? _onExecute;
+        private readonly Func<TContext, LambdaStep<TContext>, StepId>? _onNextElement;
+        private readonly Action<TContext>? _onFinish;
 
-        public string? ErrorMessage { get; set; }
+        public string ErrorMessage { get; set; } = string.Empty;
+        
 
-
-        public LambdaStep(
-            LambdaExecution<TContext>? onExecute = default,
-            LambdaExecution<TContext>? onNextElement = default,
-            LambdaFinish<TContext>? onFinish = default, TimeSpan? timeout = default)
+        public LambdaStep(Func<TContext, 
+                LambdaStep<TContext>, StepId>? onExecute = null, 
+            Func<TContext, LambdaStep<TContext>, StepId>? onNextElement = null, 
+            Action<TContext>? onFinish = null, TimeSpan? timeout = null)
         {
             Timeout = timeout;
             _onExecute = onExecute;
@@ -29,12 +25,11 @@ namespace Tauron.Application.ActorWorkflow
             _onFinish = onFinish;
         }
 
-        public StepId OnExecute(TContext context) => _onExecute?.Invoke(this, context) ?? StepId.None;
+        public StepId OnExecute(TContext context) => _onExecute?.Invoke(context, this) ?? StepId.None;
 
-        public StepId NextElement(TContext context) => _onNextElement?.Invoke(this, context) ?? StepId.None;
+        public StepId NextElement(TContext context) => _onNextElement?.Invoke(context, this) ?? StepId.None;
 
         public void OnExecuteFinish(TContext context) => _onFinish?.Invoke(context);
-
         public TimeSpan? Timeout { get; }
 
         public void SetError(string error)
@@ -44,27 +39,27 @@ namespace Tauron.Application.ActorWorkflow
     [PublicAPI]
     public sealed class LambdaStepConfiguration<TContext>
     {
-        private LambdaExecution<TContext>? _onExecute;
-        private LambdaExecution<TContext>? _onNextElement;
-        private LambdaFinish<TContext>? _onFinish;
+        private Func<TContext, LambdaStep<TContext>, StepId>? _onExecute;
+        private Func<TContext, LambdaStep<TContext>, StepId>? _onNextElement;
+        private Action<TContext>? _onFinish;
         private TimeSpan? _timeout;
 
-        public void OnExecute(LambdaExecution<TContext> func) 
+        public void OnExecute(Func<TContext, LambdaStep<TContext>, StepId> func) 
             => _onExecute = _onExecute.Combine(func);
 
-        public void OnNextElement(LambdaExecution<TContext> func) 
+        public void OnNextElement(Func<TContext, LambdaStep<TContext>, StepId> func) 
             => _onNextElement = _onNextElement.Combine(func);
 
-        public void OnExecute(Func<TContext, StepId> func)
-            => OnExecute((_, context) => func(context));
+        public void OnExecute(Func<TContext, StepId> func) 
+            => _onExecute = _onExecute.Combine((c, _) => func(c));
 
-        public void OnNextElement(Func<TContext, StepId> func)
-            => OnNextElement((_, context) => func(context));
+        public void OnNextElement(Func<TContext, StepId> func) 
+            => _onNextElement = _onNextElement.Combine((c, _) =>  func(c));
 
-        public void OnFinish(LambdaFinish<TContext> func) 
+        public void OnFinish(Action<TContext> func) 
             => _onFinish = _onFinish.Combine(func);
 
-        public void WithTimeout(TimeSpan? timeout)
+        public void WithTimeout(TimeSpan timeout)
             => _timeout = timeout;
 
 

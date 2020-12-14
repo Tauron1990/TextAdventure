@@ -2,7 +2,6 @@
 using System.Linq;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
-using Functional.Maybe;
 using Serilog;
 
 namespace Tauron.Application.Wpf.Implementation
@@ -13,14 +12,16 @@ namespace Tauron.Application.Wpf.Implementation
 
         private readonly IPackUriHelper _packUriHelper;
 
-        public ImageHelper(IPackUriHelper packUriHelper) 
-            => _packUriHelper = packUriHelper;
+        public ImageHelper(IPackUriHelper packUriHelper)
+        {
+            _packUriHelper = packUriHelper;
+        }
 
-        public Maybe<ImageSource> Convert(Uri target, string assembly)
+        public ImageSource? Convert(Uri target, string assembly)
         {
             var source = _cache.FirstOrDefault(img => img.Key == target);
             var temp = source?.GetImage();
-            if (temp != null) return temp.ToMaybe();
+            if (temp != null) return temp;
 
             var flag = target.IsAbsoluteUri && target.Scheme == Uri.UriSchemeFile && target.OriginalString.ExisFile();
             if (!flag) flag = target.IsAbsoluteUri;
@@ -31,24 +32,24 @@ namespace Tauron.Application.Wpf.Implementation
             {
                 ImageSource imgSource = BitmapFrame.Create(target);
                 _cache.Add(new KeyedImage(target, imgSource));
-                return imgSource.ToMaybe();
+                return imgSource;
             }
 
             try
             {
-                return BitmapFrame.Create(_packUriHelper.LoadStream(target.OriginalString, assembly)).ToMaybe<ImageSource>();
+                return BitmapFrame.Create(_packUriHelper.LoadStream(target.OriginalString, assembly));
             }
             catch (Exception e)
             {
                 Log.ForContext<ImageHelper>().Warning(e, "Faild To CreateResult image");
 
-                return Maybe<ImageSource>.Nothing;
+                return null;
             }
         }
 
-        public Maybe<ImageSource> Convert(string uri, string assembly)
+        public ImageSource? Convert(string uri, string assembly)
         {
-            return Uri.TryCreate(uri, UriKind.RelativeOrAbsolute, out var target) ? Convert(target, assembly) : Maybe<ImageSource>.Nothing;
+            return Uri.TryCreate(uri, UriKind.RelativeOrAbsolute, out var target) ? Convert(target, assembly) : null;
         }
 
         private class KeyedImage : IWeakReference

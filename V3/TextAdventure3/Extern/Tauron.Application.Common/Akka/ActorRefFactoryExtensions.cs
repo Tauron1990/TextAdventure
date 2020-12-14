@@ -8,13 +8,16 @@ namespace Tauron.Akka
     [PublicAPI]
     public static class ActorRefFactoryExtensions
     {
-        public static IActorRef GetOrAdd<TActor>(this IActorContext context, string name) where TActor : ActorBase, new()
-            => GetOrAdd(context, Props.Create<TActor>(), name);
-
-        public static IActorRef GetOrAdd(this IActorContext context, Props props, string name)
+        public static IActorRef GetOrAdd<TActor>(this IActorContext context, string? name) where TActor : ActorBase, new()
         {
             var child = context.Child(name);
-            return child.IsNobody() ? context.ActorOf(props, name) : child;
+            return child.Equals(ActorRefs.Nobody) ? context.ActorOf<TActor>(name) : child;
+        }
+
+        public static IActorRef GetOrAdd(this IActorContext context, string? name, Props props)
+        {
+            var child = context.Child(name);
+            return child.Equals(ActorRefs.Nobody) ? context.ActorOf(props, name) : child;
         }
 
         public static IActorRef ActorOf<TActor>(this IActorRefFactory fac, Expression<Func<TActor>> creator, string? name) where TActor : ActorBase

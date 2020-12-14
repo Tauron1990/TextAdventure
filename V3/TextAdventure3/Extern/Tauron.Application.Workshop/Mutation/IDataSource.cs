@@ -1,11 +1,9 @@
-﻿using Functional.Maybe;
-
-namespace Tauron.Application.Workshop.Mutation
+﻿namespace Tauron.Application.Workshop.Mutation
 {
     public interface IDataSource<TData>
     {
-        Maybe<TData> GetData();
+        TData GetData();
 
-        void SetData(Maybe<TData> data);
+        void SetData(TData data);
     }
 }

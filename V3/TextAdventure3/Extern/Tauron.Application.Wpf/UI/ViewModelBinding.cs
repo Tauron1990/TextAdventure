@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Windows;
 using System.Windows.Markup;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Application.Wpf.Helper;
 
@@ -12,7 +11,10 @@ namespace Tauron.Application.Wpf.UI
     {
         private readonly string _name;
 
-        public ViewModelBinding(string name) => _name = name;
+        public ViewModelBinding(string name)
+        {
+            _name = name;
+        }
 
         //public override object? ProvideValue(IServiceProvider provider)
         //{
@@ -27,7 +29,10 @@ namespace Tauron.Application.Wpf.UI
         //    return base.ProvideValue(provider);
         //}
 
-        protected override object DesignTime() => "Design Time: No View";
+        protected override object DesignTime()
+        {
+            return "Design Time: No View";
+        }
 
         protected override object ProvideValueInternal(IServiceProvider serviceProvider)
         {
@@ -35,8 +40,7 @@ namespace Tauron.Application.Wpf.UI
                 return "Invalid IProvideValueTarget: " + _name;
             if (!(service.TargetObject is DependencyObject target))
                 return "Invalid Target Object: " + _name;
-            var promise = ControlBindLogic.FindDataContext(target.ToMaybe());
-            if (promise.IsNothing())
+            if (!ControlBindLogic.FindDataContext(target, out var promise))
                 return "No Data Context Found: " + _name;
             //if (!(ControlBindLogic.FindRoot(target) is IView view))
             //    return "No View as Root: " + _name;

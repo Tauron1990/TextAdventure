@@ -3,9 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Text;
-using Functional.Maybe;
 using JetBrains.Annotations;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Workflow
 {
@@ -16,105 +14,97 @@ namespace Tauron.Application.Workflow
     {
         private readonly Dictionary<StepId, StepRev<TState, TContext>> _states;
 
-        private Maybe<string> _errorMessage;
+        private string _errorMessage = string.Empty;
 
-        private Maybe<StepId> _lastId;
+        private StepId _lastId;
 
-        protected Producer() 
-            => _states = new Dictionary<StepId, StepRev<TState, TContext>>();
-
-        public void Begin(StepId id, Maybe<TContext> context)
+        protected Producer()
         {
-            StepProcess(May(id), context).OrElse(() => new InvalidOperationException("Process Result not set"));
+            _states = new Dictionary<StepId, StepRev<TState, TContext>>();
+        }
 
-            Do(from lastId in _lastId
-               where lastId == StepId.Fail
-               select Action(() => throw new InvalidOperationException(_errorMessage.OrElse("Unkowen Error"))));
+        public void Begin(StepId id, [NotNull] TContext context)
+        {
+            Argument.NotNull(context, nameof(context));
+
+            Process(id, context);
+
+            if (_lastId.Name == StepId.Fail.Name)
+                throw new InvalidOperationException(_errorMessage);
         }
 
         [DebuggerStepThrough]
-        protected Maybe<bool> SetLastId(Maybe<StepId> id)
+        protected bool SetLastId(StepId id)
         {
             _lastId = id;
-            return from lastId in _lastId
-                   select lastId == StepId.Finish || lastId == StepId.Fail;
+            return _lastId.Name == StepId.Finish.Name || _lastId.Name == StepId.Fail.Name;
         }
 
-        protected virtual Maybe<bool> StepProcess(Maybe<StepId> mayId, Maybe<TContext> context)
+        protected virtual bool Process(StepId id, [NotNull] TContext context)
         {
-            Maybe<bool> ProcessId(StepId sId, StepRev<TState, TContext> rev, Maybe<TContext> context)
+            Argument.NotNull(context, nameof(context));
+
+            if (SetLastId(id)) return true;
+
+            if (!_states.TryGetValue(id, out var rev))
+                return SetLastId(StepId.Fail);
+
+            var sId = rev.Step.OnExecute(context);
+            var result = false;
+
+            switch (sId.Name)
             {
-                var result = May(false);
+                case "Fail":
+                    _errorMessage = rev.Step.ErrorMessage;
+                    return SetLastId(sId);
+                case "None":
+                    result = ProgressConditions(rev, context);
+                    break;
+                case "Loop":
+                    var ok = true;
 
-                switch (sId.Name)
-                {
-                    case "Fail":
-                        _errorMessage = rev.Step.ErrorMessage;
-                        return SetLastId(May(sId));
-                    case "None":
-                        result = ProgressConditions(rev, context);
-                        break;
-                    case "Loop":
-                        // ReSharper disable once RedundantAssignment
-                        var mayOk = May(true);
-
-                        do
+                    do
+                    {
+                        var loopId = rev.Step.NextElement(context);
+                        if (loopId.Name == StepId.LoopEnd.Name)
                         {
-                            var mayLoopId = rev.Step.NextElement(context);
+                            ok = false;
+                            continue;
+                        }
 
-                            mayOk = Either(from loopId in mayLoopId
-                                       where loopId == StepId.LoopEnd
-                                       select false, true);
+                        if (loopId.Name == StepId.Fail.Name)
+                            return SetLastId(StepId.Fail);
 
-                            var fail = from loopId in mayLoopId
-                                       where loopId == StepId.Fail
-                                       select SetLastId(May(StepId.Fail));
+                        ProgressConditions(rev, context);
+                    } while (ok);
 
-                            if (fail.IsSomething())
-                                return fail;
-
-                            ProgressConditions(rev, context);
-                        } while (mayOk.OrElse(false));
-
-                        break;
-                    case "Finish":
-                    case "Skip":
-                        result = May(true);
-                        break;
-                    default:
-                        return SetLastId(May(StepId.Fail));
-                }
-
-                Do(from res in result
-                   where res
-                   select Action(() => rev.Step.OnExecuteFinish(context)));
-
-                return result;
+                    break;
+                case "Finish":
+                case "Skip":
+                    result = true;
+                    break;
+                default:
+                    return SetLastId(StepId.Fail);
             }
 
-            return from id in mayId
-                   from lastIdResult in SetLastId(mayId)
-                   where lastIdResult
-                   from rev in _states.Lookup(id)
-                   from newId in rev.Step.OnExecute(context)
-                   select ProcessId(newId, rev, context);
+            if (!result)
+                rev.Step.OnExecuteFinish(context);
+
+            return result;
         }
 
-        private Maybe<bool> ProgressConditions(StepRev<TState, TContext> rev, Maybe<TContext> context)
+        private bool ProgressConditions([NotNull] StepRev<TState, TContext> rev, TContext context)
         {
             var std = (from con in rev.Conditions
                 let stateId = con.Select(rev.Step, context)
                 where stateId.Name != StepId.None.Name
                 select stateId).ToArray();
 
-            if (std.Length != 0) return Any(std.Select(id => new Func<Maybe<bool>>(() => StepProcess(May(id), context))));
+            if (std.Length != 0) return std.Any(id => Process(id, context));
 
-            if (rev.GenericCondition.IsNothing()) return May(false);
-
-            return from condition in rev.GenericCondition
-                   from newId in May(condition.Select(rev.Step, context))
-                   where newId != StepId.None
-                   select StepProcess(May(newId), context);
+            if (rev.GenericCondition == null) return false;
+            var cid = rev.GenericCondition.Select(rev.Step, context);
+            return cid.Name != StepId.None.Name && Process(cid, context);
         }
 
         [NotNull]
@@ -129,8 +119,10 @@ namespace Tauron.Application.Workflow
         }
 
         [NotNull]
-        public StepConfiguration<TState, TContext> GetStateConfiguration(StepId id) 
-            => new(_states[id]);
+        public StepConfiguration<TState, TContext> GetStateConfiguration(StepId id)
+        {
+            return new StepConfiguration<TState, TContext>(_states[id]);
+        }
     }
 
     [PublicAPI]
@@ -138,8 +130,10 @@ namespace Tauron.Application.Workflow
     {
         private readonly StepRev<TState, TContext> _context;
 
-        internal StepConfiguration([NotNull] StepRev<TState, TContext> context) 
-            => _context = context;
+        internal StepConfiguration([NotNull] StepRev<TState, TContext> context)
+        {
+            _context = context;
+        }
 
         [NotNull]
         public StepConfiguration<TState, TContext> WithCondition([NotNull] ICondition<TContext> condition)
@@ -151,12 +145,12 @@ namespace Tauron.Application.Workflow
         }
 
         [NotNull]
-        public ConditionConfiguration<TState, TContext> WithCondition(Maybe<Func<Maybe<TContext>, IStep<TContext>, bool>> guard = default)
+        public ConditionConfiguration<TState, TContext> WithCondition(Func<TContext, IStep<TContext>, bool>? guard = null)
         {
             var con = new SimpleCondition<TContext> { Guard = guard };
-            if (guard.IsSomething()) return new ConditionConfiguration<TState, TContext> (WithCondition(con), con);
+            if (guard != null) return new ConditionConfiguration<TState, TContext> (WithCondition(con), con);
 
-            _context.GenericCondition = May<ICondition<TContext>>(con);
+            _context.GenericCondition = con;
             return new ConditionConfiguration<TState, TContext>(this, con);
         }
     }
@@ -197,7 +191,7 @@ namespace Tauron.Application.Workflow
 
         [NotNull] public List<ICondition<TContext>> Conditions { get; }
 
-        public Maybe<ICondition<TContext>> GenericCondition { get; set; }
+        public ICondition<TContext>? GenericCondition { get; set; }
 
         public override string ToString()
         {
@@ -206,7 +200,7 @@ namespace Tauron.Application.Workflow
 
             foreach (var condition in Conditions) b.AppendLine("->" + condition + ";");
 
-            if (GenericCondition.IsSomething()) b.Append("Generic->" + GenericCondition.Value + ";");
+            if (GenericCondition != null) b.Append("Generic->" + GenericCondition + ";");
 
             return b.ToString();
         }

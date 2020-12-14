@@ -6,7 +6,7 @@ namespace Tauron.Temp
     [PublicAPI]
     public interface ITempInfo : IDisposable
     {
-        string          FullPath { get; }
-        ITempDic? Parent   { get; }
+        string FullPath { get; }
+        ITempDic? Parent { get; }
     }
 }

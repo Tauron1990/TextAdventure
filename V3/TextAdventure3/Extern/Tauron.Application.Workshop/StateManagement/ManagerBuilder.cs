@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using Autofac;
-using Functional.Maybe;
+using CacheManager.Core;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement.Builder;
@@ -17,16 +17,17 @@ namespace Tauron.Application.Workshop.StateManagement
         {
             var managerBuilder = new ManagerBuilder(superviser);
             builder(managerBuilder);
-            return managerBuilder.Build(Maybe<IComponentContext>.Nothing, Maybe<AutofacOptions>.Nothing);
+            return managerBuilder.Build(null, null);
         }
 
         public WorkspaceSuperviser Superviser { get; }
 
-        private          Func<IStateDispatcherConfigurator> _dispatcherFunc = () => new DefaultStateDispatcher();
-        private readonly List<Func<Maybe<IEffect>>>         _effects        = new();
-        private readonly List<Func<Maybe<IMiddleware>>>     _middlewares    = new();
-        private readonly List<StateBuilderBase>             _states         = new();
+        private Func<IStateDispatcherConfigurator> _dispatcherFunc = () => new DefaultStateDispatcher();
+        private readonly List<Func<IEffect>> _effects = new List<Func<IEffect>>();
+        private readonly List<Func<IMiddleware>> _middlewares = new List<Func<IMiddleware>>();
+        private readonly List<StateBuilderBase> _states = new List<StateBuilderBase>();
 
+        private Action<ConfigurationBuilderCachePart>? _globalCache;
         private bool _sendBackSetting;
 
         internal ManagerBuilder(WorkspaceSuperviser superviser) 
@@ -41,7 +42,7 @@ namespace Tauron.Application.Workshop.StateManagement
         }
 
         public IStateBuilder<TData> WithDataSource<TData>(Func<IExtendedDataSource<TData>> source) 
-            where TData : class
+            where TData : class, IStateEntity
         {
             var builder = new StateBuilder<TData>(source);
             _states.Add(builder);
@@ -54,13 +55,13 @@ namespace Tauron.Application.Workshop.StateManagement
             return this;
         }
 
-        public ManagerBuilder WithMiddleware(Func<Maybe<IMiddleware>> middleware)
+        public ManagerBuilder WithMiddleware(Func<IMiddleware> middleware)
         {
             _middlewares.Add(middleware);
             return this;
         }
 
-        public ManagerBuilder WithEffect(Func<Maybe<IEffect>> effect)
+        public ManagerBuilder WithEffect(Func<IEffect> effect)
         {
             _effects.Add(effect);
             return this;
@@ -72,38 +73,31 @@ namespace Tauron.Application.Workshop.StateManagement
             return this;
         }
 
-        internal RootManager Build(Maybe<IComponentContext> mayComponentContext, Maybe<AutofacOptions> mayAutofacOptions)
+        public ManagerBuilder WithGlobalCache(Action<ConfigurationBuilderCachePart>? config)
         {
-            List<IEffect> additionalEffects = new();
-            List<IMiddleware> additionalMiddlewares = new();
+            _globalCache = config;
+            return this;
+        }
 
-            var componets =
-                from componentContext in mayComponentContext
-                from options in mayAutofacOptions.Or(AutofacOptions.Default)
-                select (componentContext.Resolve<IEnumerable<IEffect>>(), componentContext.Resolve<IEnumerable<IMiddleware>>());
+        internal RootManager Build(IComponentContext? componentContext, AutofacOptions? autofacOptions)
+        {
+            List<IEffect> additionalEffects = new List<IEffect>();
+            List<IMiddleware> additionalMiddlewares = new List<IMiddleware>();
 
-            componets.Do(add =>
+            if (componentContext != null)
             {
-                var (addEffects, addMiddlewares) = add;
+                autofacOptions ??= new AutofacOptions();
 
-                additionalEffects.AddRange(addEffects);
-                additionalMiddlewares.AddRange(addMiddlewares);
-            });
+                if(autofacOptions.ResolveEffects)
+                    additionalEffects.AddRange(componentContext.Resolve<IEnumerable<IEffect>>());
+                if(autofacOptions.ResolveMiddleware)
+                    additionalMiddlewares.AddRange(componentContext.Resolve<IEnumerable<IMiddleware>>());
+            }
 
-            var middlewares =
-                from middleware in _middlewares
-                let inst = middleware().OrElseDefault()
-                where inst != null
-                select inst;
-
-            var effects =
-                from effect in _effects
-                let inst = effect().OrElseDefault()
-                where inst != null
-                select inst;
-            
-            return new RootManager(Superviser, _dispatcherFunc(), _states, effects.Concat(additionalEffects), 
-                middlewares.Concat(additionalMiddlewares), _sendBackSetting, mayComponentContext);
+            return new RootManager(Superviser, _dispatcherFunc(), _states, 
+                _effects.Select(e => e()).Concat(additionalEffects), 
+                _middlewares.Select(m => m()).Concat(additionalMiddlewares),
+                _globalCache, _sendBackSetting, componentContext);
         }
     }
 }

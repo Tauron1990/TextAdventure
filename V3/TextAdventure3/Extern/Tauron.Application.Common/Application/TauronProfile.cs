@@ -3,7 +3,6 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Serilog;
 
@@ -40,11 +39,11 @@ namespace Tauron.Application
 
         public string Application { get; private set; }
 
-        public Maybe<string> Name { get; private set; }
+        public string? Name { get; private set; }
 
-        protected Maybe<string> Dictionary { get; private set; }
+        protected string? Dictionary { get; private set; }
 
-        protected Maybe<string> FilePath { get; private set; }
+        protected string? FilePath { get; private set; }
 
         public IEnumerator<string> GetEnumerator() 
             => _settings.Select(k => k.Key).GetEnumerator();
@@ -54,55 +53,35 @@ namespace Tauron.Application
 
         public void Delete()
         {
-            var dic = Dictionary.OrElseDefault();
-            if(string.IsNullOrWhiteSpace(dic))
-                return;
-
-
             _settings.Clear();
 
-            _logger.Information($"{Application} -- Delete Profile infos... {dic.PathShorten(20)}");
+            _logger.Information($"{Application} -- Delete Profile infos... {Dictionary?.PathShorten(20)}");
 
-            dic.DeleteDirectory();
+            Dictionary?.DeleteDirectory();
         }
 
-        public virtual void Load(string name)
+        public virtual void Load([NotNull] string name)
         {
             Argument.NotNull<object>(name, nameof(name));
             IlligalCharCheck(name);
 
-            Name = name.ToMaybe();
-            Dictionary = _defaultPath.CombinePath(Application, name).ToMaybe();
-            Dictionary.Do(d => d.CreateDirectoryIfNotExis());
+            Name = name;
+            Dictionary = _defaultPath.CombinePath(Application, name);
+            Dictionary.CreateDirectoryIfNotExis();
+            FilePath = Dictionary.CombinePath("Settings.db");
 
-            FilePath =
-                from dic in Dictionary
-                select dic.CombinePath("Settings.db");
-
-            FilePath.Do(p => _logger.Information($"{Application} -- Begin Load Profile infos... {p.PathShorten(20)}"));
+            _logger.Information($"{Application} -- Begin Load Profile infos... {FilePath.PathShorten(20)}");
 
             _settings.Clear();
-
-            var text =
-                from path in FilePath
-                select 
-                    from line in path.EnumerateTextLinesIfExis()
-                    let lineInfo = line.Split(ContentSplitter, 2)
-                    where lineInfo.Length == 2
-                    select ( lineInfo[0], lineInfo[1] );
-
-            text.Do(data =>
+            foreach (var vals in
+                FilePath.EnumerateTextLinesIfExis()
+                    .Select(line => line.Split(ContentSplitter, 2))
+                    .Where(vals => vals.Length == 2))
             {
+                _logger.Information("key: {0} | Value {1}", vals[0], vals[1]);
 
-                foreach (var dataEntry in data)
-                {
-                    var (key, dataValue) = dataEntry; 
-
-                    _logger.Information("key: {0} | Value {1}", key, dataValue);
-
-                    _settings[key] = dataValue;
-                }
-            });
+                _settings[vals[0]] = vals[1];
+            }
         }
 
         public virtual void Save()
@@ -111,17 +90,16 @@ namespace Tauron.Application
 
             try
             {
-                FilePath.Do(path =>
+                using var writer = FilePath?.OpenTextWrite();
+
+                if (writer == null) return;
+
+                foreach (var (key, value) in _settings)
                 {
-                    using var writer = path.OpenTextWrite();
+                    writer.WriteLine("{0}={1}", key, value);
 
-                    foreach (var (key, value) in _settings)
-                    {
-                        writer.WriteLine("{0}={1}", key, value);
-
-                        _logger.Information("key: {0} | Value {1}", key, value);
-                    }
-                });
+                    _logger.Information("key: {0} | Value {1}", key, value);
+                }
             }
             catch (Exception e)
             {

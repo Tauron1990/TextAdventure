@@ -3,12 +3,11 @@ using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq;
 using System.Windows;
-using Functional.Maybe;
+using Akka.Actor;
 using JetBrains.Annotations;
 using Serilog;
 using Tauron.Application.Wpf.Helper;
 using Tauron.Application.Wpf.ModelMessages;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Wpf
 {
@@ -45,24 +44,25 @@ namespace Tauron.Application.Wpf
 
         private static void MarkControl(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            SetLinker(d, MayNotEmpty(e.OldValue as string), MayNotEmpty(e.NewValue as string), () => new ControlLinker());
+            SetLinker(d, e.OldValue as string, e.NewValue as string, () => new ControlLinker());
         }
 
         private static void MarkWindowChanged(DependencyObject d, DependencyPropertyChangedEventArgs e)
         {
-            SetLinker(d, MayNotEmpty(e.OldValue as string), MayNotEmpty(e.NewValue as string), () => new WindowLinker());
+            SetLinker(d, e.OldValue as string, e.NewValue as string, () => new WindowLinker());
         }
 
-        private static void SetLinker(DependencyObject obj, Maybe<string> oldName, Maybe<string> newName, Func<LinkerBase> factory)
+        private static void SetLinker(DependencyObject obj, string? oldName, string? newName, Func<LinkerBase> factory)
         {
-            if (newName.IsNothing())
+            if (string.IsNullOrWhiteSpace(newName))
                 return;
 
+            Argument.NotNull(obj, nameof(obj));
+            Argument.NotNull(factory, nameof(factory));
             if (DesignerProperties.GetIsInDesignMode(obj)) return;
 
-            var root = ControlBindLogic.FindRoot(May(obj));
-            
-            if (root.IsNothing())
+            var root = ControlBindLogic.FindRoot(obj);
+            if (root == null)
             {
                 ControlBindLogic.MakeLazy((FrameworkElement) obj, newName, oldName, 
                     (name, old, controllable, dependencyObject) => SetLinker(old, name, controllable, dependencyObject, factory));
@@ -72,17 +72,15 @@ namespace Tauron.Application.Wpf
             SetLinker(newName, oldName, root, obj, factory);
         }
 
-        private static void SetLinker(Maybe<string> newName, Maybe<string> oldName, Maybe<IBinderControllable> mayRoot, DependencyObject obj, Func<LinkerBase> factory)
+        private static void SetLinker(string? newName, string? oldName, IBinderControllable root, DependencyObject obj, Func<LinkerBase> factory)
         {
-            var root = mayRoot.Value;
-            
-            if (oldName.IsSomething())
-                root.CleanUp(ControlHelperPrefix + oldName.Value);
+            if (oldName != null)
+                root.CleanUp(ControlHelperPrefix + oldName);
 
-            if (newName.IsNothing()) return;
+            if (newName == null) return;
 
             var linker = factory();
-            linker.Name = newName.Value;
+            linker.Name = newName;
             root.Register(ControlHelperPrefix + newName, linker, obj);
         }
 
@@ -92,7 +90,7 @@ namespace Tauron.Application.Wpf
             protected override void Scan()
             {
                 if (DataContext is IViewModel model && AffectedObject is FrameworkElement element)
-                    Tell(model.Actor, new ControlSetEvent(element, Name));
+                    model.Actor.Tell(new ControlSetEvent(element, Name));
             }
         }
 
@@ -151,7 +149,7 @@ namespace Tauron.Application.Wpf
                 if (priTarget == null) return;
 
                 if (DataContext is IViewModel model && priTarget is FrameworkElement element)
-                    Tell(model.Actor, new ControlSetEvent(element, Name));
+                    model.Actor.Tell(new ControlSetEvent(element, Name));
             }
         }
     }

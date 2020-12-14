@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using Autofac;
-using Functional.Maybe;
+using CacheManager.Core;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement.Internal;
 
@@ -17,12 +17,12 @@ namespace Tauron.Application.Workshop.StateManagement.Builder
         public WorkspaceMapBuilder(Func<WorkspaceBase<TData>> workspace) 
             => _workspace = workspace;
 
-        public override (StateContainer State, Maybe<string> Key) Materialize(MutatingEngine engine, Maybe<IComponentContext> mayComponentContext) 
-            => (new WorkspaceContainer<TData>(_map.ToImmutableDictionary(), _workspace()), Maybe<string>.Nothing);
+        public override (StateContainer State, string Key) Materialize(MutatingEngine engine, ICache<object?>? parent, IComponentContext? componentContext) 
+            => (new WorkspaceContainer<TData>(_map.ToImmutableDictionary(), _workspace()), string.Empty);
 
         public IWorkspaceMapBuilder<TData> MapAction<TAction>(Func<WorkspaceBase<TData>, IDataMutation> from)
         {
-            _map[typeof(TAction)] = (work, _) => from(work);
+            _map[typeof(TAction)] = (work, action) => from(work);
             return this;
         }
 

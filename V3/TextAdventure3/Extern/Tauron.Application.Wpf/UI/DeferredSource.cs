@@ -2,21 +2,20 @@
 using System.Collections;
 using System.ComponentModel;
 using System.Runtime.CompilerServices;
-using Functional.Maybe;
+using Akka.Actor;
 using JetBrains.Annotations;
 using Tauron.Application.Wpf.Helper;
 using Tauron.Application.Wpf.ModelMessages;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Wpf.UI
 {
     public sealed class DeferredSource : ModelConnectorBase<DeferredSource>, INotifyPropertyChanged, INotifyDataErrorInfo
     {
-        private Maybe<string>  _error;
-        private Maybe<bool>    _hasErrors;
-        private Maybe<object?> _value;
+        private string? _error;
+        private bool _hasErrors;
+        private object? _value;
 
-        public DeferredSource(string name, Maybe<DataContextPromise> promise)
+        public DeferredSource(string name, DataContextPromise promise)
             : base(name, promise)
         {
         }
@@ -26,9 +25,8 @@ namespace Tauron.Application.Wpf.UI
             get => _value;
             set
             {
-                _value = May(value);
-                Do(from model in Model
-                   select Action(() => Tell(model.Actor, new SetValue(Name, _value))));
+                _value = value;
+                Model?.Actor.Tell(new SetValue(Name, value));
             }
         }
 
@@ -36,17 +34,17 @@ namespace Tauron.Application.Wpf.UI
 
         public bool HasErrors
         {
-            get => _hasErrors.OrElseDefault();
+            get => _hasErrors;
             private set
             {
-                if (value == _hasErrors.OrElseDefault()) return;
-                _hasErrors = May(value);
+                if (value == _hasErrors) return;
+                _hasErrors = value;
                 OnPropertyChanged();
                 ErrorsChanged?.Invoke(this, new DataErrorsChangedEventArgs(nameof(Value)));
             }
         }
 
-        public IEnumerable GetErrors(string? propertyName)
+        public IEnumerable GetErrors(string propertyName)
         {
             yield return _error;
         }
@@ -55,11 +53,9 @@ namespace Tauron.Application.Wpf.UI
 
         protected override void PropertyChangedHandler(PropertyChangedEvent msg)
         {
-            _value = Either(RunWith(() =>
-                                        from newVal in msg.Value
-                                        where !Equals(newVal, _value.OrElseDefault())
-                                        select newVal, () => OnPropertyChanged(nameof(Value)))
-                          , _value);
+            if (Equals(_value, msg.Value)) return;
+            _value = msg.Value;
+            OnPropertyChanged(nameof(Value));
         }
 
         protected override void NoDataContextFound()
@@ -69,7 +65,7 @@ namespace Tauron.Application.Wpf.UI
 
         protected override void ValidateCompled(ValidatingEvent msg)
         {
-            _error    = msg.Reason;
+            _error = msg.Reason;
             HasErrors = msg.Error;
         }
 

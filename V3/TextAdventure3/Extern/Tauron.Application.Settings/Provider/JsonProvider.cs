@@ -1,38 +1,31 @@
 ﻿using System.Collections.Immutable;
 using System.IO;
-using Functional.Maybe;
-using JetBrains.Annotations;
 using Newtonsoft.Json;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Settings.Provider
 {
-    [PublicAPI]
     public sealed class JsonProvider : ISettingProvider
     {
-        private readonly Maybe<string> _fileName;
+        private readonly string _fileName;
 
-        public JsonProvider(Maybe<string> fileName)
+        public JsonProvider(string fileName)
         {
-            Do(from dic in IO.Path.GetDirectoryName(IO.Path.GetFullPath(fileName))
-                where !Directory.Exists(dic)
-               select Directory.CreateDirectory(dic));
+            var dic = Path.GetDirectoryName(Path.GetFullPath(fileName));
+            if (!string.IsNullOrWhiteSpace(dic) && !Directory.Exists(dic))
+                Directory.CreateDirectory(dic);
 
-            _fileName = IO.Path.GetFullPath(fileName);
+
+            _fileName = Path.GetFullPath(fileName);
         }
 
-        public Maybe<ImmutableDictionary<string, string>> Load()
-            =>  from exists in IO.File.Exists(_fileName)
-                where exists
-                from file in _fileName
-                select JsonConvert.DeserializeObject<ImmutableDictionary<string, string>>(File.ReadAllText(file));
+        public ImmutableDictionary<string, string> Load()
+        {
+            return File.Exists(_fileName) ? JsonConvert.DeserializeObject<ImmutableDictionary<string, string>>(File.ReadAllText(_fileName)) : ImmutableDictionary<string, string>.Empty;
+        }
 
-        public Maybe<ImmutableDictionary<string, string>> Save(ImmutableDictionary<string, string> data)
-            => from file in _fileName
-                select Func(() =>
-                {
-                    File.WriteAllText(file, JsonConvert.SerializeObject(data));
-                    return data;
-                });
+        public void Save(ImmutableDictionary<string, string> data)
+        {
+            File.WriteAllText(_fileName, JsonConvert.SerializeObject(data));
+        }
     }
 }

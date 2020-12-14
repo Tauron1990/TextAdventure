@@ -1,32 +1,27 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using Functional.Maybe;
-using static Tauron.Prelude;
+﻿using JetBrains.Annotations;
 
 namespace Tauron.Application.Workshop.StateManagement.DataFactorys
 {
     public partial class MergeFactory
     {
-        public static AdvancedDataSourceFactory Merge(params Maybe<AdvancedDataSourceFactory>[] factories) 
-            => Merge(factories.AsEnumerable());
-
-        public static AdvancedDataSourceFactory Merge(IEnumerable<Maybe<AdvancedDataSourceFactory>> factorys)
+        public static AdvancedDataSourceFactory Merge(params AdvancedDataSourceFactory[] factories)
         {
-            var target = new MergeFactory();
+            var foundFac = factories.FindIndex(a => a is MergeFactory);
+            MergeFactory factory;
 
-            void Apply(Maybe<AdvancedDataSourceFactory> mayFactory)
+            if (foundFac != -1)
+                factory = (MergeFactory) factories[foundFac];
+            else
+                factory = new MergeFactory();
+
+            for (var i = 0; i < factories.Length; i++)
             {
-                Do(from factory in mayFactory 
-                   select Action(() => target.Register(factory)));
+                if(i == foundFac) continue;
+
+                factory.Register(factories[i]);
             }
 
-            foreach (var mayFactory in factorys) 
-                Apply(mayFactory);
-
-            return target;
+            return factory;
         }
-        
-        public static AdvancedDataSourceFactory Merge(IEnumerable<AdvancedDataSourceFactory> factorys) 
-            => Merge(factorys.Select(f => f.ToMaybe()));
     }
 }

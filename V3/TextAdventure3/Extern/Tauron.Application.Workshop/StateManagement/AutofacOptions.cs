@@ -5,8 +5,6 @@ namespace Tauron.Application.Workshop.StateManagement
     [PublicAPI]
     public sealed class AutofacOptions
     {
-        public static readonly AutofacOptions Default = new();
-
         public bool ResolveEffects { get; set; } = true;
 
         public bool ResolveMiddleware { get; set; } = true;
@@ -14,6 +12,5 @@ namespace Tauron.Application.Workshop.StateManagement
         public bool RegisterSuperviser { get; set; } = true;
 
         public bool AutoRegisterInContainer { get; set; } = true;
-
     }
 }

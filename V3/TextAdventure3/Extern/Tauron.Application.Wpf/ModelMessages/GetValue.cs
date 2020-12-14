@@ -1,18 +1,33 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Functional.Maybe;
+using Amadevus.RecordGenerator;
 using JetBrains.Annotations;
 
 namespace Tauron.Application.Wpf.ModelMessages
 {
-    public sealed record GetValueRequest(string Name);
+    public sealed class GetValueRequest
+    {
+        public string Name { get; }
+
+        public GetValueRequest(string name) => Name = name;
+    }
 
     [PublicAPI]
-    public sealed record GetValueResponse(string Name, Maybe<object?> Value)
+    public sealed class GetValueResponse
     {
+        public string Name { get; }
+
+        public object? Value { get; }
+
+        public GetValueResponse(string name, object? value)
+        {
+            Name = name;
+            Value = value;
+        }
+
         [return: MaybeNull]
         public TValue TryCast<TValue>()
         {
-            if (Value.OrElseDefault() is TValue value)
+            if (Value is TValue value)
                 return value;
             return default!;
         }

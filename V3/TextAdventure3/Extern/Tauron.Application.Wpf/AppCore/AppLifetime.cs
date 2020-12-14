@@ -15,8 +15,10 @@ namespace Tauron.Application.Wpf.AppCore
         private readonly TaskCompletionSource<int> _shutdownWaiter = new TaskCompletionSource<int>();
         private System.Windows.Application? _internalApplication;
 
-        public AppLifetime(ILifetimeScope factory) 
-            => _factory = factory;
+        public AppLifetime(ILifetimeScope factory)
+        {
+            _factory = factory;
+        }
 
         public Task WaitForStartAsync(ActorSystem system)
         {

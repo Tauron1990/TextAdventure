@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using Functional.Maybe;
 using Tauron.Application.Workshop.Mutation;
 
 namespace Tauron.Application.Workshop.StateManagement.Internal
@@ -12,7 +11,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
         private readonly WorkspaceBase<TData> _source;
 
         public WorkspaceContainer(ImmutableDictionary<Type, Func<WorkspaceBase<TData>, IStateAction, IDataMutation>> map, WorkspaceBase<TData> source)
-            : base(((IState)source).ToMaybe())
+            : base(source)
         {
             _map = map;
             _source = source;
@@ -60,7 +59,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                 }
                 catch (Exception e)
                 {
-                    _result(ErrorResult.From(e));
+                    _result(new ErrorResult(e));
                     throw;
                 }
                 finally
@@ -69,11 +68,14 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                 }
             }
 
-            private sealed record ErrorResult(Maybe<string[]> Errors) : IReducerResult
+            private sealed class ErrorResult : IReducerResult
             {
                 public bool IsOk => false;
 
-                public static ErrorResult From(Exception e) => new (new[] {e.Message}.ToMaybe());
+                public string[]? Errors { get; }
+
+                public ErrorResult(Exception e) 
+                    => Errors = new[] {e.Message};
             }
         }
     }

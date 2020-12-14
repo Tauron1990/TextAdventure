@@ -1,9 +1,8 @@
-﻿
-namespace Tauron.Application.Workflow
+﻿namespace Tauron.Application.Workflow
 {
     public interface IStep<in TContext>
     {
-        string? ErrorMessage { get; }
+        string ErrorMessage { get; }
 
         //StepId Id { get; }
 

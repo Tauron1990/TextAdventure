@@ -12,12 +12,12 @@ namespace Tauron
 {
     [DebuggerStepThrough]
     [PublicAPI]
-    public static class IoExtensions
+    public static class IOExtensions
     {
         public static void AddFilesFromDictionary(this ZipArchive destination, string sourceDirectoryName)
         {
-            var stack = new Stack<FileSystemInfo>(
-                new DirectoryInfo(sourceDirectoryName).EnumerateFileSystemInfos("*.*", SearchOption.AllDirectories));
+            var stack = new Stack<FileSystemInfo>();
+            new DirectoryInfo(sourceDirectoryName).EnumerateFileSystemInfos("*.*", SearchOption.AllDirectories).Foreach(e => stack.Push(e));
 
             while (stack.Count != 0)
             {
@@ -411,7 +411,7 @@ namespace Tauron
             // ReSharper disable once AccessToModifiedClosure
             if (flag)
             {
-                foreach (var s in scheme.Where(_ => flag))
+                foreach (var s in scheme.Where(s => flag))
                     flag = target!.Scheme != s;
             }
 

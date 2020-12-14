@@ -1,9 +1,7 @@
 ﻿using System;
 using System.Diagnostics;
 using System.Runtime.Serialization;
-using Functional.Maybe;
 using JetBrains.Annotations;
-using static Tauron.Prelude;
 
 namespace Tauron.Application
 {
@@ -15,17 +13,19 @@ namespace Tauron.Application
         where TType : class
     {
         public GenericWeakReference(TType target)
-            : base(target) { }
+            : base(target)
+        {
+        }
 
         private GenericWeakReference(SerializationInfo info, StreamingContext context)
             : base(info, context)
         {
         }
 
-        public Maybe<TType> TypedTarget
+        public TType? TypedTarget
         {
-            get => MayNotNull(Target as TType);
-            set => value.Do(v => Target = v);
+            get => Target as TType;
+            set => Target = value;
         }
 
         public bool Equals(GenericWeakReference<TType>? other)

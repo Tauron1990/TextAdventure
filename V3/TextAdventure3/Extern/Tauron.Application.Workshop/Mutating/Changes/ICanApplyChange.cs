@@ -1,8 +1,6 @@
-﻿using Functional.Maybe;
-
-namespace Tauron.Application.Workshop.Mutating.Changes
+﻿namespace Tauron.Application.Workshop.Mutating.Changes
 {
-    public interface ICanApplyChange<out TData>
+    public interface ICanApplyChange<TData>
     {
         TData Apply(MutatingChange apply);
     }

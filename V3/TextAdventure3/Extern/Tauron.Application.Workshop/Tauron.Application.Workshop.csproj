@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>net5.0</TargetFramework>
+    <TargetFramework>netstandard2.1</TargetFramework>
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
@@ -15,21 +15,9 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Compile Remove="StateManagement\Cache\ParentCache.cs" />
-    <Compile Remove="StateManagement\Cache\ParentCacheHandle.cs" />
-    <Compile Remove="StateManagement\Cache\ParentExtensions.cs" />
-    <Compile Remove="StateManagement\Cache\SyncCache.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <None Include="StateManagement\Cache\ParentCache.cs" />
-    <None Include="StateManagement\Cache\ParentCacheHandle.cs" />
-    <None Include="StateManagement\Cache\ParentExtensions.cs" />
-    <None Include="StateManagement\Cache\SyncCache.cs" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <PackageReference Include="FluentValidation" Version="9.3.0" />
+    <PackageReference Include="Amadevus.RecordGenerator" Version="0.6.0" />
+    <PackageReference Include="CacheManager.Core" Version="1.2.0" />
+    <PackageReference Include="FluentValidation" Version="9.2.2" />
   </ItemGroup>
 
   <ItemGroup>

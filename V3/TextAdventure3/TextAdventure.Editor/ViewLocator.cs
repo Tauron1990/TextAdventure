@@ -4,27 +4,27 @@
 using System;
 using Avalonia.Controls;
 using Avalonia.Controls.Templates;
+using JetBrains.Annotations;
 using TextAdventure.Editor.ViewModels;
 
 namespace TextAdventure.Editor
 {
+    [PublicAPI]
     public class ViewLocator : IDataTemplate
     {
         public bool SupportsRecycling => false;
 
-        public IControl Build(object data)
+        public IControl? Build(object data)
         {
             var name = data.GetType().FullName.Replace("ViewModel", "View");
             var type = Type.GetType(name);
 
             if (type != null)
             {
-                return (Control)Activator.CreateInstance(type);
+                return Activator.CreateInstance(type) as Control;
             }
-            else
-            {
-                return new TextBlock { Text = "Not Found: " + name };
-            }
+
+            return new TextBlock { Text = "Not Found: " + name };
         }
 
         public bool Match(object data)

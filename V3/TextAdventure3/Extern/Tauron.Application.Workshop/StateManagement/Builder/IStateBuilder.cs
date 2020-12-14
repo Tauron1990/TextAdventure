@@ -1,4 +1,5 @@
 ﻿using System;
+using CacheManager.Core;
 using JetBrains.Annotations;
 
 namespace Tauron.Application.Workshop.StateManagement.Builder
@@ -11,6 +12,12 @@ namespace Tauron.Application.Workshop.StateManagement.Builder
             where TState : IState<TData>;
 
         IStateBuilder<TData> WithStateType(Type type);
+
+        IStateBuilder<TData> WithNoCache();
+
+        IStateBuilder<TData> WithParentCache();
+
+        IStateBuilder<TData> WithCache(Action<ConfigurationBuilderCachePart> cache);
 
         IStateBuilder<TData> WithReducer(Func<IReducer<TData>> reducer);
 

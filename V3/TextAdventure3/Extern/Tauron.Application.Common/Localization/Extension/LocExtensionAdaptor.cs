@@ -2,7 +2,6 @@
 using System.Globalization;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Akka;
 using Tauron.Localization.Actor;
@@ -21,30 +20,23 @@ namespace Tauron.Localization.Extension
             _extension = Argument.NotNull(extension, nameof(extension));
         }
 
-        public void Request(string name, Action<object?> valueResponse, Maybe<CultureInfo> info = default)
+        public void Request(string name, Action<object?> valueResponse, CultureInfo? info = null)
         {
-            var hook = EventActor.Create(_system, Maybe<string>.Nothing, true);
-            hook.Do(h =>
-            {
-                h.Register(HookEvent.Create<LocCoordinator.ResponseLocValue>(res => valueResponse(res.Result)));
-                h.Send(_extension.LocCoordinator, new LocCoordinator.RequestLocValue(name, info.Or(CultureInfo.CurrentUICulture)));
-            });
+            var hook = EventActor.Create(_system, null, true);
+            hook.Register(HookEvent.Create<LocCoordinator.ResponseLocValue>(res => valueResponse(res.Result)));
+            hook.Send(_extension.LocCoordinator, new LocCoordinator.RequestLocValue(name, info ?? CultureInfo.CurrentUICulture));
         }
 
-        public Maybe<object> Request(string name, Maybe<CultureInfo> info = default) 
-            => _extension.LocCoordinator.Ask<LocCoordinator.ResponseLocValue>(new LocCoordinator.RequestLocValue(name, info.Or(CultureInfo.CurrentUICulture))).Result.Result;
+        public object? Request(string name, CultureInfo? info = null) 
+            => _extension.LocCoordinator.Ask<LocCoordinator.ResponseLocValue>(new LocCoordinator.RequestLocValue(name, info ?? CultureInfo.CurrentUICulture)).Result.Result;
 
-        public Task<Maybe<object>> RequestTask(string name, Maybe<CultureInfo> info = default) 
-            => _extension.LocCoordinator.Ask<LocCoordinator.ResponseLocValue>(new LocCoordinator.RequestLocValue(name, info.Or(CultureInfo.CurrentUICulture)))
-                .ContinueWith(t => t.Result.Result);
+        public Task<object?> RequestTask(string name, CultureInfo? info = null) 
+            => _extension.LocCoordinator.Ask<LocCoordinator.ResponseLocValue>(new LocCoordinator.RequestLocValue(name, info ?? CultureInfo.CurrentUICulture)).ContinueWith(t => t.Result.Result);
 
-        public Maybe<string> RequestString(string name, Maybe<CultureInfo> info = default)
-        {
-            return (from o in  Request(name, info)
-                select o.ToString() ?? string.Empty)!;
-        }
+        public string RequestString(string name, CultureInfo? info = null) 
+            => Request(name, info)?.ToString() ?? string.Empty;
 
-        public void RequestString(string name, Action<string> valueResponse, Maybe<CultureInfo> info = default) 
+        public void RequestString(string name, Action<string> valueResponse, CultureInfo? info = null) 
             => Request(name, o => valueResponse(o?.ToString() ?? string.Empty), info);
     }
 }

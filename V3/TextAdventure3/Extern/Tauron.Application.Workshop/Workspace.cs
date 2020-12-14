@@ -1,11 +1,9 @@
-﻿using Functional.Maybe;
-using JetBrains.Annotations;
+﻿using JetBrains.Annotations;
 using Tauron.Application.Workshop.Analyzing;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.Mutating.Changes;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Workshop
 {
@@ -23,15 +21,15 @@ namespace Tauron.Application.Workshop
 
         protected MutatingEngine<TData> Engine { get; }
 
-        Maybe<TData> IDataSource<TData>.GetData() 
+        TData IDataSource<TData>.GetData() 
             => GetDataInternal();
 
-        void IDataSource<TData>.SetData(Maybe<TData> data) 
+        void IDataSource<TData>.SetData(TData data) 
             => SetDataInternal(data);
 
-        protected abstract Maybe<TData> GetDataInternal();
+        protected abstract TData GetDataInternal();
 
-        protected abstract void SetDataInternal(Maybe<TData> data);
+        protected abstract void SetDataInternal(TData data);
     }
 
     [PublicAPI]
@@ -41,14 +39,11 @@ namespace Tauron.Application.Workshop
     {
         protected Workspace(WorkspaceSuperviser superviser)
             : base(superviser) =>
-            Analyzer = Analyzing.Analyzer.From<TThis, MutatingContext<TRawData>>(this.ToMaybe().Cast<Workspace<TThis, TRawData>, TThis>(), superviser);
+            Analyzer = Analyzing.Analyzer.From<TThis, MutatingContext<TRawData>>((TThis) this, superviser);
 
         public IAnalyzer<TThis, MutatingContext<TRawData>> Analyzer { get; }
 
         public void Reset(TRawData newData) 
-            => Engine.Mutate(nameof(Reset), 
-                mayData =>
-                    from data in mayData
-                    select data.Update(new ResetChange(), newData));
+            => Engine.Mutate(nameof(Reset), data => data.Update(new ResetChange(), newData));
     }
 }

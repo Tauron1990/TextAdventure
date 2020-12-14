@@ -3,21 +3,48 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Reactive.Linq;
 using JetBrains.Annotations;
 
 namespace Tauron
 {
+    public abstract record CallResult<TResult>(bool IsOk);
+
+    public sealed record ErrorCallResult<TResult>(Exception Error) : CallResult<TResult>(false);
+
+    public sealed record SucessCallResult<TResult>(TResult Result) : CallResult<TResult>(true);
+    
     [DebuggerNonUserCode]
     [PublicAPI]
     public static class EnumerableExtensions
     {
+        public static IObservable<CallResult<TResult>> SelectSafe<TEvent, TResult>(this IObservable<TEvent> observable, Func<TEvent, TResult> selector)
+        {
+            return observable.Select<TEvent, CallResult<TResult>>(evt =>
+                                                      {
+                                                          try
+                                                          {
+                                                              return new SucessCallResult<TResult>(selector(evt));
+                                                          }
+                                                          catch (Exception e)
+                                                          {
+                                                              return new ErrorCallResult<TResult>(e);
+                                                          }
+                                                      });
+        }
+
+        public static IObservable<Exception> OnError<TResult>(this IObservable<CallResult<TResult>> observable) 
+            => observable.Where(cr => cr is ErrorCallResult<TResult>).Cast<ErrorCallResult<TResult>>().Select(er => er.Error);
+
+        public static IObservable<TResult> OnResult<TResult>(this IObservable<CallResult<TResult>> observable)
+            => observable.Where(cr => cr is SucessCallResult<TResult>).Cast<SucessCallResult<TResult>>().Select(sr => sr.Result);
         public static TType AddAnd<TType>(this ICollection<TType> collection, TType item)
         {
             collection.Add(item);
             return item;
         }
 
-        public static void ShiftElements<T>(this T[]? array, int oldIndex, int newIndex)
+        public static void ShiftElements<T>([CanBeNull] this T[] array, int oldIndex, int newIndex)
         {
             if (array == null) return;
 
@@ -36,17 +63,21 @@ namespace Tauron
             array[newIndex] = tmp;
         }
 
-        public static string Concat(this IEnumerable<string> strings) 
-            => string.Concat(strings);
+        public static string Concat(this IEnumerable<string> strings)
+        {
+            return string.Concat(strings);
+        }
 
-        public static string Concat([NotNull] this IEnumerable<object> objects) 
-            => string.Concat(objects);
+        public static string Concat([NotNull] this IEnumerable<object> objects)
+        {
+            return string.Concat(objects);
+        }
 
-        //public static void Foreach<TValue>(this IEnumerable<TValue> enumerator, [NotNull] Action<TValue> action)
-        //{
-        //    foreach (var value in enumerator)
-        //        action(value);
-        //}
+        public static void Foreach<TValue>(this IEnumerable<TValue> enumerator, [NotNull] Action<TValue> action)
+        {
+            foreach (var value in enumerator)
+                action(value);
+        }
 
         public static IEnumerable<T> SkipLast<T>([NotNull] this IEnumerable<T> source, int count)
         {

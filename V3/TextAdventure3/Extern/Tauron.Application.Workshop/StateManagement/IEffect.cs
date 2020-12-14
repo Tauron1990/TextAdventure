@@ -1,8 +1,5 @@
-﻿using JetBrains.Annotations;
-
-namespace Tauron.Application.Workshop.StateManagement
+﻿namespace Tauron.Application.Workshop.StateManagement
 {
-    [PublicAPI]
     public interface IEffect
     {
 		void Handle(IStateAction action, IActionInvoker dispatcher);

@@ -1,4 +1,9 @@
 ﻿namespace Tauron.Application.Wpf.ModelMessages
 {
-    public sealed record TrackPropertyEvent(string Name);
+    public sealed class TrackPropertyEvent
+    {
+        public string Name { get; }
+
+        public TrackPropertyEvent(string name) => Name = name;
+    }
 }

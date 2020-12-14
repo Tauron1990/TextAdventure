@@ -1,5 +1,4 @@
-﻿using Functional.Maybe;
-using System;
+﻿using System;
 using System.Collections.Generic;
 using Akka.Actor;
 using JetBrains.Annotations;
@@ -14,21 +13,21 @@ namespace Tauron.Application.Workshop.Analyzing.Rules
     {
         private sealed class InternalRuleActor : ExposedReceiveActor
         {
-            public InternalRuleActor(Func<Maybe<IExposedReceiveActor>, Maybe<Unit>> constructor) 
-                => constructor(Prelude.May((IExposedReceiveActor)this));
+            public InternalRuleActor(Action<IExposedReceiveActor> constructor) 
+                => constructor(this);
         }
 
-        protected Maybe<TWorkspace> Workspace { get; private set; }
+        protected TWorkspace Workspace { get; private set; } = null!;
 
         public abstract string Name { get; }
 
-        public Maybe<IActorRef> Init(IActorRefFactory superviser, Maybe<TWorkspace> workspace)
+        public IActorRef Init(IActorRefFactory superviser, TWorkspace workspace)
         {
             Workspace = workspace;
             return superviser.ActorOf(() => new InternalRuleActor(ActorConstruct), Name);
         }
 
-        protected abstract Maybe<Unit> ActorConstruct(Maybe<IExposedReceiveActor> mayActor);
+        protected abstract void ActorConstruct(IExposedReceiveActor actor);
 
         //protected abstract void RegisterResponds(TWorkspace workspace, IActorContext context);
 

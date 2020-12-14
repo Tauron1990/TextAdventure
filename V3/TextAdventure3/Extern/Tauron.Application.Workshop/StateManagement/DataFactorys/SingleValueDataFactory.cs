@@ -1,83 +1,51 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
-using Functional.Maybe;
 using Tauron.Application.Workshop.Mutation;
 
 namespace Tauron.Application.Workshop.StateManagement.DataFactorys
 {
     public abstract class SingleValueDataFactory<TData> : AdvancedDataSourceFactory
+        where TData : IStateEntity
     {
-        private readonly SemaphoreSlim _sync = new(1);
-        private int _sourceCount;
+        private readonly Lazy<object> _lazyData;
+
+        protected SingleValueDataFactory() 
+            => _lazyData = new Lazy<object>(() => new SingleValueSource(CreateValue()), LazyThreadSafetyMode.ExecutionAndPublication);
 
         public override bool CanSupply(Type dataType) => dataType == typeof(TData);
 
-        public override Func<IExtendedDataSource<TRealData>> Create<TRealData>()
+        public override Func<IExtendedDataSource<TRealData>> Create<TRealData>() 
+            => () => (IExtendedDataSource<TRealData>) _lazyData.Value;
+
+        protected abstract Task<TData> CreateValue();
+
+        private sealed class SingleValueSource : IExtendedDataSource<TData>, IDisposable
         {
-            ThrowDispose();
-            return () =>
-                   {
-                       ThrowDispose();
-                       Interlocked.Increment(ref _sourceCount);
-                       return new SingleValueSource(CreateValue, UpdateFrom, ContextDisposed, _sync) as IExtendedDataSource<TRealData> ?? 
-                              throw new InvalidCastException("Data Type not Compatiple");
-                   };
-        }
+            private Task<TData> _value;
+            private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(0, 1);
 
-        private void ContextDisposed()
-        {
-            if(Interlocked.Decrement(ref _sourceCount) == 0)
-                Dispose();
-        }
+            public SingleValueSource(Task<TData> value) => _value = value;
 
-        protected abstract Task<Maybe<TData>> CreateValue();
-
-        protected abstract Task UpdateFrom(Maybe<TData> data);
-
-        protected override void DisposeCore(bool disposing)
-        {
-            if(disposing)
-                _sync.Dispose();
-            base.DisposeCore(disposing);
-        }
-
-        private sealed class SingleValueSource : DisposeableBase, IExtendedDataSource<TData>
-        {
-            private readonly Func<Task<Maybe<TData>>> _createValue;
-            private readonly Func<Maybe<TData>, Task> _update;
-            private readonly Action                   _onDispose;
-            private readonly SemaphoreSlim            _sync;
-
-            public SingleValueSource(Func<Task<Maybe<TData>>> createValue, Func<Maybe<TData>, Task> update, Action onDispose, SemaphoreSlim sync)
+            public async Task<TData> GetData(IQuery query)
             {
-                _createValue = createValue;
-                _update      = update;
-                _onDispose   = onDispose;
-                _sync   = sync;
+                await _semaphore.WaitAsync();
+                return await _value;
             }
 
-            public async Task<Maybe<TData>> GetData(IQuery query)
+            public Task SetData(IQuery query, TData data)
             {
-                ThrowDispose();
-                await _sync.WaitAsync();
-                return await _createValue();
-            }
-
-            public async Task SetData(IQuery query, Maybe<TData> data)
-            {
-                ThrowDispose();
-                await _update(data);
+                _value = Task.FromResult(data);
+                return Task.CompletedTask;
             }
 
             public Task OnCompled(IQuery query)
             {
-                ThrowDispose();
-                _sync.Release();
+                _semaphore.Release();
                 return Task.CompletedTask;
             }
 
-            protected override void DisposeCore(bool disposing) => _onDispose();
+            public void Dispose() => _semaphore.Dispose();
         }
     }
 }

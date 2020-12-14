@@ -1,34 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
-using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac;
+using CacheManager.Core;
 using FluentValidation;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.StateManagement.Attributes;
 using Tauron.Application.Workshop.StateManagement.DataFactorys;
-using static Tauron.Prelude;
-
-using TypeLst = System.Collections.Immutable.ImmutableList<System.Type>;
-using TypeGroupDic = System.Collections.Immutable.ImmutableDictionary<System.Type, System.Collections.Immutable.ImmutableList<System.Type>>;
 
 namespace Tauron.Application.Workshop.StateManagement.Internal
 {
     public class ReflectionSearchEngine
     {
-        private sealed record ReflectionData(ImmutableList<(Type State, Maybe<string> Key)> States, TypeGroupDic Reducers, ImmutableList<Func<Maybe<AdvancedDataSourceFactory>>> Factorys, TypeLst Processors);
-
         private static readonly MethodInfo ConfigurateStateMethod = typeof(ReflectionSearchEngine).GetMethod(nameof(ConfigurateState), BindingFlags.Instance | BindingFlags.NonPublic)
          ?? throw new InvalidOperationException("Method not Found");
 
         private readonly Assembly _assembly;
-        private readonly Maybe<IComponentContext> _context;
+        private readonly IComponentContext? _context;
 
-        public ReflectionSearchEngine(Assembly assembly, Maybe<IComponentContext> context)
+        public ReflectionSearchEngine(Assembly assembly, IComponentContext? context)
         {
             _assembly = assembly;
             _context = context;
@@ -36,90 +28,69 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
         public void Add(ManagerBuilder builder, IDataSourceFactory factory)
         {
-            var data = new ReflectionData(ImmutableList<(Type State, Maybe<string> Key)>.Empty, TypeGroupDic.Empty, ImmutableList<Func<Maybe<AdvancedDataSourceFactory>>>.Empty, TypeLst.Empty);
-
-            Func<Maybe<TType>> CreateFactory<TType>(Type target)
+            Func<TType> CreateFactory<TType>(Type target)
             {
-                Maybe<TType> TryCreate()
-                    => from obj in MayNotNull(FastReflection.Shared.FastCreateInstance(target))
-                       where obj is TType
-                       select (TType) obj;
-
-                Maybe<TType> TryResolve()
-                    => from context in _context
-                       from obj in MayNotNull(context.ResolveOptional(target))
-                       where obj is TType
-                       select (TType) obj;
-
-                return () => Either(TryResolve, TryCreate);
-            }
-
-            void ApplyAttribute(Type targetType, object attr)
-            {
-                TypeGroupDic AddToDic(TypeGroupDic dic, Type key) 
-                    => dic.ContainsKey(key) 
-                        ? dic.SetItem(key, dic[key].Add(targetType)) 
-                        : dic.Add(key, TypeLst.Empty.Add(targetType));
-
-                ReflectionData Switch(ReflectionData data)
-                {
-                    switch (attr)
-                    {
-                        case StateAttribute state:
-                             return data with{ States = data.States.Add((targetType, MayNotEmpty(state.Key))) };
-                        case EffectAttribute:
-                            builder.WithEffect(CreateFactory<IEffect>(targetType));
-                            return data;
-                        case MiddlewareAttribute:
-                            builder.WithMiddleware(CreateFactory<IMiddleware>(targetType));
-                            return data;
-                        case BelogsToStateAttribute belogsTo:
-                            return data with{Reducers = AddToDic(data.Reducers, belogsTo.StateType)};
-                        case DataSourceAttribute:
-                            return data with{Factorys = data.Factorys.Add(CreateFactory<AdvancedDataSourceFactory>(targetType))};
-                        case ProcessorAttribute:
-                            return data with{Processors = data.Processors.Add(targetType)};
-                        default:
-                            return data;
-                    }
-                }
-
-                data = DoModify(data, d => from data in d
-                                           select Switch(data));
+                if (_context != null)
+                    return () => (TType) (_context.ResolveOptional(target) ?? Activator.CreateInstance(target));
+                return () => (TType)Activator.CreateInstance(target);
             }
 
             var types = _assembly.GetTypes();
+            var states = new List<(Type, string?)>();
+            var reducers = new GroupDictionary<Type, Type>();
+            var factorys = new List<AdvancedDataSourceFactory>();
+            var processors = new List<Type>();
 
             foreach (var type in types)
             {
                 foreach (var customAttribute in type.GetCustomAttributes(false))
-                    ApplyAttribute(type, customAttribute);
+                {
+                    switch (customAttribute)
+                    {
+                        case StateAttribute state:
+                            states.Add((type, state.Key));
+                            break;
+                        case EffectAttribute _:
+                            builder.WithEffect(CreateFactory<IEffect>(type));
+                            break;
+                        case MiddlewareAttribute _:
+                            builder.WithMiddleware(CreateFactory<IMiddleware>(type));
+                            break;
+                        case BelogsToStateAttribute belogsTo:
+                            reducers.Add(belogsTo.StateType, type);
+                            break;
+                        case DataSourceAttribute _:
+                            factorys.Add((AdvancedDataSourceFactory)(_context?.ResolveOptional(type) ?? Activator.CreateInstance(type)));
+                            break;
+                        case ProcessorAttribute _:
+                            processors.Add(type);
+                            break;
+                    }
+                }
             }
 
-            if (data.Factorys.Count != 0)
+            if (factorys.Count != 0)
             {
-                var factory1 = factory;
-                
-                data    = data with{Factorys = data.Factorys.Add(() => factory1.MaybeCast<IDataSourceFactory, AdvancedDataSourceFactory>())};
-                factory = MergeFactory.Merge(data.Factorys.Select(f => f()));
+                factorys.Add((AdvancedDataSourceFactory)factory);
+                factory = MergeFactory.Merge(factorys.ToArray());
             }
 
-            foreach (var (type, key) in data.States)
+            foreach (var (type, key) in states)
             {
                 if(type == null || type.BaseType?.IsGenericType != true || type.BaseType?.GetGenericTypeDefinition() != typeof(StateBase<>)) 
                     continue;
 
                 var dataType = type.BaseType.GetGenericArguments()[0];
                 var actualMethod = ConfigurateStateMethod.MakeGenericMethod(dataType);
-                actualMethod.Invoke(this, new object?[] {type, builder, factory, data.Reducers, key});
+                actualMethod.Invoke(this, new object?[] {type, builder, factory, reducers, key});
             }
 
-            //foreach (var processor in processors) 
-            //    builder.Superviser.CreateAnonym(processor, $"Processor--{processor.Name}");
+            foreach (var processor in processors) 
+                builder.Superviser.CreateAnonym(processor, $"Processor--{processor.Name}");
         }
 
-        private void ConfigurateState<TData>(Type target, ManagerBuilder builder, IDataSourceFactory factory, TypeGroupDic reducerMap, string? key)
-            where TData : class
+        private void ConfigurateState<TData>(Type target, ManagerBuilder builder, IDataSourceFactory factory, GroupDictionary<Type, Type> reducerMap, string? key)
+            where TData : class, IStateEntity
         {
             var config = builder.WithDataSource(factory.Create<TData>());
 
@@ -127,6 +98,18 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                 config.WithKey(key);
 
             config.WithStateType(target);
+            if (target.GetCustomAttribute(typeof(CacheAttribute)) is CacheAttribute cache && cache.UseParent)
+                config.WithParentCache();
+
+            foreach (var methodInfo in target.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
+            {
+                if (!(methodInfo.GetCustomAttribute(typeof(CacheAttribute)) is CacheAttribute metCache)) continue;
+                
+                if (metCache.UseParent)
+                    config.WithParentCache();
+
+                config.WithCache((Action<ConfigurationBuilderCachePart>) Delegate.CreateDelegate(typeof(Action<ConfigurationBuilderCachePart>), methodInfo));
+            }
 
             if (!reducerMap.TryGetValue(target, out var reducers)) return;
             
@@ -177,19 +160,19 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                 //Sync Version
                 var returnType = reducer.ReturnType;
                 if (returnType == typeof(MutatingContext<TData>))
-                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(Maybe<MutatingContext<TData>>), actionType, typeof(Maybe<MutatingContext<TData>>));
+                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(MutatingContext<TData>), actionType, typeof(MutatingContext<TData>));
                 else if (returnType == typeof(ReducerResult<TData>))
-                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(Maybe<MutatingContext<TData>>), actionType, typeof(Maybe<ReducerResult<TData>>));
+                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(MutatingContext<TData>), actionType, typeof(ReducerResult<TData>));
                 else if (returnType.IsAssignableTo<TData>())
-                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(Maybe<MutatingContext<TData>>), actionType, typeof(Maybe<TData>));
+                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(MutatingContext<TData>), actionType, typeof(TData));
 
                 //AsyncVersion
                 if (returnType == typeof(Task<MutatingContext<TData>>))
-                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(Maybe<MutatingContext<TData>>), actionType, typeof(Task<Maybe<MutatingContext<TData>>>));
+                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(MutatingContext<TData>), actionType, typeof(Task<MutatingContext<TData>>));
                 else if (returnType == typeof(Task<ReducerResult<TData>>))
-                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(Maybe<MutatingContext<TData>>), actionType, typeof(Task<Maybe<ReducerResult<TData>>>));
+                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(MutatingContext<TData>), actionType, typeof(Task<ReducerResult<TData>>));
                 else if (returnType.IsAssignableTo<Task<TData>>())
-                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(Maybe<MutatingContext<TData>>), actionType, typeof(Task<Maybe<TData>>));
+                    delegateType = typeof(Func<,,>).MakeGenericType(typeof(MutatingContext<TData>), actionType, typeof(Task<TData>));
 
                 if (delegateType == null)
                     continue;
@@ -201,50 +184,49 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
                 var constructedReducer = typeof(DelegateReducer<,>).MakeGenericType(actionType, typeof(TData));
                 var reducerInstance = Activator.CreateInstance(constructedReducer, acrualDelegate, validator);
-                if (reducerInstance == null)
-                    throw new InvalidOperationException($"Reducer Creation Failed {constructedReducer}");
-                
+
                 config.WithReducer(() => (IReducer<TData>) reducerInstance);
             }
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
-        private sealed class DelegateReducer<TAction, TData> : Reducer<TAction, TData>
+        private sealed class DelegateReducer<TAction, TData> : Reducer<TAction, TData> 
+            where TData : IStateEntity 
             where TAction : IStateAction
         {
-            private readonly Func<Maybe<MutatingContext<TData>>, TAction, Task<Maybe<ReducerResult<TData>>>> _action;
+            private readonly Func<MutatingContext<TData>, TAction, Task<ReducerResult<TData>>> _action;
 
-            public DelegateReducer(Func<Maybe<MutatingContext<TData>>, TAction, Maybe<ReducerResult<TData>>> action, IValidator<TAction>? validation)
+            public DelegateReducer(Func<MutatingContext<TData>, TAction, ReducerResult<TData>> action, IValidator<TAction>? validation)
             {
                 _action = (a, c) => Task.FromResult(action(a, c));
                 Validator = validation;
             }
 
-            public DelegateReducer(Func<Maybe<MutatingContext<TData>>, TAction, Maybe<MutatingContext<TData>>> action, IValidator<TAction>? validation)
+            public DelegateReducer(Func<MutatingContext<TData>, TAction, MutatingContext<TData>> action, IValidator<TAction>? validation)
             {
                 _action = (context, stateAction) => SucessAsync(action(context, stateAction));
                 Validator = validation;
             }
 
-            public DelegateReducer(Func<Maybe<MutatingContext<TData>>, TAction, Maybe<TData>> action, IValidator<TAction>? validation)
+            public DelegateReducer(Func<MutatingContext<TData>, TAction, TData> action, IValidator<TAction>? validation)
             {
                 _action = (context, stateAction) => SucessAsync(MutatingContext<TData>.New(action(context, stateAction)));
                 Validator = validation;
             }
 
-            public DelegateReducer(Func<Maybe<MutatingContext<TData>>, TAction, Task<Maybe<ReducerResult<TData>>>> action, IValidator<TAction>? validation)
+            public DelegateReducer(Func<MutatingContext<TData>, TAction, Task<ReducerResult<TData>>> action, IValidator<TAction>? validation)
             {
                 _action = action;
                 Validator = validation;
             }
 
-            public DelegateReducer(Func<Maybe<MutatingContext<TData>>, TAction, Task<Maybe<MutatingContext<TData>>>> action, IValidator<TAction>? validation)
+            public DelegateReducer(Func<MutatingContext<TData>, TAction, Task<MutatingContext<TData>>> action, IValidator<TAction>? validation)
             {
                 _action = async (context, stateAction) => Sucess(await action(context, stateAction));
                 Validator = validation;
             }
 
-            public DelegateReducer(Func<Maybe<MutatingContext<TData>>, TAction, Task<Maybe<TData>>> action, IValidator<TAction>? validation)
+            public DelegateReducer(Func<MutatingContext<TData>, TAction, Task<TData>> action, IValidator<TAction>? validation)
             {
                 _action = async (context, stateAction) => Sucess(MutatingContext<TData>.New(await action(context, stateAction)));
                 Validator = validation;
@@ -252,7 +234,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
             public override IValidator<TAction>? Validator { get; }
 
-            protected override async Task<Maybe<ReducerResult<TData>>> Reduce(Maybe<MutatingContext<TData>> state, TAction action) 
+            protected override async Task<ReducerResult<TData>> Reduce(MutatingContext<TData> state, TAction action) 
                 => await _action(state, action);
         }
     }

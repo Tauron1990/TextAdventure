@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -10,32 +11,37 @@ using JetBrains.Annotations;
 
 namespace Tauron.Akka
 {
-    [PublicAPI]
     public interface IExposedReceiveActor
     {
-        public IActorDsl Exposed { get; }
-
-        void WhenMessageReceive<TMessage>(Func<IObservable<TMessage>, IDisposable> handler);
-
-        IObservable<TMessage> WhenMessageReceive<TMessage>();
+        IActorDsl Exposed { get; }
     }
 
     [PublicAPI]
     public class ExposedReceiveActor : ReceiveActor, IActorDsl, IExposedReceiveActor
     {
-        private readonly List<IDisposable>                         _resources = new();
-        private          Action<Exception, IActorContext>?         _onPostRestart;
-        private          Action<IActorContext>?                    _onPostStop;
-        private          Action<Exception, object, IActorContext>? _onPreRestart;
-        private          Action<IActorContext>?                    _onPreStart;
-        private          SupervisorStrategy?                       _strategy;
+        private readonly List<IDisposable> _resources = new();
+        private Action<Exception, IActorContext>? _onPostRestart;
+        private Action<IActorContext>? _onPostStop;
+        private Action<Exception, object, IActorContext>? _onPreRestart;
+        private Action<IActorContext>? _onPreStart;
+        private SupervisorStrategy? _strategy;
+
+        public IActorDsl Exposed => this;
 
         public static IUntypedActorContext ExposedContext => Context;
 
+        public ExposedReceiveActor()
+        {
+            Receive<TransmitError>(e => e.ErrorHandler(e.Error));
+        }
+        
+        public void AddResource(IDisposable res)
+            => _resources.Add(res);
+
         protected internal ILoggingAdapter Log { get; } = Context.GetLogger();
 
-        #region IActorDsl
-        
+        #region ActorDsl
+
         void IActorDsl.Receive<T>(Action<T, IActorContext> handler) => Receive<T>(m => handler(m, Context));
 
         void IActorDsl.Receive<T>(Predicate<T> shouldHandle, Action<T, IActorContext> handler) => Receive(shouldHandle, obj => handler(obj, Context));
@@ -65,6 +71,14 @@ namespace Tauron.Akka
         void IActorDsl.UnbecomeStacked() => UnbecomeStacked();
 
         IActorRef IActorDsl.ActorOf(Action<IActorDsl> config, string name) => Context.ActorOf(config, name);
+
+        protected event Action<Exception>? OnPostRestart;
+
+        protected event Action<Exception, object>? OnPreRestart;
+
+        protected event Action? OnPostStop;
+
+        protected event Action? OnPreStart;
 
         Action<Exception, IActorContext>? IActorDsl.OnPostRestart
         {
@@ -96,31 +110,6 @@ namespace Tauron.Akka
             set => _strategy = value;
         }
 
-        #endregion
-
-        public IActorDsl Exposed => this;
-
-        //public void Flow<TStart>(Action<ActorFlowBuilder<TStart>> builder)
-        //    => builder(new ActorFlowBuilder<TStart>(this));
-
-        //public EnterFlow<TStart> EnterFlow<TStart>(Action<ActorFlowBuilder<TStart>> builder)
-        //{
-        //    var flowBuilder = new ActorFlowBuilder<TStart>(this);
-        //    builder(flowBuilder);
-        //    return flowBuilder.Build();
-        //}
-
-        public void AddResource(IDisposable res)
-            => _resources.Add(res);
-
-        protected event Action<Exception>? OnPostRestart;
-
-        protected event Action<Exception, object>? OnPreRestart;
-
-        protected event Action? OnPostStop;
-
-        protected event Action? OnPreStart;
-
         protected override void PostRestart(Exception reason)
         {
             _onPostRestart?.Invoke(reason, Context);
@@ -140,7 +129,7 @@ namespace Tauron.Akka
             _onPostStop?.Invoke(Context);
             OnPostStop?.Invoke();
 
-            foreach (var disposable in _resources)
+            foreach (var disposable in _resources) 
                 disposable.Dispose();
 
             base.PostStop();
@@ -155,7 +144,33 @@ namespace Tauron.Akka
 
         protected override SupervisorStrategy SupervisorStrategy() => _strategy ?? base.SupervisorStrategy();
 
-        protected static bool CallSafe(Action exec, Action<Exception>? catching = null, Action? finalizing = null)
+        #endregion
+
+        protected void ObservableReceiveSafe<TEvent>(Func<IObservable<TEvent>, IObservable<Unit>> handler) 
+            => AddResource(new ObservableInvoker<TEvent, Unit>(handler, DefaultError, this, Self).Construct());
+
+        protected void ObservableReceiveSafe<TEvent>(Func<IObservable<TEvent>, IObservable<TEvent>> handler) 
+            => AddResource(new ObservableInvoker<TEvent, TEvent>(handler, DefaultError, this, Self).Construct());
+
+        protected void ObservableReceive<TEvent>(Func<IObservable<TEvent>, IObservable<Unit>> handler)
+            => AddResource(new ObservableInvoker<TEvent, Unit>(handler, ThrowError, this, Self).Construct());
+
+        protected void ObservableReceive<TEvent>(Func<IObservable<TEvent>, IObservable<TEvent>> handler)
+            => AddResource(new ObservableInvoker<TEvent, TEvent>(handler, ThrowError, this, Self).Construct());
+
+        private bool ThrowError(Exception e)
+        {
+            Log.Error(e, "Error on Process Event");
+            throw e;
+        }
+
+        private bool DefaultError(Exception e)
+        {
+            Log.Error(e, "Error on Process Event");
+            return true;
+        }
+
+        /*protected static bool CallSafe(Action exec, Action<Exception>? catching = null, Action? finalizing = null)
         {
             try
             {
@@ -223,26 +238,71 @@ namespace Tauron.Akka
             }
         }
 
-        public IObservable<TMessage> WhenMessageReceive<TMessage>()
+        protected static Action<TMsg> When<TMsg>(Func<TMsg, bool> test, Action<TMsg> action)
         {
-            var responder = new Subject<TMessage>();
-            AddResource(responder);
+            return m =>
+                   {
+                       if (test(m))
+                           action(m);
+                   };
+        }*/
+
+        private sealed class ObservableInvoker<TEvent, TResult> : IDisposable
+        {
+            private Subject<TEvent>? _source;
+            private IDisposable? _subscription;
             
-            Receive<TMessage>(m => responder.OnNext(m));
+            private readonly Func<IObservable<TEvent>, IObservable<TResult>> _factory;
+            private readonly Func<Exception, bool> _errorHandler;
+            private readonly IActorDsl _dsl;
+            private readonly IActorRef _self;
+
+            public ObservableInvoker(Func<IObservable<TEvent>, IObservable<TResult>> factory, Func<Exception, bool> errorHandler, IActorDsl dsl, IActorRef self)
+            {
+                _factory = factory;
+                _errorHandler = errorHandler;
+                _dsl = dsl;
+                _self = self;
+                
+                Init();
+            }
+
+            public IDisposable Construct()
+            {
+                _dsl.Receive<TEvent>(Runner);
+                return this;
+            }
+
+            private void Runner(TEvent @event, IActorContext actorContext) 
+                => _source?.OnNext(@event);
+
+            private void Init()
+            {
+                _source = new Subject<TEvent>();
+                _subscription = _factory(_source.AsObservable())
+                   .Subscribe(_ => { }, e =>
+                                        {
+                                            _self.Forward(new TransmitError(e, exception =>
+                                                                               {
+                                                                                   _source?.Dispose();
+                                                                                   _subscription?.Dispose();
+                                                                                   _source = null;
+                                                                                   _subscription = null;
+
+                                                                                   if (_errorHandler(exception))
+                                                                                       Init();
+                                                                               }));
+                                        });
+            }
             
-            return responder.AsObservable();
+            void IDisposable.Dispose()
+            {
+                _source?.Dispose();
+                _subscription?.Dispose();
+            }
         }
 
-        public void WhenMessageReceive<TMessage>(Func<IObservable<TMessage>, IDisposable> handler) 
-            => AddResource(handler(WhenMessageReceive<TMessage>()));
+        private sealed record TransmitError(Exception Error, Action<Exception> ErrorHandler);
 
-        //protected static Action<TMsg> When<TMsg>(Func<TMsg, bool> test, Action<TMsg> action)
-        //{
-        //    return m =>
-        //           {
-        //               if (test(m))
-        //                   action(m);
-        //           };
-        //}
     }
 }

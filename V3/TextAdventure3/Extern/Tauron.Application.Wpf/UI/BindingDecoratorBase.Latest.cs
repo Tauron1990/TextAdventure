@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.ObjectModel;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using System.Windows;
 using System.Windows.Controls;
@@ -36,7 +35,10 @@ namespace Tauron.Application.Wpf.UI
         ///     Object that can provide services for the markup
         ///     extension.
         /// </param>
-        public override object? ProvideValue(IServiceProvider provider) => Binding.ProvideValue(provider);
+        public override object? ProvideValue(IServiceProvider provider)
+        {
+            return Binding.ProvideValue(provider);
+        }
 
 
         /// <summary>
@@ -52,17 +54,17 @@ namespace Tauron.Application.Wpf.UI
         /// <param name="target">The binding target of the binding.</param>
         /// <param name="dp">The target property of the binding.</param>
         /// <returns>True if the provider supports all that's needed.</returns>
-        protected virtual bool TryGetTargetItems(IServiceProvider? provider, [NotNullWhen(true)]out DependencyObject? target, [NotNullWhen(true)]out DependencyProperty? dp)
+        protected virtual bool TryGetTargetItems(IServiceProvider? provider, out DependencyObject? target, out DependencyProperty? dp)
         {
             target = null;
-            dp     = null;
+            dp = null;
 
             //create a binding and assign it to the target
             if (!(provider?.GetService(typeof(IProvideValueTarget)) is IProvideValueTarget service)) return false;
 
             //we need dependency objects / properties
             target = service.TargetObject as DependencyObject;
-            dp     = service.TargetProperty as DependencyProperty;
+            dp = service.TargetProperty as DependencyProperty;
             return target != null && dp != null;
         }
 
@@ -75,7 +77,7 @@ namespace Tauron.Application.Wpf.UI
         ///     The decorated binding class.
         /// </summary>
         [Browsable(false)]
-        public Binding Binding { get; set; } = new();
+        public Binding Binding { get; set; } = new Binding();
 
         [DefaultValue(null)]
         public object? AsyncState
@@ -225,8 +227,7 @@ namespace Tauron.Application.Wpf.UI
             set => Binding.XPath = value;
         }
 
-        [DefaultValue(null)]
-        public Collection<ValidationRule>? ValidationRules => Binding.ValidationRules;
+        [DefaultValue(null)] public Collection<ValidationRule>? ValidationRules => Binding.ValidationRules;
 
         [DefaultValue(null)]
         public string? StringFormat

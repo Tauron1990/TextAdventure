@@ -23,7 +23,7 @@ namespace Tauron.Application.Wpf.UI
                 if (service.TargetObject.GetType().FullName == "System.Windows.SharedDp")
                     return this;
 
-                TargetObject   = service.TargetObject;
+                TargetObject = service.TargetObject;
                 TargetProperty = service.TargetProperty;
             }
 
@@ -34,43 +34,44 @@ namespace Tauron.Application.Wpf.UI
 
         protected void UpdateValue(object? value)
         {
-            if (TargetObject == null) return;
-            
-            if (TargetProperty is DependencyProperty dependencyProperty)
+            if (TargetObject != null)
             {
-                var obj = TargetObject as DependencyObject;
-
-                void UpdateAction()
+                if (TargetProperty is DependencyProperty dependencyProperty)
                 {
-                    obj.SetValue(dependencyProperty, value);
+                    var obj = TargetObject as DependencyObject;
+
+                    void UpdateAction()
+                    {
+                        obj.SetValue(dependencyProperty, value);
+                    }
+
+                    // Check whether the target object can be accessed from the
+                    // current thread, and use Dispatcher.Invoke if it can't
+
+                    if (obj?.CheckAccess() == true)
+                        UpdateAction();
+                    else
+                        obj?.Dispatcher.BeginInvoke(new Action(UpdateAction), DispatcherPriority.Background);
                 }
-
-                // Check whether the target object can be accessed from the
-                // current thread, and use Dispatcher.Invoke if it can't
-
-                if (obj?.CheckAccess() == true)
-                    UpdateAction();
-                else
-                    obj?.Dispatcher.BeginInvoke(new Action(UpdateAction), DispatcherPriority.Background);
-            }
-            else // _targetProperty is PropertyInfo
-            {
-                var prop = TargetProperty as PropertyInfo;
-                prop?.SetValue(TargetObject, value, null);
+                else // _targetProperty is PropertyInfo
+                {
+                    var prop = TargetProperty as PropertyInfo;
+                    prop?.SetValue(TargetObject, value, null);
+                }
             }
         }
 
         protected virtual bool TryGetTargetItems(IServiceProvider? provider, [NotNullWhen(true)] out DependencyObject? target, [NotNullWhen(true)] out DependencyProperty? dp)
         {
             target = null;
-            dp     = null;
+            dp = null;
 
             //create a binding and assign it to the target
             if (!(provider?.GetService(typeof(IProvideValueTarget)) is IProvideValueTarget service)) return false;
 
             //we need dependency objects / properties
             target = service.TargetObject as DependencyObject;
-            dp     = service.TargetProperty as DependencyProperty;
+            dp = service.TargetProperty as DependencyProperty;
             return target != null && dp != null;
         }
 

@@ -1,4 +1,9 @@
 ﻿namespace Tauron.Application.Wpf.ModelMessages
 {
-    public sealed record MakeEventHook(string Name);
+    public sealed class MakeEventHook
+    {
+        public string Name { get; }
+
+        public MakeEventHook(string name) => Name = name;
+    }
 }

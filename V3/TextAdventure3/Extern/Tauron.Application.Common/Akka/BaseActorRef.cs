@@ -1,60 +1,77 @@
 ﻿using System;
-using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using Akka.Actor;
 using JetBrains.Annotations;
 
 namespace Tauron.Akka
 {
     [PublicAPI]
-    public abstract class BaseActorRef<TActor> : IDisposable
+    public abstract class BaseActorRef<TActor>
         where TActor : ActorBase
     {
         private readonly ActorRefFactory<TActor> _builder;
-        private readonly BehaviorSubject<IActorRef> _actor = new(Nobody.Instance);
-        
-        protected BaseActorRef(ActorRefFactory<TActor> actorBuilder)
-            => _builder = actorBuilder;
 
-        public IObservable<bool> IsInitialized 
-            => _actor.Select(a => !a.IsNobody());
+        protected BaseActorRef(ActorRefFactory<TActor> actorBuilder)
+        {
+            _builder = actorBuilder;
+        }
+
+        public bool IsInitialized { get; private set; }
 
         protected virtual bool IsSync => false;
 
-        public IObservable<IActorRef> Actor 
-            => _actor.AsObservable();
+        public IActorRef Actor { get; private set; } = ActorRefs.Nobody;
 
-        public IObservable<ActorPath> Path
-            => from act in Actor
-               select act.Path;
-        
-        public void Tell(object message, IActorRef sender) => _actor.Value.Tell(message, sender);
+        public ActorPath Path => Actor.Path;
 
-        public bool Equals(IActorRef? other) 
-            => _actor.Value.Equals(other);
+        public event Action? Initialized;
+
+        public void Tell(object message, IActorRef sender)
+        {
+            Actor.Tell(message, sender);
+        }
+
+        public bool Equals(IActorRef? other)
+        {
+            return Actor.Equals(other);
+        }
 
         public int CompareTo(IActorRef? other)
-            => _actor.Value.CompareTo(other);
+        {
+            return Actor.CompareTo(other);
+        }
 
         public int CompareTo(object? obj)
-            => _actor.Value.CompareTo(obj);
+        {
+            return Actor.CompareTo(obj);
+        }
 
         public virtual void Init(string? name = null)
-            => IniCore((b, s) => _builder.Create(b, s), name);
-
-        public virtual void Init(IActorRefFactory factory, string? name = null) 
-            => IniCore((sync, parmName) => factory.ActorOf(_builder.CreateProps(sync), parmName), name);
-
-        protected virtual void IniCore(Func<bool, string?, IActorRef> create, string? name) 
-            => _actor.OnNext(create(IsSync, name));
-
-        protected void ResetInternal() 
-            => _actor.OnNext(Nobody.Instance);
-        
-        public void Dispose()
         {
-            _actor.OnCompleted();
-            _actor.Dispose();
+            CheckIsInit();
+            Actor = _builder.Create(IsSync, name);
+            IsInitialized = true;
+            Initialized?.Invoke();
+        }
+
+        public virtual void Init(IActorRefFactory factory, string? name = null)
+        {
+            CheckIsInit();
+            Actor = factory.ActorOf(_builder.CreateProps(IsSync), name);
+            IsInitialized = true;
+            Initialized?.Invoke();
+        }
+
+        protected void ResetInternal()
+        {
+            Actor.Tell(PoisonPill.Instance);
+            Actor = ActorRefs.Nobody;
+            IsInitialized = false;
+        }
+
+        protected void CheckIsInit()
+        {
+            if (IsInitialized)
+                throw new InvalidOperationException("ActorRef is Init");
         }
     }
 }

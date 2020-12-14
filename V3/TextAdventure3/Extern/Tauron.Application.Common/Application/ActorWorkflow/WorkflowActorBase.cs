@@ -3,10 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using Akka.Actor;
 using Akka.Event;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Application.Workflow;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.ActorWorkflow
 {
@@ -14,14 +12,12 @@ namespace Tauron.Application.ActorWorkflow
     public abstract class LambdaWorkflowActor<TContext> : WorkflowActorBase<LambdaStep<TContext>, TContext>
         where TContext : IWorkflowContext
     {
-        protected void WhenStep(StepId id, Action<LambdaStepConfiguration<TContext>> config, Maybe<Action<StepConfiguration<LambdaStep<TContext>, TContext>>> mayStepConfig = default)
+        protected void WhenStep(StepId id, Action<LambdaStepConfiguration<TContext>> config, Action<StepConfiguration<LambdaStep<TContext>, TContext>>? con = null)
         {
             var stepConfig = new LambdaStepConfiguration<TContext>();
             config.Invoke(stepConfig);
-            var stepConfiguration = WhenStep(id, stepConfig.Build());
-
-            Do(from postStepConfig in mayStepConfig
-               select Action(() => postStepConfig.Invoke(stepConfiguration)));
+            var concon = WhenStep(id, stepConfig.Build());
+            con?.Invoke(concon);
         }
     }
 
@@ -29,282 +25,216 @@ namespace Tauron.Application.ActorWorkflow
     public abstract class WorkflowActorBase<TStep, TContext> : ActorBase, IWithTimers
         where TStep : IStep<TContext> where TContext : IWorkflowContext
     {
-        private enum RunState
-        {
-            Stoped,
-            Running,
-            Waiting
-        }
-
-        public ITimerScheduler Timers { get; set; } = default!;
-
         protected ILoggingAdapter Log { get; } = Context.GetLogger();
-        protected Maybe<TContext> RunContext { get; private set; }
+        protected TContext RunContext { get; private set; } = default!;
 
         private readonly Dictionary<StepId, StepRev<TStep, TContext>> _steps = new();
         private readonly Dictionary<Type, Delegate> _starter = new();
         private readonly Dictionary<Type, Delegate> _signals = new();
         private readonly object _timeout = new();
 
-        private Maybe<Action<WorkflowResult<TContext>>> _onFinish;
+        private Action<WorkflowResult<TContext>>? _onFinish;
         
-        private Maybe<RunState> _runState = May(RunState.Stoped);
-        private Maybe<ChainCall> _lastCall;
-        private Maybe<IActorRef> _starterSender;
+        private bool _running;
+        private bool _waiting;
+        private ChainCall? _lastCall;
+        private IActorRef? _starterSender;
 
-        private Maybe<string> _errorMessage;
+        private string _errorMessage = string.Empty;
 
-        protected void SetError(Maybe<string> error)
+        protected void SetError(string error)
             => _errorMessage = error;
 
         protected override bool Receive(object message)
         {
-            return OrElse(from run in _runState
-                          select run switch
-                          {
-                              RunState.Stoped => Initializing(message),
-                              RunState.Running => Running(message),
-                              RunState.Waiting => Singnaling(message),
-                              _ => Initializing(message)
-                          }, false);
+            if (_running)
+                return _waiting ? Singnaling(message) : Running(message);
+            return Initializing(message);
         }
 
-        protected virtual Maybe<bool> Singnaling(object msg)
+        protected virtual bool Singnaling(object msg)
         {
-            Maybe<StepId> TryCall(Delegate del)
-                => MayThrow(from id in May(del.DynamicInvoke(RunContext, msg))
-                            where id is StepId
-                            select (StepId) id,
-                    () => new InvalidOperationException("Invalid Call of Signal Delegate"));
-
-            return Finally(() =>
-                {
-                    switch (msg)
-                    {
-                        case TimeoutMarker:
-                            _errorMessage = May("Timeout");
-                            Finish(false);
-                            return May(true);
-                        default:
-                            var callResult =
-                                from msgKey in May(msg.GetType())
-                                from signal in _signals.Lookup(msgKey)
-                                let _ = Action(() => Timers.Cancel(_timeout))
-                                select TryCall(signal);
-
-                            return Match(callResult,
-                                id =>
-                                {
-                                    Self.Tell(new ChainCall(id.Value).WithBase(_lastCall), OrElse(_starterSender, ActorRefs.NoSender));
-                                    _lastCall = Maybe<ChainCall>.Nothing;
-                                    return true;
-                                },
-                                () => May(false));
-                    }
-                },
-                () => _runState = May(RunState.Running));
-        }
-
-        protected virtual Maybe<bool> Initializing(object msg)
-        {
-            var defaultCall = msg switch
+            try
             {
-                ChainCall => May(true),
-                LoopElement => May(true),
-                WorkflowResult<TContext> result => Either(from finish in _onFinish
-                                                      select Func(() =>
-                                                      {
-                                                          finish.Invoke(result);
-                                                          return true;
-                                                      }), May(true)),
-                _ => Maybe<bool>.Nothing
-            };
+                if (msg is TimeoutMarker)
+                {
+                    _errorMessage = "Timeout";
+                    Finish(false);
+                    return true;
+                }
 
-            return Either(defaultCall, from del in _starter.Lookup(msg.GetType())
-                                       from call in May(del.DynamicInvoke(msg))
-                                       select true);
+                if (!_signals.TryGetValue(msg.GetType(), out var del)) return false;
+                Timers.Cancel(_timeout);
+
+                if (del.DynamicInvoke(RunContext, msg) is not StepId id)
+                    throw new InvalidOperationException("Invalid Call of Signal Delegate");
+
+                Self.Tell(new ChainCall(id).WithBase(_lastCall), _starterSender);
+
+                _lastCall = null;
+                return true;
+            }
+            finally
+            {
+                _waiting = false;
+            }
         }
 
-        protected void Signal<TMessage>(Func<Maybe<TContext>, TMessage, StepId> signal)
+        protected virtual bool Initializing(object msg)
+        {
+            switch (msg)
+            {
+                case ChainCall:
+                case LoopElement:
+                    return true;
+                case WorkflowResult<TContext> result:
+                    _onFinish?.Invoke(result);
+                    return true;
+            }
+
+            if (!_starter.TryGetValue(msg.GetType(), out var del)) return false;
+            del.DynamicInvoke(msg);
+            return true;
+
+        }
+
+        protected void Signal<TMessage>(Func<TContext, TMessage, StepId> signal)
             => _signals[typeof(TMessage)] = signal;
 
         protected void StartMessage<TType>(Action<TType> msg) 
             => _starter[typeof(TType)] = msg;
 
-        protected virtual Maybe<bool> Running(object msg)
+        protected virtual bool Running(object msg)
         {
-            bool ProcessStep(StepId sId, StepRev<TStep, TContext> stepRev, ChainCall chain)
+            try
             {
-                switch (sId.Name)
+                switch (msg)
                 {
-                    case "Fail":
-                        _errorMessage = stepRev.Step.ErrorMessage;
-                        Finish(false);
-                        break;
-                    case "None":
-                        ProgressConditions(stepRev, true, May(chain));
-                        break;
-                    case "Loop":
-                        Self.Forward(new LoopElement(stepRev, chain));
-                        break;
-                    case "Finish":
-                    case "Skip":
-                        Finish(true, May(stepRev));
-                        break;
-                    case "Waiting":
-                        _runState = May(RunState.Waiting);
-                        // ReSharper disable once MergeSequentialPatterns
-                        if (stepRev.Step is IHasTimeout timeout && timeout.Timeout.IsSomething())
-                            Timers.StartSingleTimer(_timeout, new TimeoutMarker(), timeout.Timeout.Value);
-                        _lastCall = May(chain);
-                        break;
-                    default:
-                        Self.Forward(new ChainCall(sId).WithBase(May(chain)));
-                        break;
-                }
+                    case ChainCall chain:
+                    {
+                        var id = chain.Id;
+                        if (id == StepId.Fail)
+                        {
+                            Finish(false);
+                            return true;
+                        }
 
+                        if (!_steps.TryGetValue(id, out var rev))
+                        {
+                            Log.Warning("No Step Found {Id}", id.Name);
+                            _errorMessage = id.Name;
+                            Finish(false);
+                            return true;
+                        }
+
+                        var sId = rev.Step.OnExecute(RunContext);
+
+                        switch (sId.Name)
+                        {
+                            case "Fail":
+                                _errorMessage = rev.Step.ErrorMessage;
+                                Finish(false);
+                                break;
+                            case "None":
+                                ProgressConditions(rev, true, chain);
+                                return true;
+                            case "Loop":
+                                Self.Forward(new LoopElement(rev, chain));
+                                return true;
+                            case "Finish":
+                            case "Skip":
+                                Finish(true, rev);
+                                break;
+                            case "Waiting":
+                                _waiting = true;
+                                if (rev.Step is IHasTimeout timeout && timeout.Timeout != null) 
+                                    Timers.StartSingleTimer(_timeout, new TimeoutMarker(), timeout.Timeout.Value);
+                                _lastCall = chain;
+                                return true;
+                            default:
+                                Self.Forward(new ChainCall(sId).WithBase(chain));
+                                return true;
+                        }
+                        if(_running)
+                            Self.Forward(chain.Next());
+
+                        return true;
+                    }
+                    case LoopElement loop:
+                    {
+                        var loopId = loop.Rev.Step.NextElement(RunContext);
+                        if (loopId != StepId.LoopEnd) 
+                            Self.Forward(new LoopElement(loop.Rev, loop.Call));
+
+                        if (loopId == StepId.LoopContinue)
+                            return true;
+
+                        if (loopId.Name == StepId.Fail.Name)
+                        {
+                            Finish(false);
+                            return true;
+                        }
+
+                        ProgressConditions(loop.Rev, baseCall:loop.Call);
+                        return true;
+                    }
+                    default:
+                        return false;
+                }
+            }
+            catch (Exception e)
+            {
+                Log.Error(e, "Exception While Processing Workflow");
+                _errorMessage = e.Message;
+                Finish(false);
                 return true;
             }
-
-            var result =
-                Try(() =>
-                {
-                    switch (msg)
-                    {
-                        case ChainCall chain:
-                        {
-                            var mayId = chain.Id;
-
-                            return Any(
-                                () =>
-                                    from id in mayId
-                                    where id == StepId.Fail
-                                    select Finish(false),
-
-                                () =>
-                                    RunWith(() =>
-                                            from id in mayId
-                                            from stepRev in _steps.Lookup(id)
-                                            from sId in stepRev.Step.OnExecute(RunContext)
-                                            select ProcessStep(sId, stepRev, chain),
-                                        () => Do(from state in _runState
-                                                 where state == RunState.Running
-                                                 select Action(() => Self.Forward(chain.Next())))),
-
-                                () =>
-                                    from id in mayId
-                                    select Func(() =>
-                                    {
-                                        Log.Warning("No Step Found {Id}", id.Name);
-                                        _errorMessage = May(id.Name);
-
-                                        return Finish(false);
-                                    })
-                            );
-                        }
-
-                        case LoopElement loop:
-                        {
-                            var loopId = loop.Rev.Step.NextElement(RunContext);
-
-                            return Any(
-                                () => from id in loopId
-                                      where id == StepId.LoopContinue
-                                      select SelfForeward(new LoopElement(loop.Rev, loop.Call)),
-                                () => from id in loopId
-                                      where id == StepId.LoopEnd
-                                      select SelfForeward(loop.Call.Next()),
-                                () => from id in loopId
-                                      where id == StepId.Fail
-                                      select RunWith(() => Finish(false), () => _errorMessage = loop.Rev.Step.ErrorMessage),
-                                () => from id in loopId
-                                      select OrElse(ProgressConditions(loop.Rev, baseCall: May(loop.Call)), false)
-                            );
-                        }
-                        default:
-                            return May(false);
-                    }
-                });
-
-            return result.Match(m => m,
-                e =>
-                {
-                    Log.Error(e, "Exception While Processing Workflow");
-                    _errorMessage = May(e.Message);
-                    Finish(false);
-                    return May(true);
-                });
         }
 
-        private bool SelfForeward(object message)
+        private void ProgressConditions(StepRev<TStep, TContext> rev, bool finish = false, ChainCall? baseCall = null)
         {
-            if (message is Maybe<ChainCall> mayChain)
-            {
-                if (mayChain.IsNothing())
-                {
-                    _errorMessage = May("ChainError");
-                    Finish(false);
-                    return false;
-                }
+            var std = (from con in rev.Conditions
+                let stateId = con.Select(rev.Step, RunContext)
+                where stateId.Name != StepId.None.Name
+                select stateId).ToArray();
 
-                message = mayChain.Value;
+            if (std.Length != 0)
+            {
+                Self.Forward(new ChainCall(std).WithBase(baseCall));
+                return;
             }
 
-            Self.Forward(message);
-            return true;
+            if (rev.GenericCondition == null)
+            {
+                if(finish)
+                    Finish(false);
+            }
+            else
+            {
+                var cid = rev.GenericCondition.Select(rev.Step, RunContext);
+                if(cid.Name != StepId.None.Name)
+                    Self.Forward(new ChainCall(cid).WithBase(baseCall));
+            }
         }
 
-        private Maybe<bool> ProgressConditions(StepRev<TStep, TContext> rev, bool finish = false, Maybe<ChainCall> baseCall = default)
+        protected void OnFinish(Action<WorkflowResult<TContext>> con) 
+            => _onFinish = _onFinish.Combine(con);
+
+        private void Finish(bool isok, StepRev<TStep, TContext>? rev = null)
         {
-            var mayStd = May(
-                (
-                    from con in rev.Conditions
-                    let stateId = con.Select(rev.Step, RunContext)
-                    where stateId.Name != StepId.None.Name
-                    select stateId
-                ).ToArray()
-            );
-
-            return Any(
-                () =>
-                    from ids in mayStd
-                    where ids.Length != 0
-                    select SelfForeward(new ChainCall(ids).WithBase(baseCall)),
-                () =>
-                    from condition in rev.GenericCondition
-                    from cid in May(condition.Select(rev.Step, RunContext))
-                    where cid != StepId.None
-                    select SelfForeward(new ChainCall(cid).WithBase(baseCall)),
-                () =>
-                    from tryFinish in May(finish) 
-                    where tryFinish
-                    select Finish(false)
-            ).Or(May(true));
-        }
-
-        protected void OnFinish(Action<WorkflowResult<TContext>> con)
-            => _onFinish = Either(from del in _onFinish
-                              select del.Combine(con), con);
-
-        private bool Finish(bool isok, Maybe<StepRev<TStep, TContext>> mayRev = default)
-        {
-            _starterSender = Maybe<IActorRef>.Nothing;
-            _runState = May(RunState.Stoped);
-
-            Do(from rev in mayRev
-               select Action(() => rev.Step.OnExecuteFinish(RunContext)));
-
+            _starterSender = null;
+            _running = false;
+            if(isok)
+                rev?.Step.OnExecuteFinish(RunContext);
             Self.Forward(new WorkflowResult<TContext>(isok, _errorMessage, RunContext));
-            RunContext = Maybe<TContext>.Nothing;
-            _errorMessage = Maybe<string>.Nothing;
-
-            return true;
+            RunContext = default!;
+            _errorMessage = string.Empty;
         }
 
-        public void Start(Maybe<TContext> context)
+        public void Start(TContext context)
         {
-            _starterSender = Either(MayNotNull(Sender), ActorRefs.Nobody);
-            _runState = May(RunState.Running);
+            _starterSender = Sender;
+            _running = true;
             RunContext = context;
             Self.Forward(new ChainCall(StepId.Start));
         }
@@ -316,74 +246,72 @@ namespace Tauron.Application.ActorWorkflow
             return new StepConfiguration<TStep, TContext>(rev);
         }
 
-        private sealed record TimeoutMarker;
-        private sealed record LoopElement(StepRev<TStep, TContext> Rev, ChainCall Call);
-    
+        private sealed class TimeoutMarker
+        {
+            
+        }
+
+        private sealed class LoopElement
+        {
+            public StepRev<TStep, TContext> Rev { get; }
+            public ChainCall Call { get; }
+
+            public LoopElement(StepRev<TStep, TContext> rev, ChainCall call)
+            {
+                Rev = rev;
+                Call = call;
+            }
+        }
+
         private sealed class ChainCall
         {
-            private Maybe<ChainCall> BaseCall { get; }
+            private ChainCall? BaseCall { get; }
 
             private StepId[] StepIds { get; }
 
-            private Maybe<int> Position { get; }
+            private int Position { get; }
 
-            private ChainCall(StepId[] stepIds, Maybe<int> position, Maybe<ChainCall> baseCall = default)
+            private ChainCall(StepId[] stepIds, int position, ChainCall? baseCall = null)
             {
                 BaseCall = baseCall;
                 StepIds = stepIds;
                 Position = position;
             }
 
-            public ChainCall(StepId id, Maybe<ChainCall> baseCall = default)
+            public ChainCall(StepId id, ChainCall? baseCall = null)
             {
                 BaseCall = baseCall;
                 StepIds = new[] { id };
-                Position = May(0);
+                Position = 0;
             }
 
             public ChainCall(StepId[] ids)
             {
                 StepIds = ids;
-                Position = May(0);
+                Position = 0;
             }
 
-            public Maybe<StepId> Id
-                => Either(
-                    from pos in Position
-                    where pos >= StepIds.Length
-                    select StepIds[pos],
+            public StepId Id => Position >= StepIds.Length ? BaseCall?.Id ?? StepId.Fail : StepIds[Position];
 
-                    from baseCall in BaseCall
-                    from id in baseCall.Id
-                    select id);
-
-            public Maybe<ChainCall> Next()
+            public ChainCall Next()
             {
-                var newPos = from oldPos in Position
-                             select oldPos + 1;
-
-                return Any
-                (
-                    () => Collapse(
-                        from baseCall in BaseCall
-                        from pos in Position
-                        where pos == StepIds.Length
-                        select baseCall.Next()),
-
-                    () => May(new ChainCall(StepIds, newPos))
-                );
+                var newPos = Position + 1;
+                if (newPos == StepIds.Length && BaseCall != null) return BaseCall.Next();
+                return new ChainCall(StepIds, newPos);
             }
 
-            public Maybe<ChainCall> WithBase(Maybe<ChainCall> mayCall)
+            public ChainCall WithBase(ChainCall? call)
             {
-                return Any(
-                    () =>
-                        from call in mayCall 
-                        from next in call.Next()
-                        select new ChainCall(next.StepIds, next.Position, May(this)),
-                    () => May(this)
-                );
+                if (call == null)
+                    return this;
+                else
+                {
+                    call = call.Next();
+                    return new ChainCall(call.StepIds, call.Position, this);
+                }
             }
         }
+
+        public ITimerScheduler Timers { get; set; } = default!;
     }
 }

@@ -1,21 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
 using Autofac;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Host;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Wpf.UI
 {
     [PublicAPI]
     public sealed class AutoViewLocation
     {
-        private static readonly Dictionary<Type, Type> Views = new();
+        private static readonly Dictionary<Type, Type> Views = new Dictionary<Type, Type>();
 
         private readonly ILifetimeScope _provider;
 
-        public AutoViewLocation(ILifetimeScope provider) => _provider = provider;
+        public AutoViewLocation(ILifetimeScope provider)
+        {
+            _provider = provider;
+        }
 
         public static AutoViewLocation Manager => ActorApplication.Application.Continer.Resolve<AutoViewLocation>();
 
@@ -24,16 +25,13 @@ namespace Tauron.Application.Wpf.UI
             Views[model] = view;
         }
 
-        public Maybe<IView> ResolveView(object viewModel)
+        public IView? ResolveView(object viewModel)
         {
-            if(viewModel is not IViewModel model)
-                return Maybe<IView>.Nothing;
+            if (!(viewModel is IViewModel model))
+                return null;
 
             var type = model.ModelType;
-
-            return from viewType in Views.Lookup(type)
-                from view in MayNotNull(_provider.ResolveOptional(viewType, new TypedParameter(typeof(IViewModel<>).MakeGenericType(type), viewModel)) as IView)
-                select view;
+            return Views.TryGetValue(type, out var view) ? _provider.ResolveOptional(view, new TypedParameter(typeof(IViewModel<>).MakeGenericType(type), viewModel)) as IView : null;
         }
     }
 }

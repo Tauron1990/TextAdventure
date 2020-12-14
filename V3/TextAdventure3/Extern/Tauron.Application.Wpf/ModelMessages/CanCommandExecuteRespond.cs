@@ -2,5 +2,16 @@
 
 namespace Tauron.Application.Wpf.ModelMessages
 {
-    public sealed record CanCommandExecuteRespond(string Name, Func<bool> CanExecute);
+    public sealed class CanCommandExecuteRespond
+    {
+        public string Name { get; }
+
+        public Func<bool> CanExecute { get; }
+
+        public CanCommandExecuteRespond(string name, Func<bool> canExecute)
+        {
+            Name = name;
+            CanExecute = canExecute;
+        }
+    }
 }

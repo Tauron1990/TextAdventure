@@ -13,8 +13,8 @@ namespace TextAdventure.Editor.Models.Data
             => input
               .Select(s => Path.Combine(s, ProjectFileName))
               .SafeFileExists()
-              .Map((exists, path) => new ProjectValidation(exists, exists
-                                                                       ? "Datei nicht gefunden"
+              .Map((exists, path) => new ProjectValidation(exists, !exists
+                                                                       ? "Project Datei wurde nicht nicht gefunden"
                                                                        : string.Empty, path),
                    (exception, path) => new ProjectValidation(false, exception.Message, path));
     }

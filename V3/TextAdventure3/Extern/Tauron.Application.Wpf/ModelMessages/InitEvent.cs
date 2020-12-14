@@ -1,4 +1,12 @@
 ﻿namespace Tauron.Application.Wpf.ModelMessages
 {
-    public sealed record InitEvent(string Key);
+    public sealed class InitEvent
+    {
+        public InitEvent(string key)
+        {
+            Key = key;
+        }
+
+        public string Key { get; }
+    }
 }

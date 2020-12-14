@@ -1,8 +1,7 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Analyzing.Actor;
 using Tauron.Application.Workshop.Analyzing.Core;
@@ -13,34 +12,25 @@ using Tauron.Application.Workshop.Mutation;
 namespace Tauron.Application.Workshop.Analyzing
 {
     [PublicAPI]
-    public sealed class Analyzer<TWorkspace, TData> : DeferredActor<Analyzer<TWorkspace, TData>.AnalyserState>, IAnalyzer<TWorkspace, TData> 
+    public sealed class Analyzer<TWorkspace, TData> : DeferredActor, IAnalyzer<TWorkspace, TData> 
         where TWorkspace : WorkspaceBase<TData> where TData : class
     {
-        public sealed record AnalyserState(ImmutableHashSet<string> Rules, ImmutableList<object>? Stash, IActorRef Actor) : DeferredActorState(Stash, Actor)
-        {
-            public AnalyserState()
-                : this(ImmutableHashSet<string>.Empty, ImmutableList<object>.Empty, ActorRefs.Nobody)
-            {
-                
-            }
-        }
-        
+        private readonly HashSet<string> _rules = new HashSet<string>();
+
         internal Analyzer(Task<IActorRef> actor, IEventSource<IssuesEvent> source)
-            : base(actor, new AnalyserState()) => Issues = source;
+            : base(actor) => Issues = source;
 
         internal Analyzer()
-            : base(Task.FromResult<IActorRef>(ActorRefs.Nobody), new AnalyserState()) 
+            : base(Task.FromResult<IActorRef>(ActorRefs.Nobody)) 
             => Issues = new AnalyzerEventSource<TWorkspace, TData>(Task.FromResult<IActorRef>(ActorRefs.Nobody), new WorkspaceSuperviser());
 
         public void RegisterRule(IRule<TWorkspace, TData> rule)
         {
-            if(ObjectState.Rules.Contains(rule.Name))
-                return;
-            
-            Run(s =>
-                    from state in s
-                    let data = state.Rules.Add(rule.Name)
-                    select state with{Rules = data});
+            lock (_rules)
+            {
+                if (!_rules.Add(rule.Name))
+                    return;
+            }
 
             TellToActor(new RegisterRule<TWorkspace, TData>(rule));
         }
@@ -51,12 +41,12 @@ namespace Tauron.Application.Workshop.Analyzing
     [PublicAPI]
     public static class Analyzer
     {
-        public static IAnalyzer<TWorkspace, TData> From<TWorkspace, TData>(Maybe<TWorkspace> workspace, WorkspaceSuperviser superviser)
+        public static IAnalyzer<TWorkspace, TData> From<TWorkspace, TData>(TWorkspace workspace, WorkspaceSuperviser superviser)
             where TWorkspace : WorkspaceBase<TData> where TData : class
         {
             var evtSource = new SourceFabricator<TWorkspace, TData>();
 
-            var actor = superviser.Create(Props.Create(() => new AnalyzerActor<TWorkspace, TData>(workspace, evtSource.Send)).ToMaybe(), "AnalyzerActor");
+            var actor = superviser.Create(Props.Create(() => new AnalyzerActor<TWorkspace, TData>(workspace, evtSource.Send)), "AnalyzerActor");
             evtSource.Init(actor, superviser);
 
             return new Analyzer<TWorkspace, TData>(actor, evtSource.EventSource ?? throw new InvalidOperationException("Create Analyzer"));

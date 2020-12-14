@@ -1,8 +1,6 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Routing;
-using Functional.Maybe;
-using JetBrains.Annotations;
 
 namespace Tauron.Application.Workshop.Mutation
 {
@@ -22,18 +20,41 @@ namespace Tauron.Application.Workshop.Mutation
         Func<Task> Run { get; }
     }
 
-    [PublicAPI]
-    public sealed record DataMutation(Action Task, string Name, Maybe<object> Hash = default) : ISyncMutation
+    public sealed class DataMutation<TData> : ISyncMutation
+        where TData : class
     {
-        public object ConsistentHashKey => Hash.Or(Name);
+        private readonly Action _task;
+        private readonly object? _hash;
 
-        Action ISyncMutation.Run => Task;
+        public DataMutation(Action task, string name, object? hash = null)
+        {
+            _task = task;
+            _hash = hash;
+            Name = name;
+        }
+
+        public string Name { get; }
+        Action ISyncMutation.Run => _task;
+
+        public object ConsistentHashKey => _hash ?? Name;
     }
-    
-    [PublicAPI]
-    public sealed record AsyncDataMutation(Func<Task> Task, string Name, Maybe<object> Hash = default) : IAsyncMutation
+
+    public sealed class AsyncDataMutation<TData> : IAsyncMutation
+        where TData : class
     {
-        public object ConsistentHashKey => Hash.Or(Name);
-        Func<Task> IAsyncMutation.Run => Task;
+        private readonly Func<Task> _task;
+        private readonly object? _hash;
+
+        public AsyncDataMutation(Func<Task> task, string name, object? hash = null)
+        {
+            _task = task;
+            _hash = hash;
+            Name = name;
+        }
+
+        public string Name { get; }
+
+        public object ConsistentHashKey => _hash ?? Name;
+        Func<Task> IAsyncMutation.Run => _task;
     }
 }

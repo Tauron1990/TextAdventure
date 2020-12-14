@@ -1,89 +1,49 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Util.Internal;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Core;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Workshop.Mutation
 {
     [PublicAPI]
-    public abstract class EventSourceBase<TRespond> : DeferredActor<EventSourceBase<TRespond>.EventSourceState>, IEventSource<TRespond>
+    public abstract class EventSourceBase<TRespond> : DeferredActor, IEventSource<TRespond>
     {
-        public sealed record EventSourceState(ImmutableList<object>? Stash, IActorRef Actor, Action<Maybe<TRespond>>? Action, ImmutableList<IActorRef> Intrests, 
-                                              ImmutableDictionary<IActorRef, Action<Maybe<TRespond>>> SourceActions)
-            : DeferredActorState(Stash, Actor)
-        {
-            public EventSourceState()
-                : this(ImmutableList<object>.Empty, ActorRefs.Nobody, null, ImmutableList<IActorRef>.Empty, ImmutableDictionary<IActorRef, Action<Maybe<TRespond>>>.Empty)
-            {
-                
-            }
-        }
-        
-        
         private readonly WorkspaceSuperviser _superviser;
 
+        private Action<TRespond>? _action;
+        private ImmutableList<IActorRef> _intrests = ImmutableList<IActorRef>.Empty;
+        private ImmutableDictionary<IActorRef, Action<TRespond>> _sourcesActions = ImmutableDictionary<IActorRef, Action<TRespond>>.Empty;
+
         protected EventSourceBase(Task<IActorRef> mutator, WorkspaceSuperviser superviser)
-            : base(mutator, new EventSourceState()) 
+            : base(mutator) 
             => _superviser = superviser;
-        
+
         public void RespondOn(IActorRef actorRef)
         {
-            WatchIntrest CreateIntrest()
-            {
-                return new(actorRef,
-                           () => Run(s =>
-                                         from state in s
-                                         select state with{Intrests = state.Intrests.Remove(actorRef)}));
-            }
-            
-            Run(s =>
-                    from state in s
-                    from _ in MayUse(() => _superviser.WatchIntrest(CreateIntrest()))
-                    select state with{Intrests = state.Intrests.Add(actorRef)});
+            lock(this)
+                Interlocked.Exchange(ref _intrests, _intrests.Add(actorRef));
+            _superviser.WatchIntrest(new WatchIntrest(() => Interlocked.Exchange(ref _intrests, _intrests.Remove(actorRef)), actorRef));
         }
 
-        public void RespondOn(IActorRef? source, Action<Maybe<TRespond>> action)
+        public void RespondOn(IActorRef? source, Action<TRespond> action)
         {
-            WatchIntrest CreateIntrest(IActorRef actor)
-            {
-                return new(actor,
-                           () => Run(s =>
-                                         from state in s
-                                         select state with{SourceActions = state.SourceActions.Remove(actor)}));
-            }
-            
-            if (source == null || source.IsNobody())
-            {
-                Run(s =>
-                        from state in s 
-                        select state with{Action = state.Action.Combine(action)});
-            }
+            if (source.IsNobody())
+                _action = _action.Combine(action);
             else
             {
-                Run(s =>
-                        from state in s
-                        from _ in MayUse(() => _superviser.WatchIntrest(CreateIntrest(source)))
-                        let list = state.SourceActions
-                        select state with{ SourceActions = list.ContainsKey(source)
-                                                               ? list.SetItem(source, list[source].Combine(action))
-                                                               : list.SetItem(source, action)});
+                ImmutableInterlocked.AddOrUpdate(ref _sourcesActions!, source, _ => action, (_, old) => old.Combine(action) ?? action);
+                _superviser.WatchIntrest(new WatchIntrest(() => ImmutableInterlocked.TryRemove(ref _sourcesActions!, source, out _), source!));
             }
         }
 
-        protected void Send(Maybe<TRespond> respond)
+        protected void Send(TRespond respond)
         {
-            if(respond.IsNothing()) return;
-
-            var current = ObjectState;
-            
-            current.Intrests.ForEach(ar => ar.Tell(respond));
-            current.Action?.Invoke(respond);
-            current.SourceActions.ForEach(p => p.Key.Tell(IncommingEvent.From(respond, p.Value)));
+            _intrests.ForEach(ar => ar.Tell(respond));
+            _action?.Invoke(respond);
+            _sourcesActions.Foreach(p => p.Key.Tell(IncommingEvent.From(respond, p.Value)));
         }
     }
 }

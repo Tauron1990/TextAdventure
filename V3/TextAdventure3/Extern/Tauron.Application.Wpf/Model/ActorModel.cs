@@ -1,61 +1,47 @@
 ﻿using System;
-using System.Collections.Immutable;
+using System.Collections.Generic;
 using Autofac;
-using Functional.Maybe;
 using JetBrains.Annotations;
+using Tauron.Akka;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement;
 using Tauron.Operations;
 
 namespace Tauron.Application.Wpf.Model
 {
-    public abstract class ActorModel : StatefulActorModel<ActorModel.ActorModelState>
-    {
-        public record ActorModelState(ImmutableDictionary<Type, Action<IOperationResult>> CompledActions);
-
-        protected ActorModel(IActionInvoker actionInvoker) 
-            : base(actionInvoker, new ActorModelState(ImmutableDictionary<Type, Action<IOperationResult>>.Empty))
-        {
-        }
-    }
-    
     [PublicAPI]
-    public abstract class StatefulActorModel<TModelState> : StatefulReceiveActor<TModelState>
-        where TModelState : ActorModel.ActorModelState
+    public abstract class ActorModel : ExposedReceiveActor
     {
-        protected StatefulActorModel(IActionInvoker actionInvoker, TModelState state)
-            : base(state)
-        {
-            ActionInvoker = actionInvoker;
-            
-            Receive<IncommingEvent>(evt => evt.Action());
-            Receive<IOperationResult>(OnOperationCompled);
-        }
+        private readonly Dictionary<Type, Action<IOperationResult>> _compledActions = new Dictionary<Type, Action<IOperationResult>>();
 
         public IActionInvoker ActionInvoker { get; }
+
+        protected ActorModel(IActionInvoker actionInvoker)
+        {
+            ActionInvoker = actionInvoker;
+            Receive<IOperationResult>(OnOperationCompled);
+        }
 
         protected virtual void OnOperationCompled(IOperationResult result)
         {
             var actionType = result.Outcome?.GetType();
 
-            if (actionType?.IsAssignableTo<IStateAction>() != true) return;
-            
-            if (ObjectState.CompledActions.TryGetValue(actionType, out var action))
-                action(result);
+            if (actionType?.IsAssignableTo<IStateAction>() == true)
+            {
+                if (_compledActions.TryGetValue(actionType, out var action))
+                    action(result);
+            }
         }
 
         public void WhenActionComnpled<TAction>(Action<IOperationResult> opsAction)
             where TAction : IStateAction
         {
-            Run(s =>
-                    from state in s
-                    let key = typeof(TAction)
-                    let action = state.CompledActions.GetValueOrDefault(key).Combine(opsAction)
-                    select state with{CompledActions = state.CompledActions.SetItem(key, action)});
+            var key = typeof(TAction);
+            _compledActions[key] = opsAction.Combine(_compledActions.GetValueOrDefault(key))!;
         }
 
-        public UIStateConfiguration<TState> WhenStateChanges<TState>(Maybe<string> name = default)
-            where TState : class => new(ActionInvoker.GetState<TState>(name).OrElse(() => new ArgumentException("No such State Found")), this);
+        public UIStateConfiguration<TState> WhenStateChanges<TState>(string? name = null)
+            where TState : class => new UIStateConfiguration<TState>(ActionInvoker.GetState<TState>(name ?? string.Empty) ?? throw new ArgumentException("No such State Found"), this);
 
         public void DispatchAction(IStateAction action, bool? sendBack = true)
             => ActionInvoker.Run(action, sendBack);
@@ -63,10 +49,10 @@ namespace Tauron.Application.Wpf.Model
         [PublicAPI]
         public sealed class UIStateConfiguration<TState>
         {
-            private readonly StatefulActorModel<TModelState> _actor;
-            private readonly TState                          _state;
+            private readonly TState _state;
+            private readonly ActorModel _actor;
 
-            public UIStateConfiguration(TState state, StatefulActorModel<TModelState> actor)
+            public UIStateConfiguration(TState state, ActorModel actor)
             {
                 _state = state;
                 _actor = actor;
@@ -83,13 +69,13 @@ namespace Tauron.Application.Wpf.Model
         [PublicAPI]
         public sealed class UIStateEventConfiguration<TEvent>
         {
-            private readonly StatefulActorModel<TModelState> _actor;
-            private readonly IEventSource<TEvent>            _eventSource;
+            private readonly IEventSource<TEvent> _eventSource;
+            private readonly ActorModel _actor;
 
-            public UIStateEventConfiguration(IEventSource<TEvent> eventSource, StatefulActorModel<TModelState> actor)
+            public UIStateEventConfiguration(IEventSource<TEvent> eventSource, ActorModel actor)
             {
                 _eventSource = eventSource;
-                _actor       = actor;
+                _actor = actor;
             }
 
             public ActorFlowBuilder<TEvent> ToFlow()

@@ -1,72 +1,171 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ContentModelStore">
-    <e p="C:\Users\PC\AppData\Local\JetBrains\Rider2020.3\extResources" t="IncludeRecursive" />
-    <e p="C:\Users\PC\AppData\Local\JetBrains\Rider2020.3\resharper-host\Local\Transient\Rider\v203\SolutionCaches\_TextAdventure3.-958710442.00" t="ExcludeRecursive" />
-    <e p="C:\Users\PC\source\repos\TextAdventure\V3\TextAdventure3" t="IncludeFlat">
+    <e p="C:\Users\user\AppData\Local\JetBrains\Rider2020.3\extResources" t="IncludeRecursive" />
+    <e p="C:\Users\user\AppData\Local\JetBrains\Rider2020.3\resharper-host\Local\Transient\Rider\v203\SolutionCaches\_TextAdventure3.-528066130.00" t="ExcludeRecursive" />
+    <e p="C:\Users\user\source\repos\TextAdventure\V3\TextAdventure3" t="IncludeFlat">
       <e p="Adventure.Ui" t="IncludeRecursive">
         <e p="Adventure.Ui.csproj" t="IncludeRecursive" />
       </e>
-      <e p="Extern" t="Include" />
-      <e p="packages" t="ExcludeRecursive" />
-      <e p="Playground" t="IncludeRecursive">
-        <e p="bin" t="ExcludeRecursive" />
-        <e p="obj" t="ExcludeRecursive">
-          <e p="Debug" t="Include">
-            <e p="net5.0" t="Include">
-              <e p="Playground.AssemblyInfo.cs" t="Include" />
+      <e p="Apps" t="Include">
+        <e p="Editor" t="Include" />
+        <e p="Runner" t="Include" />
+      </e>
+      <e p="Extern" t="Include">
+        <e p="Tauron.Application.Common" t="IncludeRecursive">
+          <e p="ActorFlowBuilder - Backup.cs" t="Include" />
+          <e p="ActorFlowBuilder.cs" t="Include" />
+          <e p="Akka" t="Include">
+            <e p="ActorRefFactory.cs" t="Include" />
+            <e p="ActorRefFactoryExtensions.cs" t="Include" />
+            <e p="BaseActorRef.cs" t="Include" />
+            <e p="DefaultActorRef.cs" t="Include" />
+            <e p="EventActor.cs" t="Include" />
+            <e p="EventActorExtensions.cs" t="Include" />
+            <e p="ExposedReceiveActor.cs" t="Include" />
+            <e p="ExposedReceiveActorExtensions.cs" t="Include" />
+            <e p="HookEvent.cs" t="Include" />
+            <e p="IDefaultActorRef.cs" t="Include" />
+            <e p="IEventActor.cs" t="Include" />
+            <e p="InitableActorRef.cs" t="Include" />
+            <e p="InitAbleExtensions.cs" t="Include" />
+            <e p="ISyncActorRef.cs" t="Include" />
+            <e p="SyncActorRef.cs" t="Include" />
+            <e p="TimerScheduler.cs" t="Include" />
+          </e>
+          <e p="Application" t="Include">
+            <e p="ActorWorkflow" t="Include">
+              <e p="IHasTimeout.cs" t="Include" />
+              <e p="IWorkflowContext.cs" t="Include" />
+              <e p="LambdaStep.cs" t="Include" />
+              <e p="WorkflowActorBase.cs" t="Include" />
+              <e p="WorkflowResult.cs" t="Include" />
+            </e>
+            <e p="CrcStream.cs" t="Include" />
+            <e p="GenericWeakReference.cs" t="Include" />
+            <e p="GroupDirectory.cs" t="Include" />
+            <e p="INotifyPropertyChangedMethod.cs" t="Include" />
+            <e p="ITauronEnviroment.cs" t="Include" />
+            <e p="LimitedList.cs" t="Include" />
+            <e p="ObservableDictionary.cs" t="Include" />
+            <e p="ObservableObject.cs" t="Include" />
+            <e p="ResourceManagerProvider.cs" t="Include" />
+            <e p="ShearedEvent.cs" t="Include" />
+            <e p="TauronEnviroment.cs" t="Include" />
+            <e p="TauronProfile.cs" t="Include" />
+            <e p="WeakAction.cs" t="Include" />
+            <e p="WeakCleanUp.cs" t="Include" />
+            <e p="WeakCollection.cs" t="Include" />
+            <e p="Workflow" t="Include">
+              <e p="ICondition.cs" t="Include" />
+              <e p="IStep.cs" t="Include" />
+              <e p="Producer.cs" t="Include" />
+              <e p="SimpleCondition.cs" t="Include" />
+              <e p="StepId.cs" t="Include" />
             </e>
           </e>
+          <e p="Argument.cs" t="Include" />
+          <e p="Async.cs" t="Include" />
+          <e p="bin" t="ExcludeRecursive" />
+          <e p="CommonModule.cs" t="Include" />
+          <e p="CriticalExceptions.cs" t="Include" />
+          <e p="DelegateExtensions.cs" t="Include" />
+          <e p="DisposeableBase.cs" t="Include" />
+          <e p="EnumerableExtensions.cs" t="Include" />
+          <e p="Host" t="Include">
+            <e p="ActorApplication.cs" t="Include" />
+            <e p="ApplicationLifetime.cs" t="Include" />
+            <e p="CommonLifetime.cs" t="Include" />
+            <e p="Environments.cs" t="Include" />
+            <e p="Extensions.cs" t="Include" />
+            <e p="HostBuilderContext.cs" t="Include" />
+            <e p="HostDefaults.cs" t="Include" />
+            <e p="HostEnviroment.cs" t="Include" />
+            <e p="HostEnvironmentEnvExtensions.cs" t="Include" />
+            <e p="HostExtensions.cs" t="Include" />
+            <e p="IApplicationBuilder.cs" t="Include" />
+            <e p="IApplicationLifetime.cs" t="Include" />
+            <e p="IAppRoute.cs" t="Include" />
+            <e p="IHostApplicationLifetime.cs" t="Include" />
+            <e p="IHostEnvironment.cs" t="Include" />
+            <e p="IHostLifetime.cs" t="Include" />
+            <e p="StartupBase.cs" t="Include" />
+          </e>
+          <e p="IOExtensions.cs" t="Include" />
+          <e p="IWeakReference.cs" t="Include" />
+          <e p="Localization" t="Include">
+            <e p="Actor" t="Include">
+              <e p="JsonLocLocStoreActor.cs" t="Include" />
+              <e p="LocCoordinator.cs" t="Include" />
+              <e p="LocStoreActorBase.cs" t="Include" />
+            </e>
+            <e p="EscapeHelper.cs" t="Include" />
+            <e p="Extension" t="Include">
+              <e p="LocExtension.cs" t="Include" />
+              <e p="LocExtensionAdaptor.cs" t="Include" />
+            </e>
+            <e p="JsonConfiguration.cs" t="Include" />
+            <e p="LocEmlement.cs" t="Include" />
+            <e p="LocExtensionId.cs" t="Include" />
+            <e p="LocExtensions.cs" t="Include" />
+            <e p="Provider" t="Include">
+              <e p="ILocStoreProducer.cs" t="Include" />
+              <e p="LocJsonProvider.cs" t="Include" />
+            </e>
+          </e>
+          <e p="obj" t="ExcludeRecursive">
+            <e p="Debug" t="Include">
+              <e p="net5.0" t="Include">
+                <e p="Tauron.Application.Common.AssemblyInfo.cs" t="Include" />
+              </e>
+            </e>
+          </e>
+          <e p="ObjectExtension.cs" t="Include" />
+          <e p="Operations" t="Include">
+            <e p="OperationResult.cs" t="Include" />
+          </e>
+          <e p="ProgressChange.cs" t="Include" />
+          <e p="ProgressStatistic.cs" t="Include" />
+          <e p="ReadOnlyEnumerator.cs" t="Include" />
+          <e p="ReflectionExtensions.cs" t="Include" />
+          <e p="SecurityHelper.cs" t="Include" />
+          <e p="SerializationExtensions.cs" t="Include" />
+          <e p="StreamHelper.cs" t="Include" />
+          <e p="SynchronizationContextRemover.cs" t="Include" />
+          <e p="Tauron.Application.Common.csproj" t="IncludeRecursive" />
+          <e p="Tauron.Application.Common.csproj.DotSettings" t="Include" />
+          <e p="Temp" t="Include">
+            <e p="ITempDic.cs" t="Include" />
+            <e p="ITempFile.cs" t="Include" />
+            <e p="ITempInfo.cs" t="Include" />
+            <e p="TempDic.cs" t="Include" />
+            <e p="TempFile.cs" t="Include" />
+            <e p="TempStorage.cs" t="Include" />
+            <e p="TempStream.cs" t="Include" />
+          </e>
         </e>
+      </e>
+      <e p="packages" t="ExcludeRecursive" />
+      <e p="Playground" t="IncludeRecursive">
         <e p="Playground.csproj" t="IncludeRecursive" />
-        <e p="Program.cs" t="Include" />
       </e>
       <e p="Solution Items" t="Include" />
       <e p="Test" t="Include" />
+      <e p="TestApp" t="IncludeRecursive">
+        <e p="TestApp.csproj" t="IncludeRecursive" />
+      </e>
       <e p="TextAdventure" t="IncludeRecursive">
         <e p="TextAdventure.csproj" t="IncludeRecursive" />
       </e>
+      <e p="TextAdventure.Editor" t="IncludeRecursive">
+        <e p="TextAdventure.Editor.csproj" t="IncludeRecursive" />
+      </e>
       <e p="TextAdventure3.sln" t="IncludeFlat" />
       <e p="TextAdventures.Engines" t="IncludeRecursive">
-        <e p="Actors" t="Include">
-          <e p="GameMasterActor.cs" t="Include" />
-          <e p="GameProcess.cs" t="Include" />
-        </e>
-        <e p="bin" t="ExcludeRecursive" />
-        <e p="Data" t="Include">
-          <e p="Component.cs" t="Include" />
-          <e p="GameObject.cs" t="Include" />
-          <e p="GameObjectManager.cs" t="Include" />
-        </e>
-        <e p="EventSystem" t="Include">
-          <e p="EventDispatcher.cs" t="Include" />
-        </e>
-        <e p="Game.cs" t="Include" />
-        <e p="GameMaster.cs" t="Include" />
-        <e p="obj" t="ExcludeRecursive">
-          <e p="Debug" t="Include">
-            <e p="net5.0" t="Include">
-              <e p="TextAdventures.Engines.AssemblyInfo.cs" t="Include" />
-            </e>
-          </e>
-        </e>
         <e p="TextAdventures.Engines.csproj" t="IncludeRecursive" />
       </e>
       <e p="TextAdventures.WorldBuilder" t="IncludeRecursive">
-        <e p="bin" t="ExcludeRecursive" />
-        <e p="ComponentBlueprint.cs" t="Include" />
-        <e p="GameObjectBlueprint.cs" t="Include" />
-        <e p="GameSetup.cs" t="Include" />
-        <e p="obj" t="ExcludeRecursive">
-          <e p="Debug" t="Include">
-            <e p="net5.0" t="Include">
-              <e p="TextAdventures.WorldBuilder.AssemblyInfo.cs" t="Include" />
-            </e>
-          </e>
-        </e>
         <e p="TextAdventures.WorldBuilder.csproj" t="IncludeRecursive" />
-        <e p="World.cs" t="Include" />
-        <e p="WorldBuilder.cs" t="Include" />
       </e>
       <e p="TODO.txt" t="Include" />
     </e>

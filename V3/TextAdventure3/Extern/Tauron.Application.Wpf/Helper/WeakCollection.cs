@@ -5,8 +5,6 @@ using System.Collections.ObjectModel;
 using System.Diagnostics;
 using System.Linq;
 using Akka.Util.Internal;
-using Functional.Either;
-using Functional.Maybe;
 using JetBrains.Annotations;
 
 namespace Tauron.Application.Wpf.Helper
@@ -15,7 +13,7 @@ namespace Tauron.Application.Wpf.Helper
     public sealed class WeakCollection<TType> : IList<TType>
         where TType : class
     {
-        private readonly List<WeakReference<TType>?> _internalCollection = new();
+        private readonly List<WeakReference<TType>?> _internalCollection = new List<WeakReference<TType>?>();
 
         public WeakCollection()
         {
@@ -26,15 +24,18 @@ namespace Tauron.Application.Wpf.Helper
 
         public TType? this[int index]
         {
-            #pragma warning disable CS8613 // Die NULL-Zulässigkeit von Verweistypen im Rückgabetyp entspricht nicht dem implizit implementierten Member.
-            #pragma warning disable CS8766 // Nullability of reference types in return type doesn't match implicitly implemented member (possibly because of nullability attributes).
-            get => _internalCollection[index]?.TypedTarget().OrElseDefault();
-            #pragma warning restore CS8766 // Nullability of reference types in return type doesn't match implicitly implemented member (possibly because of nullability attributes).
+#pragma warning disable CS8613 // Die NULL-Zulässigkeit von Verweistypen im Rückgabetyp entspricht nicht dem implizit implementierten Member.
+#pragma warning disable CS8766 // Nullability of reference types in return type doesn't match implicitly implemented member (possibly because of nullability attributes).
+            get => _internalCollection[index]?.TypedTarget();
+#pragma warning restore CS8766 // Nullability of reference types in return type doesn't match implicitly implemented member (possibly because of nullability attributes).
             set => _internalCollection[index] = value == null ? null : new WeakReference<TType>(value);
-            #pragma warning restore CS8613 // Die NULL-Zulässigkeit von Verweistypen im Rückgabetyp entspricht nicht dem implizit implementierten Member.
+#pragma warning restore CS8613 // Die NULL-Zulässigkeit von Verweistypen im Rückgabetyp entspricht nicht dem implizit implementierten Member.
         }
 
-        IEnumerator IEnumerable.GetEnumerator() => GetEnumerator();
+        IEnumerator IEnumerable.GetEnumerator()
+        {
+            return GetEnumerator();
+        }
 
         public int Count => _internalCollection.Count;
 
@@ -54,7 +55,7 @@ namespace Tauron.Application.Wpf.Helper
 
         public bool Contains(TType item)
         {
-            return item != null && _internalCollection.Any(it => it?.TypedTarget().OrElseDefault() == item);
+            return item != null && _internalCollection.Any(it => it?.TypedTarget() == item);
         }
 
         public void CopyTo(TType[] array, int arrayIndex)
@@ -67,7 +68,7 @@ namespace Tauron.Application.Wpf.Helper
                 TType? target = null;
                 while (target == null && index <= _internalCollection.Count)
                 {
-                    target = _internalCollection[index]?.TypedTarget().OrElseDefault();
+                    target = _internalCollection[index]?.TypedTarget();
                     index++;
                 }
 
@@ -80,9 +81,9 @@ namespace Tauron.Application.Wpf.Helper
         public IEnumerator<TType> GetEnumerator()
         {
             return
-                _internalCollection.Select(reference => reference?.TypedTarget().OrElseDefault())
-                                   .Where(target => target != null)
-                                   .GetEnumerator()!;
+                _internalCollection.Select(reference => reference?.TypedTarget())
+                    .Where(target => target != null)
+                    .GetEnumerator()!;
         }
 
         public int IndexOf(TType item)
@@ -93,7 +94,7 @@ namespace Tauron.Application.Wpf.Helper
             for (index = 0; index < _internalCollection.Count; index++)
             {
                 var temp = _internalCollection[index];
-                if (temp?.TypedTarget().OrElseDefault() == item) break;
+                if (temp?.TypedTarget() == item) break;
             }
 
             return index == _internalCollection.Count ? -1 : index;
@@ -148,7 +149,10 @@ namespace Tauron.Application.Wpf.Helper
 
         protected override void ClearItems()
         {
-            lock (this) base.ClearItems();
+            lock (this)
+            {
+                base.ClearItems();
+            }
         }
 
         protected override void InsertItem(int index, TType item)
@@ -162,12 +166,18 @@ namespace Tauron.Application.Wpf.Helper
 
         protected override void RemoveItem(int index)
         {
-            lock (this) base.RemoveItem(index);
+            lock (this)
+            {
+                base.RemoveItem(index);
+            }
         }
 
         protected override void SetItem(int index, TType item)
         {
-            lock (this) base.SetItem(index, item);
+            lock (this)
+            {
+                base.SetItem(index, item);
+            }
         }
 
         private void CleanUpMethod()
@@ -175,13 +185,13 @@ namespace Tauron.Application.Wpf.Helper
             lock (this)
             {
                 Items.ToArray()
-                     .Where(it => !it.IsAlive)
-                     .ForEach(it =>
-                              {
-                                  if (it is IDisposable dis) dis.Dispose();
+                    .Where(it => !it.IsAlive)
+                    .ForEach(it =>
+                    {
+                        if (it is IDisposable dis) dis.Dispose();
 
-                                  Items.Remove(it);
-                              });
+                        Items.Remove(it);
+                    });
             }
         }
     }

@@ -1,18 +1,16 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using Functional.Maybe;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.Mutation;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Workshop.StateManagement.Internal
 {
     public abstract class StateContainer : IDisposable
     {
-        public Maybe<IState> Instance { get; }
+        public IState Instance { get; }
 
-        protected StateContainer(Maybe<IState> instance) 
+        protected StateContainer(IState instance) 
             => Instance = instance;
 
         public abstract IDataMutation? TryDipatch(IStateAction action, Action<IReducerResult> sendResult, Action onCompled);
@@ -26,7 +24,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
         private IReadOnlyCollection<IReducer<TData>> Reducers { get; }
         private ExtendedMutatingEngine<MutatingContext<TData>> MutatingEngine { get; }
 
-        public StateContainer(Maybe<IState> instance, IReadOnlyCollection<IReducer<TData>> reducers, ExtendedMutatingEngine<MutatingContext<TData>> mutatingEngine, IDisposable toDispose)
+        public StateContainer(IState instance, IReadOnlyCollection<IReducer<TData>> reducers, ExtendedMutatingEngine<MutatingContext<TData>> mutatingEngine, IDisposable toDispose)
             : base(instance)
         {
             _toDispose = toDispose;
@@ -40,37 +38,30 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             if (reducers.Count == 0)
                 return null;
 
-            return MutatingEngine.CreateMutate(action.ActionName, action.Query,
-                                               async data =>
-                                               {
-                                                   try
-                                                   {
-                                                       var isFail = false;
-                                                       foreach (var reducer in reducers)
-                                                       {
-                                                           var mayResult = await reducer.Reduce(data, action);
+            return MutatingEngine.CreateMutate(action.ActionName, action.Query, async data =>
+            {
+                try
+                {
+                    var isFail = false;
+                    foreach (var reducer in reducers)
+                    {
+                        var result = await reducer.Reduce(data, action);
 
-                                                           var tempData =
-                                                               Collapse(from result in mayResult
-                                                                        from _ in MayUse(() => sendResult(result))
-                                                                        where result.IsOk
-                                                                        select result.Data);
+                        if (!result.IsOk)
+                            isFail = true;
 
-                                                           if (tempData.IsNothing())
-                                                               isFail = true;
+                        sendResult(result);
+                        data = result.Data;
+                    }
 
-                                                           data = tempData.Or(data);
-                                                       }
-
-                                                       return isFail ? Maybe<MutatingContext<TData>>.Nothing : data;
-                                                   }
-                                                   finally
-                                                   {
-                                                       onCompled();
-                                                   }
-                                               });
+                    return isFail ? null : data;
+                }
+                finally
+                {
+                    onCompled();
+                }
+            });
         }
-
 
         public override void Dispose() 
             => _toDispose.Dispose();

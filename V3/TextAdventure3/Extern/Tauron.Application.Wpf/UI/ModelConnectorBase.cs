@@ -2,13 +2,11 @@
 using System.Threading;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Functional.Maybe;
 using JetBrains.Annotations;
 using Serilog;
 using Tauron.Akka;
 using Tauron.Application.Wpf.Helper;
 using Tauron.Application.Wpf.ModelMessages;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Wpf.UI
 {
@@ -21,11 +19,10 @@ namespace Tauron.Application.Wpf.UI
 
         private int _isInitializing = 1;
 
-        protected ModelConnectorBase(string name, Maybe<DataContextPromise> mayPromise)
+        protected ModelConnectorBase(string name, DataContextPromise promise)
         {
             Name = name;
 
-            var promise = mayPromise.Value;
             promise.OnUnload(OnUnload);
 
             promise.OnNoContext(NoDataContextFound);
@@ -33,14 +30,16 @@ namespace Tauron.Application.Wpf.UI
             promise
                .OnContext((model, view) =>
                           {
-                              View  = May(view);
-                              Model = May(model);
+                              View = view;
+                              Model = model;
 
                               if (model.IsInitialized)
+                              {
                                   Task.Run(async () => await InitAsync());
+                              }
                               else
                               {
-                                  void OnModelOnInitialized()
+                                  void OnModelOnInitialized() 
                                       => Task.Run(async () => await InitAsync());
 
                                   model.AwaitInit(OnModelOnInitialized);
@@ -48,10 +47,10 @@ namespace Tauron.Application.Wpf.UI
                           });
         }
 
-        protected string            Name  { get; }
-        protected Maybe<IViewModel> Model { get; private set; }
+        protected string Name { get; }
+        protected IViewModel? Model { get; private set; }
 
-        protected Maybe<IView> View { get; private set; }
+        protected IView? View { get; private set; }
 
         protected int IsInitializing => _isInitializing;
 
@@ -61,23 +60,20 @@ namespace Tauron.Application.Wpf.UI
             {
                 Log.Debug("Init ModelConnector {Type} -- {Name}", typeof(TDrived), Name);
 
-                if (Model.IsNothing()) return;
+                if (Model == null) return;
                 OnLoad();
+
                 //Log.Information("Ask For {Property}", _name);
-                await DoAsync(from model in Model
-                              select Func(async () =>
-                                          {
-                                              var eventActor = await Ask<IEventActor>(model.Actor, new MakeEventHook(Name), TimeSpan.FromSeconds(15));
-                                              //Log.Information("Ask Compled For {Property}", _name);
+                var eventActor = await Model.Actor.Ask<IEventActor>(new MakeEventHook(Name), TimeSpan.FromSeconds(15));
+                //Log.Information("Ask Compled For {Property}", _name);
 
-                                              eventActor.Register(HookEvent.Create<PropertyChangedEvent>(PropertyChangedHandler));
-                                              eventActor.Register(HookEvent.Create<ValidatingEvent>(ValidateCompled));
+                eventActor.Register(HookEvent.Create<PropertyChangedEvent>(PropertyChangedHandler));
+                eventActor.Register(HookEvent.Create<ValidatingEvent>(ValidateCompled));
 
-                                              Tell(model.Actor, new TrackPropertyEvent(Name), eventActor.OriginalRef);
+                Model.Actor.Tell(new TrackPropertyEvent(Name), eventActor.OriginalRef);
 
-                                              Interlocked.Exchange(ref _eventActor, eventActor);
-                                              Interlocked.Exchange(ref _isInitializing, 0);
-                                          }));
+                Interlocked.Exchange(ref _eventActor, eventActor);
+                Interlocked.Exchange(ref _isInitializing, 0);
             }
             catch (Exception e)
             {
@@ -102,11 +98,11 @@ namespace Tauron.Application.Wpf.UI
 
         public void ForceUnload()
         {
-            if (Model.IsNothing())
+            if (Model == null)
                 return;
 
             OnUnload();
-            Model = Maybe<IViewModel>.Nothing;
+            Model = null;
             _eventActor?.OriginalRef.Tell(PoisonPill.Instance);
         }
 

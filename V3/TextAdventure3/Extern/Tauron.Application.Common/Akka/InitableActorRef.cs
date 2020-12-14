@@ -1,5 +1,4 @@
-﻿using System;
-using Akka.Actor;
+﻿using Akka.Actor;
 using JetBrains.Annotations;
 
 namespace Tauron.Akka
@@ -7,7 +6,7 @@ namespace Tauron.Akka
     [PublicAPI]
     public interface IInitableActorRef
     {
-        IObservable<IActorRef> Actor { get; }
+        IActorRef Actor { get; }
 
         void Init(string? name = null);
 

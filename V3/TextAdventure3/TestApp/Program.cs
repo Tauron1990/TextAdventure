@@ -1,6 +1,8 @@
-﻿using System.IO;
-using System.Threading.Tasks;
-using Microsoft.Build.Construction;
+﻿
+using System;
+using System.Collections.Generic;
+using System.Reactive;
+using System.Reactive.Linq;
 
 namespace TestApp
 {
@@ -8,25 +10,70 @@ namespace TestApp
     {
         private static void Main(string[] args)
         {
-            string testPath = Path.GetFullPath("Test");
+            foreach (var i in Fib(1000000))
+            {
+                Console.WriteLine(i);
+                if(i > 1_000_000_000)
+                    break;
+            }
+            
+            Console.WriteLine(FibSpec(0));
+            Console.WriteLine(FibSpec(10));
+        }
 
-            if (Directory.Exists(testPath))
-                Directory.Delete(testPath, true);
-            Directory.CreateDirectory(testPath);
+        private static IEnumerable<int> Fib(int count)
+        {
+            int? first = null;
+            int? second = null;
 
-            var testFile = Path.Combine(testPath, "test.sln");
+            for (int i = 0; i < count; i++)
+            {
+                if (first == null)
+                {
+                    first = 1;
+                    yield return 1;
+                    continue;
+                }
 
-            File.WriteAllText(testFile, string.Empty);
-            SolutionFile file = SolutionFile.Parse(testFile);
+                if (second == null)
+                {
+                    second = 1;
+                    yield return 1;
+                    continue;
+                }
 
-            //MSBuildLocator.RegisterDefaults();
+                var next = first.Value + second.Value;
+                second = first;
+                first = next;
 
-            //var workspace = MSBuildWorkspace.Create();
+                yield return next;
+            }
+        }
+        private static int FibSpec(int count)
+        {
+            int? first = null;
+            int? second = null;
 
-            //await workspace.OpenSolutionAsync(testPath);
+            for (int i = 0; i < count; i++)
+            {
+                if (first == null)
+                {
+                    first = 1;
+                    continue;
+                }
 
-            //SolutionEditor
+                if (second == null)
+                {
+                    second = 1;
+                    continue;
+                }
 
+                var next = first.Value + second.Value;
+                second = first;
+                first = next;
+            }
+
+            return first ?? 0;
         }
     }
 }

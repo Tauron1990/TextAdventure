@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Reactive.Disposables;
 using Akka.Util;
 using JetBrains.Annotations;
 using Serilog;
@@ -7,7 +6,7 @@ using Serilog;
 namespace Tauron
 {
     [PublicAPI]
-    public abstract class DisposeableBase : ICancelable
+    public abstract class DisposeableBase : IDisposable
     {
         private readonly AtomicBoolean _isDisposed = new();
         private Action? _tracker;

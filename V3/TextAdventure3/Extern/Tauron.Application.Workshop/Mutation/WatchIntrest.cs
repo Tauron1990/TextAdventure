@@ -3,5 +3,16 @@ using Akka.Actor;
 
 namespace Tauron.Application.Workshop.Mutation
 {
-    public sealed record WatchIntrest(IActorRef Target, Action OnRemove);
+    public sealed class WatchIntrest
+    {
+        public WatchIntrest(Action onRemove, IActorRef target)
+        {
+            OnRemove = onRemove;
+            Target = target;
+        }
+
+        public Action OnRemove { get; }
+
+        public IActorRef Target { get; }
+    }
 }

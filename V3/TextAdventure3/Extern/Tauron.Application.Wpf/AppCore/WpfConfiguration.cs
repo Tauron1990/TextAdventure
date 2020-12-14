@@ -10,7 +10,10 @@ namespace Tauron.Application.Wpf.AppCore
     {
         internal readonly ContainerBuilder ServiceCollection;
 
-        public WpfConfiguration(ContainerBuilder serviceCollection) => ServiceCollection = serviceCollection;
+        public WpfConfiguration(ContainerBuilder serviceCollection)
+        {
+            ServiceCollection = serviceCollection;
+        }
 
         public WpfConfiguration WithAppFactory(Func<System.Windows.Application> factory)
         {

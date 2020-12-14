@@ -6,7 +6,6 @@ using JetBrains.Annotations;
 using Tauron.Akka;
 using Tauron.Application.Wpf.Model;
 using Tauron.Application.Wpf.UI;
-using static Tauron.Prelude;
 
 namespace Tauron.Application.Wpf
 {
@@ -23,7 +22,7 @@ namespace Tauron.Application.Wpf
                 .OnRelease(vm =>
                 {
                     if (vm.IsInitialized)
-                        Tell(vm.Actor, PoisonPill.Instance);
+                        vm.Actor.Tell(PoisonPill.Instance);
                 });
         }
 
