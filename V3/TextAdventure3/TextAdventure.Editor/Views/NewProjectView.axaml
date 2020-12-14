@@ -1,0 +1,32 @@
+﻿<UserControl xmlns="https://github.com/avaloniaui"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+             xmlns:model="clr-namespace:TextAdventure.Editor.ViewModels"
+             mc:Ignorable="d" d:DesignWidth="800" d:DesignHeight="450"
+             x:Class="TextAdventure.Editor.Views.NewProjectView">
+
+    <UserControl.Styles>
+        <Style Selector="TextBlock">
+            <Setter Property="Margin" Value="5"/>
+            <Setter Property="VerticalAlignment" Value="Center"/>
+        </Style>
+        <Style Selector="TextBox">
+            <Setter Property="Margin" Value="5"/>
+        </Style>
+    </UserControl.Styles>
+
+    <Grid ColumnDefinitions="1*,Auto,1*,1*" RowDefinitions="1*, Auto, Auto, Auto, Auto, Auto, Auto, 1*">
+        <TextBlock Grid.Row="1" Grid.Column="1" Text="Projekt Name:"/>
+        <TextBox Grid.Row="1" Grid.Column="2" Text="{Binding ProjectName}" IsEnabled="{Binding IsNotRunning}"/>
+        <TextBlock Grid.Row="2" Grid.Column="1" Text="Spiel Name:"/>
+		<TextBox Grid.Row="2" Grid.Column="2" Text="{Binding GameName}" IsEnabled="{Binding IsNotRunning}"/>
+        <TextBlock Grid.Row="3" Grid.Column="1" Text="Prject Pfad:"/>
+        <TextBox Grid.Row="3" Grid.Column="2" Text="{Binding ProjectPath}" IsEnabled="{Binding IsNotRunning}"/>
+        <CheckBox Grid.Row="4" Grid.Column="1" Grid.ColumnSpan="2" HorizontalAlignment="Center" Content="Git Initialisieren?" Margin="5" IsEnabled="{Binding IsNotRunning}"
+                  IsChecked="{Binding InitGit}"/>
+        <Button Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Content="Weiter" HorizontalAlignment="Right" Name="NextButton"/>
+        <Button Grid.Row="5" Grid.Column="1" Grid.ColumnSpan="2" Margin="5" Content="Abbrechen" HorizontalAlignment="Left" Name="CancelButton"/>
+        <ProgressBar Grid.Column="1" Grid.ColumnSpan="2" Grid.Row="6" IsVisible="{Binding IsRunning}" IsIndeterminate="True" Margin="5"></ProgressBar>
+    </Grid>
+</UserControl>

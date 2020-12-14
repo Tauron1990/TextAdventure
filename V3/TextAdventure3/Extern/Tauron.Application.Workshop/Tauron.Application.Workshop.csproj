@@ -1,0 +1,39 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net5.0</TargetFramework>
+    <Nullable>enable</Nullable>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="obj\**" />
+    <Compile Remove="StateManagement\Data\**" />
+    <EmbeddedResource Remove="obj\**" />
+    <EmbeddedResource Remove="StateManagement\Data\**" />
+    <None Remove="obj\**" />
+    <None Remove="StateManagement\Data\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Compile Remove="StateManagement\Cache\ParentCache.cs" />
+    <Compile Remove="StateManagement\Cache\ParentCacheHandle.cs" />
+    <Compile Remove="StateManagement\Cache\ParentExtensions.cs" />
+    <Compile Remove="StateManagement\Cache\SyncCache.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <None Include="StateManagement\Cache\ParentCache.cs" />
+    <None Include="StateManagement\Cache\ParentCacheHandle.cs" />
+    <None Include="StateManagement\Cache\ParentExtensions.cs" />
+    <None Include="StateManagement\Cache\SyncCache.cs" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="FluentValidation" Version="9.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Tauron.Application.Common\Tauron.Application.Common.csproj" />
+  </ItemGroup>
+
+</Project>
