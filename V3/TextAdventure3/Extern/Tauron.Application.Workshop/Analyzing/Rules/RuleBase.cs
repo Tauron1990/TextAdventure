@@ -29,10 +29,6 @@ namespace Tauron.Application.Workshop.Analyzing.Rules
 
         protected abstract void ActorConstruct(IExposedReceiveActor actor);
 
-        //protected abstract void RegisterResponds(TWorkspace workspace, IActorContext context);
-
-        //protected abstract void RegisterRules(IActorDsl dsl);
-
         protected void SendIssues(IEnumerable<Issue.IssueCompleter> issues, IActorContext context)
             => context.Parent.Tell(new RuleIssuesChanged<TWorkspace, TData>(this, issues));
     }

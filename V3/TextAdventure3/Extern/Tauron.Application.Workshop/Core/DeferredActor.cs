@@ -1,10 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Collections.Immutable;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
-using Akka.Actor.Dsl;
-using Tauron.Akka;
 
 namespace Tauron.Application.Workshop.Core
 {
@@ -14,7 +13,7 @@ namespace Tauron.Application.Workshop.Core
         private Task? _actorTask;
 
         private IActorRef _actorRef = ActorRefs.Nobody;
-        protected IActorRef Actor => _actorRef;
+        private IActorRef Actor => _actorRef;
 
         protected DeferredActor(Task<IActorRef> actor)
         {

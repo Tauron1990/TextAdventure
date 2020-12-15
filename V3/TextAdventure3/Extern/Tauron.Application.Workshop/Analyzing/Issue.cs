@@ -1,5 +1,8 @@
-﻿namespace Tauron.Application.Workshop.Analyzing
+﻿using JetBrains.Annotations;
+
+namespace Tauron.Application.Workshop.Analyzing
 {
+    [PublicAPI]
     public sealed class Issue
     {
         public sealed class IssueCompleter
@@ -16,7 +19,7 @@
             }
 
             public Issue Build(string ruleName)
-                => new Issue(_type, _data, _project, ruleName);
+                => new(_type, _data, _project, ruleName);
         }
 
         private Issue(string issueType, object? data, string project, string ruleName)

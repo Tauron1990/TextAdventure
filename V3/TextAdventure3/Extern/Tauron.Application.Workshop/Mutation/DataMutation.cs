@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using Akka.Routing;
+using JetBrains.Annotations;
 
 namespace Tauron.Application.Workshop.Mutation
 {
@@ -20,6 +21,7 @@ namespace Tauron.Application.Workshop.Mutation
         Func<Task> Run { get; }
     }
 
+    [PublicAPI]
     public sealed class DataMutation<TData> : ISyncMutation
         where TData : class
     {
@@ -39,6 +41,7 @@ namespace Tauron.Application.Workshop.Mutation
         public object ConsistentHashKey => _hash ?? Name;
     }
 
+    [PublicAPI]
     public sealed class AsyncDataMutation<TData> : IAsyncMutation
         where TData : class
     {

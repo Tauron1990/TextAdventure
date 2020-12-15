@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Diagnostics.CodeAnalysis;
+using System.Reactive.Disposables;
 using System.Runtime.CompilerServices;
 using System.Threading;
 using System.Threading.Tasks;
@@ -39,7 +40,7 @@ namespace Tauron.Application.Settings
         public IDisposable BlockSet()
         {
             _isBlocked = true;
-            return new ActionDispose(() => _isBlocked = false);
+            return Disposable.Create(() => _isBlocked = false);
         }
 
         private async Task LoadValues()
@@ -72,7 +73,7 @@ namespace Tauron.Application.Settings
 
             if (string.IsNullOrEmpty(name)) return;
 
-            ImmutableInterlocked.AddOrUpdate(ref _dic, name, value, (s, s1) => value);
+            ImmutableInterlocked.AddOrUpdate(ref _dic, name, value, (_, _) => value);
 
             _actor.Tell(new SetSettingValue(_scope, name, value));
 

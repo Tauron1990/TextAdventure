@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using FluentValidation;
 using JetBrains.Annotations;
@@ -15,8 +16,13 @@ namespace Tauron.Application.Workshop.StateManagement
     {
         public virtual IValidator<TAction>? Validator { get; }
 
-        public virtual async Task<ReducerResult<TData>> Reduce(MutatingContext<TData> state, IStateAction action)
+        public virtual IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, IStateAction action)
         {
+            var typedAction = (TAction)action;
+
+            var pub = state.Publish().AutoConnect(2);
+            
+            
             try
             {
                 var typedAction = (TAction) action;
@@ -32,7 +38,7 @@ namespace Tauron.Application.Workshop.StateManagement
             }
         }
 
-        protected abstract Task<ReducerResult<TData>> Reduce(MutatingContext<TData> state, TAction action);
+        protected abstract IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action);
 
         protected ReducerResult<TData> Sucess(MutatingContext<TData> data)
             => ReducerResult.Sucess(data);

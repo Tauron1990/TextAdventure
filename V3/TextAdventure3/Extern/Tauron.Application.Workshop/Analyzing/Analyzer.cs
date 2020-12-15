@@ -15,7 +15,7 @@ namespace Tauron.Application.Workshop.Analyzing
     public sealed class Analyzer<TWorkspace, TData> : DeferredActor, IAnalyzer<TWorkspace, TData> 
         where TWorkspace : WorkspaceBase<TData> where TData : class
     {
-        private readonly HashSet<string> _rules = new HashSet<string>();
+        private readonly HashSet<string> _rules = new();
 
         internal Analyzer(Task<IActorRef> actor, IEventSource<IssuesEvent> source)
             : base(actor) => Issues = source;
@@ -60,8 +60,12 @@ namespace Tauron.Application.Workshop.Analyzing
             public void Init(Task<IActorRef> actor, WorkspaceSuperviser superviser) 
                 => EventSource = new AnalyzerEventSource<TWorkspace, TData>(actor, superviser);
 
-            public void Send(RuleIssuesChanged<TWorkspace, TData> evt) 
-                => EventSource?.SendEvent(evt);
+            public IObserver<RuleIssuesChanged<TWorkspace, TData>> Send()
+            {
+                if (EventSource == null)
+                    throw new InvalidOperationException("Analýzer is not Initialized");
+                return EventSource.SendEvent();
+            }
         }
     }
 }

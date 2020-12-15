@@ -1,4 +1,5 @@
-﻿using JetBrains.Annotations;
+﻿using System.Reactive.Linq;
+using JetBrains.Annotations;
 using Tauron.Application.Workshop.Analyzing;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.Mutating.Changes;
@@ -44,6 +45,6 @@ namespace Tauron.Application.Workshop
         public IAnalyzer<TThis, MutatingContext<TRawData>> Analyzer { get; }
 
         public void Reset(TRawData newData) 
-            => Engine.Mutate(nameof(Reset), data => data.Update(new ResetChange(), newData));
+            => Engine.Mutate(nameof(Reset), data => data.Select(d => d.Update(new ResetChange(), newData)));
     }
 }

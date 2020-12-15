@@ -3,6 +3,9 @@ using System;
 using System.Collections.Generic;
 using System.Reactive;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Threading.Tasks;
+using Tauron;
 
 namespace TestApp
 {
@@ -10,15 +13,18 @@ namespace TestApp
     {
         private static void Main(string[] args)
         {
-            foreach (var i in Fib(1000000))
-            {
-                Console.WriteLine(i);
-                if(i > 1_000_000_000)
-                    break;
-            }
-            
-            Console.WriteLine(FibSpec(0));
-            Console.WriteLine(FibSpec(10));
+            var test = Observable.StartAsync(() =>
+
+                                                 Task.Run(async () =>
+                                                          {
+                                                              await Task.Delay(TimeSpan.FromMilliseconds(5000));
+                                                              return "Hallo World";
+                                                          })
+                                            );
+
+            test.LastAsync().Subscribe(Console.WriteLine, () => Console.WriteLine("Fertig"));
+
+            Console.ReadKey();
         }
 
         private static IEnumerable<int> Fib(int count)

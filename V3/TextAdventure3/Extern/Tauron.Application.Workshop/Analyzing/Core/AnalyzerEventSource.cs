@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Reactive;
+using System.Threading.Tasks;
 using Akka.Actor;
 using Tauron.Application.Workshop.Analyzing.Actor;
 using Tauron.Application.Workshop.Mutation;
@@ -13,9 +15,10 @@ namespace Tauron.Application.Workshop.Analyzing.Core
         {
         }
 
-        public void SendEvent(RuleIssuesChanged<TWorkspace, TData> evt)
+        public IObserver<RuleIssuesChanged<TWorkspace, TData>> SendEvent()
         {
-            Send(evt.ToEvent());
+            var sender = Sender();
+            return new AnonymousObserver<RuleIssuesChanged<TWorkspace, TData>>(v => sender.OnNext(v.ToEvent()), exception => sender.OnError(exception), sender.OnCompleted);
         }
     }
 }

@@ -1,5 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
+using System.Reactive;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Threading.Tasks;
 using Akka.Actor;
 using JetBrains.Annotations;
@@ -16,7 +18,7 @@ namespace Tauron.Application.Workshop.Mutation
         private readonly Task<IActorRef> _mutator;
         private readonly IDataSource<TData> _dataSource;
         private readonly WorkspaceSuperviser _superviser;
-        private readonly ResponderList _responder;
+        private readonly Subject<TData> _responder;
 
         internal MutatingEngine(Task<IActorRef> mutator, IDataSource<TData> dataSource, WorkspaceSuperviser superviser)
             : base(mutator, superviser)
@@ -24,7 +26,9 @@ namespace Tauron.Application.Workshop.Mutation
             _mutator = mutator;
             _dataSource = dataSource;
             _superviser = superviser;
-            _responder = new ResponderList(_dataSource.SetData);
+            _responder = new Subject<TData>();
+            _responder.Subscribe(dataSource.SetData);
+
         }
 
         public MutatingEngine(IDataSource<TData> dataSource) : base(Task.FromResult<IActorRef>(ActorRefs.Nobody), new WorkspaceSuperviser())
@@ -32,55 +36,45 @@ namespace Tauron.Application.Workshop.Mutation
             _mutator = Task.FromResult<IActorRef>(ActorRefs.Nobody);
             _dataSource = dataSource;
             _superviser = new WorkspaceSuperviser();
-            _responder = new ResponderList(_dataSource.SetData);
+            _responder = new Subject<TData>();
+            _responder.Subscribe(_dataSource.SetData);
         }
 
 
-        public void Mutate(string name, Func<TData, TData?> transform, object? hash = null) 
+        public void Mutate(string name, Func<IObservable<TData>, IObservable<TData?>> transform, object? hash = null) 
             => Mutate(CreateMutate(name, transform, hash));
 
-        public IDataMutation CreateMutate(string name, Func<TData, TData?> transform, object? hash = null)
+        public IDataMutation CreateMutate(string name, Func<IObservable<TData>, IObservable<TData?>> transform, object? hash = null)
         {
-            void Runner() => _responder.Push(transform(_dataSource.GetData()));
+            void Runner()
+            {
+                using var sender = new Subject<TData>();
+
+                transform(sender.AsObservable()).NotNull().Subscribe(_responder);
+                sender.OnNext(_dataSource.GetData());
+                sender.OnCompleted();
+            }
+
             return new DataMutation<TData>(Runner, name, hash);
         }
 
-        public IDataMutation CreateMutate(string name, Func<TData, Task<TData?>> transform, object? hash = null)
-        {
-            async Task Runner() => _responder.Push(await transform(_dataSource.GetData()));
-            return new AsyncDataMutation<TData>(Runner, name, hash);
-        }
+        //public IDataMutation CreateMutate(string name, Func<TData, Task<TData?>> transform, object? hash = null)
+        //{
+        //    async Task Runner()
+        //    {
+        //        var subject = new Subject<TData>();
+                
+        //        _responder.Push(await transform(_dataSource.GetData()));
+        //    }
+
+        //    return new AsyncDataMutation<TData>(Runner, name, hash);
+        //}
 
         public IEventSource<TRespond> EventSource<TRespond>(Func<TData, TRespond> transformer, Func<TData, bool>? where = null) 
             => new EventSource<TRespond, TData>(_superviser, _mutator, transformer, where, _responder);
-        
-        private sealed class ResponderList : IRespondHandler<TData>
-        {
-            private readonly List<Action<TData>> _handler = new List<Action<TData>>();
-            private readonly Action<TData> _root;
 
-            public ResponderList(Action<TData> root) => _root = root;
-
-            public void Register(Action<TData> responder)
-            {
-                lock (_handler)
-                {
-                    _handler.Add(responder);
-                }
-            }
-
-            public void Push(TData? data)
-            {
-                if(data == null) return;
-
-                _root(data);
-                lock (_handler)
-                {
-                    foreach (var action in _handler)
-                        action(data);
-                }
-            }
-        }
+        public IEventSource<TRespond> EventSource<TRespond>(Func<IObservable<TData>, IObservable<TRespond>> transform) 
+            => new EventSource<TRespond,TData>(_superviser, _mutator, transform(_responder.AsObservable()));
     }
 
     [PublicAPI]
@@ -101,27 +95,25 @@ namespace Tauron.Application.Workshop.Mutation
             _responder = new ResponderList(_dataSource.SetData, dataSource.OnCompled);
         }
 
-        public void Mutate(string name, IQuery query, Func<TData, TData?> transform)
+        public void Mutate(string name, IQuery query, Func<IObservable<TData>, IObservable<TData?>> transform)
             => Mutate(CreateMutate(name, query, transform));
 
-        public IDataMutation CreateMutate(string name, IQuery query, Func<TData, TData?> transform)
+        public IDataMutation CreateMutate(string name, IQuery query, Func<IObservable<TData>, IObservable<TData?>> transform)
         {
-            async Task Runner() => await _responder.Push(query, async () => transform(await _dataSource.GetData(query)));
-            return new AsyncDataMutation<TData>(Runner, name, query.ToHash());
-        }
+            void Runner() => _responder.Push(query, transform(Observable.StartAsync(() => _dataSource.GetData(query))).NotNull());
 
-        public IDataMutation CreateMutate(string name, IQuery query, Func<TData, Task<TData?>> transform)
-        {
-            async Task Runner() => await _responder.Push(query, async () => await transform(await _dataSource.GetData(query)));
-            return new AsyncDataMutation<TData>(Runner, name, query.ToHash());
+            return new DataMutation<TData>(Runner, name, query.ToHash());
         }
-
+        
         public IEventSource<TRespond> EventSource<TRespond>(Func<TData, TRespond> transformer, Func<TData, bool>? where = null)
             => new EventSource<TRespond, TData>(_superviser, _mutator, transformer, where, _responder);
 
-        private sealed class ResponderList : IRespondHandler<TData>
+        public IEventSource<TRespond> EventSource<TRespond>(Func<IObservable<TData>, IObservable<TRespond>> transform) 
+            => new EventSource<TRespond,TData>(_superviser, _mutator, transform(_responder));
+
+        private sealed class ResponderList : IObservable<TData>
         {
-            private readonly List<Action<TData>> _handler = new List<Action<TData>>();
+            private readonly Subject<TData> _handler = new ();
             private readonly Func<IQuery, TData, Task> _root;
             private readonly Func<IQuery, Task> _completer;
 
@@ -130,35 +122,30 @@ namespace Tauron.Application.Workshop.Mutation
                 _root = root;
                 _completer = completer;
             }
-
-            public void Register(Action<TData> responder)
+            
+            public void Push(IQuery query, IObservable<TData> dataFunc)
             {
-                lock (_handler)
-                {
-                    _handler.Add(responder);
-                }
+                dataFunc
+                   .SelectMany(async data =>
+                               {
+                                   try
+                                   {
+                                       if (data == null) return Unit.Default;
+
+                                       await _root(query, data);
+                                       _handler.OnNext(data);
+                                   }
+                                   finally
+                                   {
+                                       await _completer(query);
+                                   }
+
+                                   return Unit.Default;
+                               })
+                   .SingleTimeSubscribe();
             }
 
-            public async Task Push(IQuery query, Func<Task<TData?>> dataFunc)
-            {
-                try
-                {
-                    var data = await dataFunc();
-
-                    if (data == null) return;
-
-                    await _root(query, data);
-                    lock (_handler)
-                    {
-                        foreach (var action in _handler)
-                            action(data);
-                    }
-                }
-                finally
-                {
-                    await _completer(query);
-                }
-            }
+            public IDisposable Subscribe(IObserver<TData> observer) => _handler.Subscribe(observer);
         }
     }
 
@@ -185,7 +172,7 @@ namespace Tauron.Application.Workshop.Mutation
         }
 
         public static ExtendedMutatingEngine<TData> From<TData>(IExtendedDataSource<TData> source, MutatingEngine parent)
-            where TData : class => new ExtendedMutatingEngine<TData>(parent._mutator, source, parent._superviser);
+            where TData : class => new(parent._mutator, source, parent._superviser);
 
         public static MutatingEngine<TData> From<TData>(IDataSource<TData> source, WorkspaceSuperviser superviser, Func<Props, Props>? configurate = null) 
             where TData : class
@@ -198,12 +185,12 @@ namespace Tauron.Application.Workshop.Mutation
         }
 
         public static MutatingEngine<TData> From<TData>(IDataSource<TData> source, MutatingEngine parent) 
-            where TData : class => new MutatingEngine<TData>(parent._mutator, source, parent._superviser);
+            where TData : class => new(parent._mutator, source, parent._superviser);
 
         public static MutatingEngine<TData> Dummy<TData>(IDataSource<TData> source) 
             where TData : class
         {
-            return new MutatingEngine<TData>(source);
+            return new(source);
         }
 
         private readonly Task<IActorRef> _mutator;

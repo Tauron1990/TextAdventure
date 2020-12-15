@@ -10,13 +10,13 @@ namespace Tauron.Application.Workshop.Mutation
         private IncommingEvent(Action action) => Action = action;
 
         public static IncommingEvent From<TData>(TData data, Action<TData> dataAction)
-            => new IncommingEvent(() => dataAction(data));
+            => new(() => dataAction(data));
     }
 
-    public interface IEventSource<out TRespond>
+    public interface IEventSource<out TRespond> : IObservable<TRespond>
     {
-        void RespondOn(IActorRef actorRef);
+        IDisposable RespondOn(IActorRef actorRef);
 
-        void RespondOn(IActorRef? source, Action<TRespond> action);
+        IDisposable RespondOn(IActorRef? source, Action<TRespond> action);
     }
 }
