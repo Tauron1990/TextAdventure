@@ -130,8 +130,6 @@ namespace Tauron.Application.Workshop.Mutation
                                {
                                    try
                                    {
-                                       if (data == null) return Unit.Default;
-
                                        await _root(query, data);
                                        _handler.OnNext(data);
                                    }
@@ -142,6 +140,7 @@ namespace Tauron.Application.Workshop.Mutation
 
                                    return Unit.Default;
                                })
+                   .Finally(() => _completer(query))
                    .SingleTimeSubscribe();
             }
 

@@ -1,28 +1,33 @@
 ﻿
 using System;
 using System.Collections.Generic;
-using System.Reactive;
 using System.Reactive.Linq;
-using System.Reactive.Subjects;
 using System.Threading.Tasks;
-using Tauron;
 
 namespace TestApp
 {
     internal class Program
     {
+        private static string Test(string s)
+            => s;
+        
         private static void Main(string[] args)
         {
+            var neu = new Func<string, string>(Test);
+
             var test = Observable.StartAsync(() =>
 
                                                  Task.Run(async () =>
                                                           {
                                                               await Task.Delay(TimeSpan.FromMilliseconds(5000));
-                                                              return "Hallo World";
+                                                              return true;
                                                           })
                                             );
 
-            test.LastAsync().Subscribe(Console.WriteLine, () => Console.WriteLine("Fertig"));
+            var bad = test.Where(f => !f).Select(b => "Bad Hallo");
+            var good = test.Where(f => f).Select(_ => "Good Hallo");
+
+            bad.Concat(good).Subscribe(Console.WriteLine);
 
             Console.ReadKey();
         }

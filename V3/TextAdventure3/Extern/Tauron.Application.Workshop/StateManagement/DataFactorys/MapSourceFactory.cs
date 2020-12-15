@@ -8,14 +8,14 @@ namespace Tauron.Application.Workshop.StateManagement.DataFactorys
     [PublicAPI]
     public class MapSourceFactory : AdvancedDataSourceFactory
     {
-        public ConcurrentDictionary<Type, Func<object>> Map { get; private set; } = new ConcurrentDictionary<Type, Func<object>>();
+        public ConcurrentDictionary<Type, Func<object>> Map { get; private set; } = new();
 
         public void Register<TSource, TData>(Func<TSource> factory)
             where TSource : IExtendedDataSource<TData>
         {
             var creator = new Func<object>(() => factory());
 
-            Map.AddOrUpdate(typeof(TSource), () => creator, (key, oldValue) => creator);
+            Map.AddOrUpdate(typeof(TSource), () => creator, (_, _) => creator);
         }
 
         public override bool CanSupply(Type dataType) => Map.ContainsKey(dataType);

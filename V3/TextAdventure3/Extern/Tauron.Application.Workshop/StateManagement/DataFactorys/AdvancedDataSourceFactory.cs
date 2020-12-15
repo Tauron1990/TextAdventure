@@ -7,6 +7,7 @@ namespace Tauron.Application.Workshop.StateManagement.DataFactorys
     {
         public abstract bool CanSupply(Type dataType);
 
-        public abstract Func<IExtendedDataSource<TData>> Create<TData>() where TData : class, IStateEntity;
+        public abstract Func<IExtendedDataSource<TData>> Create<TData>() 
+            where TData : class, IStateEntity;
     }
 }

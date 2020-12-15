@@ -1,9 +1,10 @@
-﻿namespace Tauron.Application.Workshop.StateManagement
+﻿using JetBrains.Annotations;
+
+namespace Tauron.Application.Workshop.StateManagement
 {
+    [PublicAPI]
     public interface IStateEntity
     {
-        bool IsDeleted { get; }
-
         string Id { get; }
     }
 }

@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutation;
 
 namespace Tauron.Application.Workshop.StateManagement.DataFactorys
 {
+    [PublicAPI]
     public abstract class SingleValueDataFactory<TData> : AdvancedDataSourceFactory
         where TData : IStateEntity
     {
@@ -23,7 +25,7 @@ namespace Tauron.Application.Workshop.StateManagement.DataFactorys
         private sealed class SingleValueSource : IExtendedDataSource<TData>, IDisposable
         {
             private Task<TData> _value;
-            private readonly SemaphoreSlim _semaphore = new SemaphoreSlim(0, 1);
+            private readonly SemaphoreSlim _semaphore = new(0, 1);
 
             public SingleValueSource(Task<TData> value) => _value = value;
 

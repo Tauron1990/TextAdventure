@@ -16,26 +16,21 @@ namespace Tauron.Application.Workshop.StateManagement
     {
         public virtual IValidator<TAction>? Validator { get; }
 
-        public virtual IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, IStateAction action)
+        public virtual Func<IObservable<MutatingContext<TData>>, IObservable<ReducerResult<TData>>> Reduce(IStateAction action)
         {
-            var typedAction = (TAction)action;
+            IObservable<ReducerResult<TData>> ErrorHandler(Exception e)
+                => Observable.Return(new ReducerResult<TData>(null, new[] { e.Message }));
 
-            var pub = state.Publish().AutoConnect(2);
-            
-            
-            try
-            {
-                var typedAction = (TAction) action;
+            return state =>
+                   {
+                       var typedAction = (TAction) action;
+                       var validation = Validator?.Validate(typedAction);
 
-                if (Validator == null) return await Reduce(state, (TAction) action);
-                var result = await Validator.ValidateAsync(typedAction);
-            
-                return !result.IsValid ? ReducerResult.Fail(state, result.Errors.Select(f => f.ErrorMessage)) : await Reduce(state, (TAction) action);
-            }
-            catch (Exception e)
-            {
-                return ReducerResult.Fail(state, new[] {e.Message});
-            }
+                       var invalid = state.Where(_ => validation != null && !validation.IsValid).Select(c => ReducerResult.Fail(c, validation!.Errors.Select(f => f.ErrorMessage)));
+                       var runner = Reduce(state.Where(_ => validation == null || validation.IsValid), typedAction).Catch<ReducerResult<TData>, Exception>(ErrorHandler);
+
+                       return invalid.Concat(runner);
+                   };
         }
 
         protected abstract IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action);

@@ -1,6 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
+using System.Reactive.Disposables;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.Mutation;
 
@@ -13,7 +17,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
         protected StateContainer(IState instance) 
             => Instance = instance;
 
-        public abstract IDataMutation? TryDipatch(IStateAction action, Action<IReducerResult> sendResult, Action onCompled);
+        public abstract IDataMutation? TryDipatch(IStateAction action, IObserver<IReducerResult> sendResult, IObserver<Unit> onCompled);
         public abstract void Dispose();
     }
 
@@ -32,37 +36,54 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             MutatingEngine = mutatingEngine;
         }
 
-        public override IDataMutation? TryDipatch(IStateAction action, Action<IReducerResult> sendResult, Action onCompled)
+        public override IDataMutation? TryDipatch(IStateAction action, IObserver<IReducerResult> sendResult, IObserver<Unit> onCompled)
         {
             var reducers = Reducers.Where(r => r.ShouldReduceStateForAction(action)).ToList();
             if (reducers.Count == 0)
                 return null;
 
-            return MutatingEngine.CreateMutate(action.ActionName, action.Query, async data =>
-            {
-                try
-                {
-                    var isFail = false;
-                    foreach (var reducer in reducers)
-                    {
-                        var result = await reducer.Reduce(data, action);
+            return MutatingEngine
+               .CreateMutate(action.ActionName, action.Query,
+                             data =>
+                             {
+                                 try
+                                 {
+                                     var subs = new CompositeDisposable(3);
+                                     var cancel = new Subject<Unit>();
+                                     subs.Add(cancel);
+                                     
+                                     var starData = Observable.Using(() => subs, _ => data);
 
-                        if (!result.IsOk)
-                            isFail = true;
+                                     var reducer =
+                                         (from reducerFactory in reducers.ToObservable()
+                                          where reducerFactory.ShouldReduceStateForAction(action)
+                                          select reducerFactory.Reduce(action)).TakeUntil(cancel);
 
-                        sendResult(result);
-                        data = result.Data;
-                    }
+                                     var processor = reducer.Aggregate(
+                                                                       starData.Select(d => ReducerResult.Sucess(d) with{StartLine = true}).SingleAsync(),
+                                                                       (observable, func) =>
+                                                                       {
+                                                                           var fail = observable
+                                                                                     .Where(r => !r.IsOk || r.Data == null)
+                                                                                     .Do(_ => cancel.OnNext(Unit.Default));
+                                                                           var succsess = func(observable.Where(r => r.IsOk && r.Data != null).Select(r => r.Data!));
 
-                    return isFail ? null : data;
-                }
-                finally
-                {
-                    onCompled();
-                }
-            });
+                                                                           return fail.Merge(succsess);
+                                                                       }).Switch().Publish().RefCount();
+
+                                     subs.Add(processor.Select(_ => Unit.Default).Subscribe(onCompled));
+                                     subs.Add(processor.Cast<IReducerResult>().Subscribe(sendResult));
+                                     
+                                     return processor.Where(r => r.IsOk).Select(r => r.Data);
+                                 }
+                                 catch
+                                 {
+                                     onCompled.OnCompleted();
+                                     throw;
+                                 }
+                             });
         }
-
+        
         public override void Dispose() 
             => _toDispose.Dispose();
     }

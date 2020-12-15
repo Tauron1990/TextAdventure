@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac;
-using CacheManager.Core;
 using FluentValidation;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutating;

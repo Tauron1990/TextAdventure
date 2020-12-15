@@ -77,12 +77,12 @@ namespace Tauron.Application.Workshop.StateManagement
 
             builder.Register((context, parameters) =>
             {
-                var supplyedParameters = parameters?.ToArray() ?? Array.Empty<Parameter>();
+                var supplyedParameters = parameters.ToArray();
                 object[] param = new object[2];
                 param[0] = Buildhelper.GetParam(Buildhelper.Parameters[0], context, () => context.Resolve(typeof(WorkspaceSuperviser)), supplyedParameters);
                 param[1] = Buildhelper.GetParam(Buildhelper.Parameters[1], context, () => configAction, supplyedParameters);
 
-                return ((Buildhelper) Activator.CreateInstance(typeof(Buildhelper), param)).Create(context, options);
+                return (Activator.CreateInstance(typeof(Buildhelper), param) as Buildhelper)?.Create(context, options) ?? throw new InvalidOperationException("Build helper Creation Failed");
             }).As<IActionInvoker>().SingleInstance();
 
             return builder;

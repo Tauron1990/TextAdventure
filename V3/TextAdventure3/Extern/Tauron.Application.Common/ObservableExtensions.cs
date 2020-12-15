@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Reactive;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Akka.Actor;
@@ -43,12 +44,9 @@ namespace Tauron
 
             public Action? OnCompled { get; init; }
             
-            public SingleTimeObserver(Action<TEvent> handler) => Handler = handler;
+            public SingleTimeObserver(Action<TEvent>? handler) => Handler = handler;
 
-            public SingleTimeObserver()
-            {
-                
-            }
+            public SingleTimeObserver() { }
 
             public IDisposable Register(IObservable<TEvent> evt)
             {
@@ -91,7 +89,7 @@ namespace Tauron
             return observer.Register(observable);
         }
 
-        public static IDisposable SingleTimeSubscribe<TEvent>(this IObservable<TEvent> observable, Action<TEvent> handler, Action<Exception>? error, Action? onCompled)
+        public static IDisposable SingleTimeSubscribe<TEvent>(this IObservable<TEvent> observable, Action<TEvent>? handler, Action<Exception>? error, Action? onCompled)
         {
             var observer = new SingleTimeObserver<TEvent>(handler)
                            {
@@ -102,11 +100,15 @@ namespace Tauron
             return observer.Register(observable);
         }
 
-        public static IDisposable SingleTimeSubscribe<TEvent>(this IObservable<TEvent> observable, Action<TEvent> handler, Action<Exception>? error)
+        public static IDisposable SingleTimeSubscribe<TEvent>(this IObservable<TEvent> observable, Action<TEvent>? handler, Action<Exception>? error)
             => SingleTimeSubscribe(observable, handler, error, null);
 
-        public static IDisposable SingleTimeSubscribe<TEvent>(this IObservable<TEvent> observable, Action<TEvent> handler)
+        public static IDisposable SingleTimeSubscribe<TEvent>(this IObservable<TEvent> observable, Action<TEvent>? handler)
             => SingleTimeSubscribe(observable, handler, null);
+
+        public static IDisposable Subscribe<TEvent>(this IObservable<TEvent> observable, IActorRef actor) 
+            => observable.Subscribe(evt => actor.Tell(evt), e => actor.Tell(new Status.Failure(e)), () => actor.Tell(new Status.Success(Unit.Default)));
+
 
         public static IObservable<IActorRef> NotNobody(this IObservable<IActorRef> observable) 
             => observable.Where(a => !a.IsNobody());

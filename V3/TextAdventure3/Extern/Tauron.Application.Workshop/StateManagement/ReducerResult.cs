@@ -7,14 +7,14 @@ namespace Tauron.Application.Workshop.StateManagement
     public static class ReducerResult
     {
         public static ReducerResult<TData> Sucess<TData>(MutatingContext<TData> data)
-            => new ReducerResult<TData>(data, null);
+            => new(data, null);
 
-        public static ReducerResult<TData> Fail<TData>(MutatingContext<TData> data, IEnumerable<string> errors)
+        public static ReducerResult<TData> Fail<TData>(MutatingContext<TData> context, IEnumerable<string> errors)
         {
             if(errors is string[] array)
-                return new ReducerResult<TData>(data, array);
+                return new ReducerResult<TData>(null, array);
 
-            return new ReducerResult<TData>(data, errors.ToArray());
+            return new ReducerResult<TData>(null, errors.ToArray());
         }
     }
 
@@ -24,19 +24,10 @@ namespace Tauron.Application.Workshop.StateManagement
         string[]? Errors { get; }
     }
 
-    public sealed class ReducerResult<TData> : IReducerResult
+    public sealed record ReducerResult<TData>(MutatingContext<TData>? Data, string[]? Errors) : IReducerResult
     {
-        public MutatingContext<TData> Data { get; }
-
-        public string[]? Errors { get; }
-
+        internal bool StartLine { get; init; }
+        
         public bool IsOk => Errors == null;
-
-
-        internal ReducerResult(MutatingContext<TData> data, string[]? errors)
-        {
-            Data = data;
-            Errors = errors;
-        }
     }
 }

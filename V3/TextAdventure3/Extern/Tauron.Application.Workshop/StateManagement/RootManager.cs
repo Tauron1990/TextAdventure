@@ -2,15 +2,14 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive;
 using System.Threading;
 using Akka.Actor;
 using Akka.Actor.Internal;
 using Autofac;
-using CacheManager.Core;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement.Builder;
-using Tauron.Application.Workshop.StateManagement.Cache;
 using Tauron.Application.Workshop.StateManagement.Dispatcher;
 using Tauron.Application.Workshop.StateManagement.Internal;
 using Tauron.Operations;
@@ -21,28 +20,24 @@ namespace Tauron.Application.Workshop.StateManagement
     public sealed class RootManager : DisposeableBase, IActionInvoker
     {
         private readonly bool _sendBackSetting;
-        private readonly ConcurrentDictionary<string, ConcurrentBag<StateContainer>> _stateContainers = new ConcurrentDictionary<string, ConcurrentBag<StateContainer>>();
+        private readonly ConcurrentDictionary<string, ConcurrentBag<StateContainer>> _stateContainers = new();
         private readonly StateContainer[] _states;
         private readonly MutatingEngine _engine;
         private readonly IEffect[] _effects;
         private readonly IMiddleware[] _middlewares;
 
         internal RootManager(WorkspaceSuperviser superviser, IStateDispatcherConfigurator stateDispatcher, IEnumerable<StateBuilderBase> states,
-            IEnumerable<IEffect?> effects, IEnumerable<IMiddleware?> middlewares, Action<ConfigurationBuilderCachePart>? globalCache, bool sendBackSetting, 
+            IEnumerable<IEffect?> effects, IEnumerable<IMiddleware?> middlewares, bool sendBackSetting, 
             IComponentContext? componentContext)
         {
             _sendBackSetting = sendBackSetting;
             _engine = MutatingEngine.Create(superviser, stateDispatcher.Configurate);
             _effects = effects.Where(e => e != null).ToArray()!;
             _middlewares = middlewares.Where(m => m != null).ToArray()!;
-
-            ICache<object?>? cache = null;
-            if(globalCache != null)
-                cache = new SyncCache<object?>(CacheFactory.Build(globalCache));
-
+            
             foreach (var stateBuilder in states)
             {
-                var (container, key) = stateBuilder.Materialize(_engine, cache, componentContext);
+                var (container, key) = stateBuilder.Materialize(_engine, componentContext);
                 _stateContainers.GetOrAdd(key, _ => new ConcurrentBag<StateContainer>()).Add(container);
             }
 
@@ -62,13 +57,12 @@ namespace Tauron.Application.Workshop.StateManagement
         public TState? GetState<TState>(string key)
             where TState : class
         {
-            if (_stateContainers.TryGetValue(key, out var bag))
+            if (!_stateContainers.TryGetValue(key, out var bag)) return null;
+            
+            foreach (var stateContainer in bag)
             {
-                foreach (var stateContainer in bag)
-                {
-                    if (stateContainer.Instance is TState state)
-                        return state;
-                }
+                if (stateContainer.Instance is TState state)
+                    return state;
             }
 
             return null;
@@ -89,7 +83,7 @@ namespace Tauron.Application.Workshop.StateManagement
             var effects = new EffectInvoker(_effects.Where(e => e.ShouldReactToAction(action)), action, this);
             var resultInvoker = new ResultInvoker(effects, _engine, sender, sendBack ?? _sendBackSetting, action);
 
-            foreach (var dataMutation in _states.Select(sc => sc.TryDipatch(action, resultInvoker.AddResult, resultInvoker.WorkCompled)))
+            foreach (var dataMutation in _states.Select(sc => sc.TryDipatch(action, resultInvoker.AddResult(), resultInvoker.WorkCompled())))
             {
                 if(dataMutation == null) continue;
                 
@@ -109,7 +103,7 @@ namespace Tauron.Application.Workshop.StateManagement
         private sealed class ResultInvoker : ISyncMutation
         {
             private int _pending;
-            private readonly ConcurrentBag<IReducerResult> _results = new ConcurrentBag<IReducerResult>();
+            private readonly ConcurrentBag<IReducerResult> _results = new();
             private readonly EffectInvoker _effectInvoker;
             private readonly MutatingEngine _mutatingEngine;
             private readonly IActorRef _sender;
@@ -132,36 +126,36 @@ namespace Tauron.Application.Workshop.StateManagement
 
             private void Runner()
             {
-                if(!_sendBack || _sender.IsNobody()) return;
+                if (!_sendBack || _sender.IsNobody()) return;
 
                 var errors = new List<string>();
                 var fail = false;
 
                 foreach (var result in _results)
                 {
-                    if(result.IsOk) continue;
+                    if (result.IsOk) continue;
 
                     fail = true;
                     errors.AddRange(result.Errors ?? Array.Empty<string>());
                 }
 
-                _sender.Tell(fail ? OperationResult.Failure(errors, _action) : OperationResult.Success(_action), ActorRefs.NoSender);
+                _sender.Tell(fail ? OperationResult.Failure(errors.Select(s => new Error(s, s)), _action) : OperationResult.Success(_action), ActorRefs.NoSender);
             }
 
             public void PushWork()
                 => Interlocked.Increment(ref _pending);
 
-            public void AddResult(IReducerResult result)
-                => _results.Add(result);
+            public IObserver<IReducerResult> AddResult()
+                => new AnonymousObserver<IReducerResult>(n => _results.Add(n));
 
-            public void WorkCompled()
-            {
-                if (Interlocked.Decrement(ref _pending) == 0)
-                {
-                    _mutatingEngine.Mutate(_effectInvoker);
-                    _mutatingEngine.Mutate(this);
-                }
-            }
+            public IObserver<Unit> WorkCompled()
+                => new AnonymousObserver<Unit>(_ =>
+                                               {
+                                                   if (Interlocked.Decrement(ref _pending) != 0) return;
+
+                                                   _mutatingEngine.Mutate(_effectInvoker);
+                                                   _mutatingEngine.Mutate(this);
+                                               });
         }
 
         private sealed class EffectInvoker : ISyncMutation

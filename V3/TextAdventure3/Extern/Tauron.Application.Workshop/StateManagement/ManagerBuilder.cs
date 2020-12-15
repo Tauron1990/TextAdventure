@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using Autofac;
-using CacheManager.Core;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement.Builder;
@@ -23,11 +22,10 @@ namespace Tauron.Application.Workshop.StateManagement
         public WorkspaceSuperviser Superviser { get; }
 
         private Func<IStateDispatcherConfigurator> _dispatcherFunc = () => new DefaultStateDispatcher();
-        private readonly List<Func<IEffect>> _effects = new List<Func<IEffect>>();
-        private readonly List<Func<IMiddleware>> _middlewares = new List<Func<IMiddleware>>();
-        private readonly List<StateBuilderBase> _states = new List<StateBuilderBase>();
-
-        private Action<ConfigurationBuilderCachePart>? _globalCache;
+        private readonly List<Func<IEffect>> _effects = new();
+        private readonly List<Func<IMiddleware>> _middlewares = new();
+        private readonly List<StateBuilderBase> _states = new();
+        
         private bool _sendBackSetting;
 
         internal ManagerBuilder(WorkspaceSuperviser superviser) 
@@ -72,17 +70,12 @@ namespace Tauron.Application.Workshop.StateManagement
             _dispatcherFunc = factory;
             return this;
         }
-
-        public ManagerBuilder WithGlobalCache(Action<ConfigurationBuilderCachePart>? config)
-        {
-            _globalCache = config;
-            return this;
-        }
+        
 
         internal RootManager Build(IComponentContext? componentContext, AutofacOptions? autofacOptions)
         {
-            List<IEffect> additionalEffects = new List<IEffect>();
-            List<IMiddleware> additionalMiddlewares = new List<IMiddleware>();
+            List<IEffect> additionalEffects = new();
+            List<IMiddleware> additionalMiddlewares = new();
 
             if (componentContext != null)
             {
@@ -96,8 +89,8 @@ namespace Tauron.Application.Workshop.StateManagement
 
             return new RootManager(Superviser, _dispatcherFunc(), _states, 
                 _effects.Select(e => e()).Concat(additionalEffects), 
-                _middlewares.Select(m => m()).Concat(additionalMiddlewares),
-                _globalCache, _sendBackSetting, componentContext);
+                _middlewares.Select(m => m()).Concat(additionalMiddlewares), 
+                _sendBackSetting, componentContext);
         }
     }
 }

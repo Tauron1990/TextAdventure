@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Immutable;
+using System.Reactive;
 using Tauron.Application.Workshop.Mutation;
 
 namespace Tauron.Application.Workshop.StateManagement.Internal
@@ -17,7 +18,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             _source = source;
         }
 
-        public override IDataMutation? TryDipatch(IStateAction action, Action<IReducerResult> sendResult, Action onCompled)
+        public override IDataMutation? TryDipatch(IStateAction action, IObserver<IReducerResult> sendResult, IObserver<Unit> onCompled)
         {
             var type = action.GetType();
             return !_map.TryGetValue(type, out var runner) 
@@ -32,11 +33,11 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
         private sealed class WorkspaceMutation : ISyncMutation
         {
-            private readonly Action _run;
-            private readonly Action<IReducerResult> _result;
-            private readonly Action _compled;
+            private readonly Func<IDataMutation> _run;
+            private readonly IObserver<IReducerResult> _result;
+            private readonly IObserver<Unit> _compled;
 
-            public WorkspaceMutation(Action run, Action<IReducerResult> result, Action compled, object hashKey, string actionName)
+            public WorkspaceMutation(Func<IDataMutation> run, IObserver<IReducerResult> result, IObserver<Unit> compled, object hashKey, string actionName)
             {
                 _run = run;
                 _result = result;
@@ -55,16 +56,28 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             {
                 try
                 {
-                    _run();
+                    switch (_run())
+                    {
+                        case ISyncMutation mut:
+                            mut.Run();
+                            break;
+                        case IAsyncMutation mut:
+                            mut.Run().Wait(TimeSpan.FromMinutes(1));
+                            break;
+                        default:
+                            throw new InvalidOperationException("Unkowen Data Mutation Type");
+                    }
                 }
                 catch (Exception e)
                 {
-                    _result(new ErrorResult(e));
+                    _result.OnNext(new ErrorResult(e));
                     throw;
                 }
                 finally
                 {
-                    _compled();
+                    _compled.OnNext(Unit.Default);
+                    _compled.OnCompleted();
+                    _result.OnCompleted();
                 }
             }
 
