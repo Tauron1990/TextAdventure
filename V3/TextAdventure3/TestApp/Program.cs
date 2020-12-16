@@ -18,6 +18,7 @@ namespace TestApp
         
         private static void Main(string[] args)
         {
+            
             var one = GetMethodInfo(() => Program.Test<string>(null));
             var two = GetMethodInfo<Program>(p => p.Test2(null));
 
