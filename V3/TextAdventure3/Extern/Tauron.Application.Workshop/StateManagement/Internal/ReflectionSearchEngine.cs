@@ -97,18 +97,6 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                 config.WithKey(key);
 
             config.WithStateType(target);
-            if (target.GetCustomAttribute(typeof(CacheAttribute)) is CacheAttribute cache && cache.UseParent)
-                config.WithParentCache();
-
-            foreach (var methodInfo in target.GetMethods(BindingFlags.Public | BindingFlags.NonPublic | BindingFlags.Static))
-            {
-                if (!(methodInfo.GetCustomAttribute(typeof(CacheAttribute)) is CacheAttribute metCache)) continue;
-                
-                if (metCache.UseParent)
-                    config.WithParentCache();
-
-                config.WithCache((Action<ConfigurationBuilderCachePart>) Delegate.CreateDelegate(typeof(Action<ConfigurationBuilderCachePart>), methodInfo));
-            }
 
             if (!reducerMap.TryGetValue(target, out var reducers)) return;
             
@@ -188,53 +176,53 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             }
         }
 
+        private static class ReducerBuilder
+        {
+            private static MethodInfo GenericBuilder = Reflex.MethodInfo(() => ReducerBuilder.Create<string, string>(null!)).GetGenericMethodDefinition();
+            
+            public static ReducerBuilderBase? Create<TData>(MethodInfo info, Type actionType) 
+                => GenericBuilder.MakeGenericMethod(typeof(TData), actionType).Invoke(null, new object[] {info}) as ReducerBuilderBase;
+
+            [UsedImplicitly]
+            private static ReducerBuilderBase? Create<TData, TAction>(MethodInfo info)
+            {
+                var returnType = info.ReturnType;
+                
+                //One to One
+                
+                
+                return null;
+            }
+        }
+
+        private abstract class ReducerBuilderBase
+        {
+            public static TDelegate CreateDelegate<TDelegate>(Type delegateType, MethodInfo method)
+                where TDelegate : Delegate => (TDelegate) Delegate.CreateDelegate(delegateType, method);
+        }
+
+        private abstract class ReducerBuilder<TData, TAction> : ReducerBuilderBase
+        {
+            public abstract IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action);
+        }
+
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
         private sealed class DelegateReducer<TAction, TData> : Reducer<TAction, TData> 
             where TData : IStateEntity 
             where TAction : IStateAction
         {
-            private readonly Func<MutatingContext<TData>, TAction, Task<ReducerResult<TData>>> _action;
+            private readonly ReducerBuilder<TData, TAction> _builder;
 
-            public DelegateReducer(Func<MutatingContext<TData>, TAction, ReducerResult<TData>> action, IValidator<TAction>? validation)
+            public DelegateReducer(ReducerBuilder<TData, TAction> builder, IValidator<TAction>? validation)
             {
-                _action = (a, c) => Task.FromResult(action(a, c));
+                _builder = builder;
                 Validator = validation;
             }
-
-            public DelegateReducer(Func<MutatingContext<TData>, TAction, MutatingContext<TData>> action, IValidator<TAction>? validation)
-            {
-                _action = (context, stateAction) => SucessAsync(action(context, stateAction));
-                Validator = validation;
-            }
-
-            public DelegateReducer(Func<MutatingContext<TData>, TAction, TData> action, IValidator<TAction>? validation)
-            {
-                _action = (context, stateAction) => SucessAsync(MutatingContext<TData>.New(action(context, stateAction)));
-                Validator = validation;
-            }
-
-            public DelegateReducer(Func<MutatingContext<TData>, TAction, Task<ReducerResult<TData>>> action, IValidator<TAction>? validation)
-            {
-                _action = action;
-                Validator = validation;
-            }
-
-            public DelegateReducer(Func<MutatingContext<TData>, TAction, Task<MutatingContext<TData>>> action, IValidator<TAction>? validation)
-            {
-                _action = async (context, stateAction) => Sucess(await action(context, stateAction));
-                Validator = validation;
-            }
-
-            public DelegateReducer(Func<MutatingContext<TData>, TAction, Task<TData>> action, IValidator<TAction>? validation)
-            {
-                _action = async (context, stateAction) => Sucess(MutatingContext<TData>.New(await action(context, stateAction)));
-                Validator = validation;
-            }
+            
 
             public override IValidator<TAction>? Validator { get; }
-
-            protected override async Task<ReducerResult<TData>> Reduce(MutatingContext<TData> state, TAction action) 
-                => await _action(state, action);
+            
+            protected override IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action) => _builder.Reduce(state, action);
         }
     }
 }

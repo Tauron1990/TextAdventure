@@ -3,28 +3,42 @@ using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
 using System.Linq.Expressions;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
+using FastExpressionCompiler;
 using JetBrains.Annotations;
 
 namespace Tauron.Application
 {
-    public static class PropertyHelper
+    [PublicAPI]
+    public static class ObservablePropertyChangedExtensions
     {
-        public static string ExtractPropertyName<T>(Expression<Func<T>> propertyExpression)
+        public static IObservable<TProp> WhenAny<TProp>(this IObservablePropertyChanged @this, Expression<Func<TProp>> prop)
         {
-            Argument.NotNull(propertyExpression, nameof(propertyExpression));
-            var memberExpression = (MemberExpression) propertyExpression.Body;
+            var name = Reflex.PropertyName(prop);
+            var func = prop.CompileFast();
 
-            return memberExpression.Member.Name;
+            return @this.PropertyChangedObservable.Where(s => s == name).Select(_ => func());
         }
     }
 
+    [PublicAPI]
+    public interface IObservablePropertyChanged
+    {
+        IObservable<string> PropertyChangedObservable { get; }
+    }
+    
     [Serializable]
     [PublicAPI]
     [DebuggerStepThrough]
-    public abstract class ObservableObject : INotifyPropertyChangedMethod
+    public abstract class ObservableObject : INotifyPropertyChangedMethod, IObservablePropertyChanged
     {
+        private readonly Subject<string> _propertyChnaged = new();
+        
         public event PropertyChangedEventHandler? PropertyChanged;
+
+        public IObservable<string> PropertyChangedObservable => _propertyChnaged.AsObservable();
 
         [NotifyPropertyChangedInvocator]
         public virtual void OnPropertyChanged([CallerMemberName] string? eventArgs = null) 
@@ -50,12 +64,16 @@ namespace Tauron.Application
         public virtual void OnPropertyChanged(PropertyChangedEventArgs eventArgs) 
             => OnPropertyChanged(this, Argument.NotNull(eventArgs, nameof(eventArgs)));
 
-        public virtual void OnPropertyChanged(object sender, PropertyChangedEventArgs eventArgs) 
-            => PropertyChanged?.Invoke(Argument.NotNull(sender, nameof(sender)), Argument.NotNull(eventArgs, nameof(eventArgs)));
+        public virtual void OnPropertyChanged(object sender, PropertyChangedEventArgs eventArgs)
+        {
+            if(!string.IsNullOrWhiteSpace(eventArgs.PropertyName))
+                _propertyChnaged.OnNext(eventArgs.PropertyName);
+            PropertyChanged?.Invoke(Argument.NotNull(sender, nameof(sender)), Argument.NotNull(eventArgs, nameof(eventArgs)));
+        }
 
 
         public virtual void OnPropertyChanged<T>(Expression<Func<T>> eventArgs) 
-            => OnPropertyChanged(new PropertyChangedEventArgs(PropertyHelper.ExtractPropertyName(Argument.NotNull(eventArgs, nameof(eventArgs)))));
+            => OnPropertyChanged(new PropertyChangedEventArgs(Reflex.PropertyName(Argument.NotNull(eventArgs, nameof(eventArgs)))));
 
 
         public virtual void OnPropertyChangedExplicit(string propertyName) 

@@ -10,6 +10,34 @@ using JetBrains.Annotations;
 namespace Tauron
 {
     [PublicAPI]
+    public static class Reflex
+    {
+        public static MethodInfo MethodInfo<T>(Expression<Action<T>> expression)
+        {
+            if (expression.Body is MethodCallExpression member)
+                return member.Method;
+
+            throw new ArgumentException("Expression is not a method", nameof(expression));
+        }
+
+        public static MethodInfo MethodInfo(Expression<Action> expression)
+        {
+            if (expression.Body is MethodCallExpression member)
+                return member.Method;
+
+            throw new ArgumentException("Expression is not a method", nameof(expression));
+        }
+
+        public static string PropertyName<T>(Expression<Func<T>> propertyExpression)
+        {
+            Argument.NotNull(propertyExpression, nameof(propertyExpression));
+            var memberExpression = (MemberExpression)propertyExpression.Body;
+
+            return memberExpression.Member.Name;
+        }
+    }
+    
+    [PublicAPI]
     public sealed class FastReflection
     {
         private static readonly Lazy<FastReflection> SharedLazy = new(() => new FastReflection(), true);
