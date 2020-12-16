@@ -141,6 +141,7 @@ namespace Tauron.Application.Workshop.Mutation
                                    return Unit.Default;
                                })
                    .Finally(() => _completer(query))
+                   .Timeout(TimeSpan.FromMinutes(10))
                    .SingleTimeSubscribe();
             }
 

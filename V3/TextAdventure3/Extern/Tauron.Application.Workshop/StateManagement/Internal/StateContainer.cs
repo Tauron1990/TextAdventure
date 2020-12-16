@@ -74,7 +74,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                                      subs.Add(processor.Select(_ => Unit.Default).Subscribe(onCompled));
                                      subs.Add(processor.Cast<IReducerResult>().Subscribe(sendResult));
                                      
-                                     return processor.Where(r => r.IsOk).Select(r => r.Data);
+                                     return processor.Where(r => r.IsOk && !r.StartLine).Select(r => r.Data);
                                  }
                                  catch
                                  {

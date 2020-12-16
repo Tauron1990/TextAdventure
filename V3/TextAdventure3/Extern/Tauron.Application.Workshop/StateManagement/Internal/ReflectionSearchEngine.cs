@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using System.Reactive.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Autofac;
@@ -30,8 +32,8 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             Func<TType> CreateFactory<TType>(Type target)
             {
                 if (_context != null)
-                    return () => (TType) (_context.ResolveOptional(target) ?? Activator.CreateInstance(target));
-                return () => (TType)Activator.CreateInstance(target);
+                    return () => (TType) (_context.ResolveOptional(target) ?? Activator.CreateInstance(target))!;
+                return () => (TType)Activator.CreateInstance(target)!;
             }
 
             var types = _assembly.GetTypes();
@@ -187,23 +189,125 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
             private static ReducerBuilderBase? Create<TData, TAction>(MethodInfo info)
             {
                 var returnType = info.ReturnType;
-                
+                var parms = info.GetParameterTypes().ToArray();
+                if (parms.Length != 2 && parms[1] != typeof(TAction))
+                    return null;
+
+                var parm = parms[0];
+
                 //One to One
+                if (returnType == typeof(IObservable<ReducerResult<TData>>) && parm == typeof(IObservable<MutatingContext<TData>>))
+                    return new ReducerBuilder<TData, TAction>.OneToOneMap(info);
                 
-                
+                //Observable Variants
+                if (returnType == typeof(IObservable<MutatingContext<TData>>) && parm == typeof(IObservable<MutatingContext<TData>>))
+                    return new ReducerBuilder<TData, TAction>.SameTypeMap(info);
+                if (parm == typeof(IObservable<MutatingContext<TData>>) && returnType == typeof(IObservable<TData>))
+                    return new ReducerBuilder<TData, TAction>.DataToDataMap(info);
+                if (parm == typeof(IObservable<MutatingContext<TData>>) && returnType == typeof(IObservable<ReducerResult<TData>>))
+                    return new ReducerBuilder<TData, TAction>.DataToContextMap(info);
+
+                if (parm == typeof(IObservable<TData>) && returnType == typeof(IObservable<TData>))
+                    return new ReducerBuilder<TData, TAction>.DataToDataMap(info);
+                if (parm == typeof(IObservable<TData>) && returnType == typeof(IObservable<MutatingContext<TData>>))
+                    return new ReducerBuilder<TData, TAction>.DataToContextMap(info);
+                if (parm == typeof(IObservable<TData>) && returnType == typeof(IObservable<ReducerResult<TData>>))
+                    return new ReducerBuilder<TData, TAction>.DataToResultMap(info);
+
                 return null;
             }
         }
 
         private abstract class ReducerBuilderBase
         {
-            public static TDelegate CreateDelegate<TDelegate>(Type delegateType, MethodInfo method)
-                where TDelegate : Delegate => (TDelegate) Delegate.CreateDelegate(delegateType, method);
+            protected delegate IObservable<ReducerResult<TData>> ReducerDel<TData, in TAction>(IObservable<MutatingContext<TData>> state, TAction action);
+
+            protected static TDelegate CreateDelegate<TDelegate>(MethodInfo method)
+                where TDelegate : Delegate => (TDelegate) Delegate.CreateDelegate(typeof(TDelegate), method);
         }
 
         private abstract class ReducerBuilder<TData, TAction> : ReducerBuilderBase
         {
-            public abstract IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action);
+            private readonly MethodInfo _info;
+            private ReducerDel<TData, TAction>? _reducer;
+
+            protected ReducerBuilder(MethodInfo info) => _info = info;
+
+            protected abstract ReducerDel<TData, TAction> Build(MethodInfo info);
+
+            public IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action)
+            {
+                _reducer ??= Build(_info);
+                return _reducer(state, action);
+            }
+
+            public sealed class OneToOneMap : ReducerBuilder<TData, TAction>
+            {
+                public OneToOneMap(MethodInfo info) 
+                    : base(info) { }
+
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info) => CreateDelegate<ReducerDel<TData, TAction>>(info);
+            }
+            public sealed class SameTypeMap : ReducerBuilder<TData, TAction>
+            {
+                public SameTypeMap([NotNull] MethodInfo info) : base(info) { }
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info)
+                {
+                    var del = CreateDelegate<Func<IObservable<MutatingContext<TData>>, TAction, IObservable<MutatingContext<TData>>>>(info);
+
+                    return (state, action) => del(state, action).Select(ReducerResult.Sucess);
+                }
+            }
+            public sealed class SameTypeMap : ReducerBuilder<TData, TAction>
+            {
+                public SameTypeMap([NotNull] MethodInfo info) : base(info) { }
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info)
+                {
+                    var del = CreateDelegate<Func<IObservable<MutatingContext<TData>>, TAction, IObservable<MutatingContext<TData>>>>(info);
+
+                    return (state, action) => del(state, action).Select(ReducerResult.Sucess);
+                }
+            }
+            public sealed class SameTypeMap : ReducerBuilder<TData, TAction>
+            {
+                public SameTypeMap([NotNull] MethodInfo info) : base(info) { }
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info)
+                {
+                    var del = CreateDelegate<Func<IObservable<MutatingContext<TData>>, TAction, IObservable<MutatingContext<TData>>>>(info);
+
+                    return (state, action) => del(state, action).Select(ReducerResult.Sucess);
+                }
+            }
+            public sealed class DataToContextMap : ReducerBuilder<TData, TAction>
+            {
+                public DataToContextMap([NotNull] MethodInfo info) : base(info) { }
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info)
+                {
+                    var del = CreateDelegate<Func<IObservable<TData>, TAction, IObservable<MutatingContext<TData>>>>(info);
+
+                    return (state, action) => del(state.Select(c => c.Data), action).Select(ReducerResult.Sucess);
+                }
+            }
+            public sealed class DataToResultMap : ReducerBuilder<TData, TAction>
+            {
+                public DataToResultMap([NotNull] MethodInfo info) : base(info) { }
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info)
+                {
+                    var del = CreateDelegate<Func<IObservable<TData>, TAction, IObservable<ReducerResult<TData>>>>(info);
+
+                    return (state, action) => del(state.Select(c => c.Data), action);
+                }
+            }
+            public sealed class DataToDataMap : ReducerBuilder<TData, TAction>
+            {
+                public DataToDataMap([NotNull] MethodInfo info) : base(info) { }
+                protected override ReducerDel<TData, TAction> Build(MethodInfo info)
+                {
+                    var del = CreateDelegate<Func<IObservable<TData>, TAction, IObservable<TData>>>(info);
+
+                    return (state, action) => del(state.Select(c => c.Data), action).Select(d => ReducerResult.Sucess(MutatingContext<TData>.New(d)));
+                }
+            }
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedNoFixedConstructorSignature)]
@@ -222,7 +326,8 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
             public override IValidator<TAction>? Validator { get; }
             
-            protected override IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action) => _builder.Reduce(state, action);
+            protected override IObservable<ReducerResult<TData>> Reduce(IObservable<MutatingContext<TData>> state, TAction action) 
+                => _builder.Reduce(state, action);
         }
     }
 }

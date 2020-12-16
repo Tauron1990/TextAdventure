@@ -80,16 +80,6 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                     _result.OnCompleted();
                 }
             }
-
-            private sealed class ErrorResult : IReducerResult
-            {
-                public bool IsOk => false;
-
-                public string[]? Errors { get; }
-
-                public ErrorResult(Exception e) 
-                    => Errors = new[] {e.Message};
-            }
         }
     }
 }

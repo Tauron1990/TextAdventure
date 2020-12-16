@@ -146,16 +146,26 @@ namespace Tauron.Application.Workshop.StateManagement
                 => Interlocked.Increment(ref _pending);
 
             public IObserver<IReducerResult> AddResult()
-                => new AnonymousObserver<IReducerResult>(n => _results.Add(n));
+                => new AnonymousObserver<IReducerResult>(n => _results.Add(n), _ => {});
 
             public IObserver<Unit> WorkCompled()
-                => new AnonymousObserver<Unit>(_ =>
-                                               {
-                                                   if (Interlocked.Decrement(ref _pending) != 0) return;
+            {
+                void Compled()
+                {
+                    if (Interlocked.Decrement(ref _pending) != 0) return;
 
-                                                   _mutatingEngine.Mutate(_effectInvoker);
-                                                   _mutatingEngine.Mutate(this);
-                                               });
+                    _mutatingEngine.Mutate(_effectInvoker);
+                    _mutatingEngine.Mutate(this);
+                }
+
+                return new AnonymousObserver<Unit>(_ => { },
+                                                   e =>
+                                                   {
+                                                       _results.Add(new ErrorResult(e));
+                                                       Compled();
+                                                   },
+                                                   Compled);
+            }
         }
 
         private sealed class EffectInvoker : ISyncMutation

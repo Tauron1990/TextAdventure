@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Tauron.Application.Workshop.Mutating;
 
@@ -16,6 +17,16 @@ namespace Tauron.Application.Workshop.StateManagement
 
             return new ReducerResult<TData>(null, errors.ToArray());
         }
+    }
+
+    public sealed class ErrorResult : IReducerResult
+    {
+        public bool IsOk => false;
+
+        public string[]? Errors { get; }
+
+        public ErrorResult(Exception e)
+            => Errors = new[] { e.Message };
     }
 
     public interface IReducerResult
