@@ -71,23 +71,10 @@ namespace Tauron
             if (string.IsNullOrWhiteSpace(target)) return;
             then(target);
         }
-
-        public static T? As<T>(this object? value) where T : class
-        {
-            return value as T;
-        }
-
-        [return: MaybeNull]
-        public static T SafeCast<T>(this object? value)
-        {
-            if (value == null) return default!;
-
-            return (T) value;
-        }
-
+        
         public static DateTime CutSecond(this DateTime source)
         {
-            return new DateTime(source.Year, source.Month, source.Day, source.Hour, source.Minute, 0);
+            return new(source.Year, source.Month, source.Day, source.Hour, source.Minute, 0);
         }
 
         public static T? GetService<T>(this IServiceProvider provider)

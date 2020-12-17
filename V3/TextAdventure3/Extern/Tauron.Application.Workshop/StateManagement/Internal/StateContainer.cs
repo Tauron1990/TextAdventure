@@ -7,6 +7,7 @@ using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.Mutation;
+using Tauron.ObservableExt;
 
 namespace Tauron.Application.Workshop.StateManagement.Internal
 {
@@ -61,14 +62,16 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
                                      var processor = reducer.Aggregate(
                                                                        starData.Select(d => ReducerResult.Sucess(d) with{StartLine = true}).SingleAsync(),
-                                                                       (observable, func) =>
+                                                                       (observable, reducerBuilder) =>
                                                                        {
-                                                                           var fail = observable
-                                                                                     .Where(r => !r.IsOk || r.Data == null)
-                                                                                     .Do(_ => cancel.OnNext(Unit.Default));
-                                                                           var succsess = func(observable.Where(r => r.IsOk && r.Data != null).Select(r => r.Data!));
-
-                                                                           return fail.Merge(succsess);
+                                                                           return observable
+                                                                                 .ConditionalSelect()
+                                                                                 .ToSame(b =>
+                                                                                         {
+                                                                                             b.When(r => !r.IsOk || r.Data == null, o => o.Do(_ => cancel.OnNext(Unit.Default)))
+                                                                                              .When(r => r.IsOk && r.Data != null,
+                                                                                                    o => reducerBuilder(o.Select(d => d.Data!)));
+                                                                                         });
                                                                        }).Switch().Publish().RefCount();
 
                                      subs.Add(processor.Select(_ => Unit.Default).Subscribe(onCompled));
