@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Threading.Tasks;
@@ -19,7 +19,7 @@ namespace Tauron.Akka
     [PublicAPI]
     public class ExposedReceiveActor : ReceiveActor, IActorDsl, IExposedReceiveActor
     {
-        private readonly List<IDisposable> _resources = new();
+        private readonly CompositeDisposable _resources = new();
         private Action<Exception, IActorContext>? _onPostRestart;
         private Action<IActorContext>? _onPostStop;
         private Action<Exception, object, IActorContext>? _onPreRestart;
@@ -124,13 +124,16 @@ namespace Tauron.Akka
             base.PreRestart(reason, message);
         }
 
+        public override void AroundPostStop()
+        {
+            base.AroundPostStop();
+            _resources.Dispose();
+        }
+
         protected override void PostStop()
         {
             _onPostStop?.Invoke(Context);
             OnPostStop?.Invoke();
-
-            foreach (var disposable in _resources) 
-                disposable.Dispose();
 
             base.PostStop();
         }
