@@ -4,7 +4,7 @@ namespace Tauron.Application.Workshop.StateManagement
 {
     public sealed class EmptyQuery : IQuery
     {
-        public static readonly EmptyQuery Instance = new EmptyQuery();
+        public static readonly EmptyQuery Instance = new();
 
         private readonly string? _hash;
 
@@ -18,6 +18,6 @@ namespace Tauron.Application.Workshop.StateManagement
         private EmptyQuery(string? hash) => _hash = hash;
 
         public EmptyQuery WithHash(string hash)
-            => new EmptyQuery(hash);
+            => new(hash);
     }
 }

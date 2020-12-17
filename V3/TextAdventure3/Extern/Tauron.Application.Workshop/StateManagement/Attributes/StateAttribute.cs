@@ -3,6 +3,7 @@ using JetBrains.Annotations;
 
 namespace Tauron.Application.Workshop.StateManagement.Attributes
 {
+    [MeansImplicitUse(ImplicitUseKindFlags.Access)]
     [AttributeUsage(AttributeTargets.Class, AllowMultiple = true)]
     [BaseTypeRequired(typeof(StateBase<>))]
     [PublicAPI]

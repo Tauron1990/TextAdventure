@@ -17,6 +17,8 @@ namespace Tauron.Application.Workshop.StateManagement
 
             return new ReducerResult<TData>(null, errors.ToArray());
         }
+
+        public static ReducerResult<TData> Fail<TData>(MutatingContext<TData> context, string error) => Fail(context, new[] { error });
     }
 
     public sealed class ErrorResult : IReducerResult

@@ -34,7 +34,7 @@ namespace Tauron.Host
             catch (Exception e)
             {
                 _logger.Warning(e, "Error on get Route");
-                _route = GetRoute("default");
+                _route = GetRoute(null);
             }
 
             await _route.WaitForStartAsync(actorSystem);
@@ -43,9 +43,7 @@ namespace Tauron.Host
 
         public Task ShutdownTask { get; private set; } = Task.CompletedTask;
 
-        private IAppRoute GetRoute(string name)
-        {
-            return _factory.ResolveNamed<IAppRoute>(name);
-        }
+        private IAppRoute GetRoute(string? name) 
+            => name == null ? _factory.Resolve<IAppRoute>() : _factory.ResolveNamed<IAppRoute>(name);
     }
 }
