@@ -32,8 +32,11 @@ namespace Tauron.Host
         public IContainer Continer { get; }
         public ActorSystem ActorSystem { get; }
 
-        public void Dispose() 
-            => Continer.Dispose();
+        public void Dispose()
+        {
+            Continer.Dispose();
+            ActorSystem.Dispose();
+        }
 
         public static IApplicationBuilder Create(string[]? args = null)
         {

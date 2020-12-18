@@ -7,8 +7,7 @@ using Akka.Actor;
 using Akka.DI.Core;
 using Autofac;
 using FluentValidation;
-using JetBrains.Annotations;
-using Newtonsoft.Json;
+using Serilog;
 using Tauron;
 using Tauron.Akka;
 using Tauron.Application.Workshop.Mutating;
@@ -22,7 +21,7 @@ using Tauron.Operations;
 
 namespace TestApp
 {
-    internal class Program
+    internal static class Program
     {
         #region Data
 
@@ -159,31 +158,74 @@ namespace TestApp
 
         public sealed class ConsoleActor : ExposedReceiveActor
         {
-            private readonly IActionInvoker _invoker;
-
             public ConsoleActor(IActionInvoker invoker)
             {
-                _invoker = invoker;
-                
+                static (string Command, string[] Args) ParseCommand(string? input)
+                {
+                    if (string.IsNullOrWhiteSpace(input))
+                        return (string.Empty, Array.Empty<string>());
+
+                    string[] split = input.Split(new[] {' '}, StringSplitOptions.RemoveEmptyEntries);
+                    
+                    return split.Length == 1 
+                               ? (split[0], Array.Empty<string>()) 
+                               : (split[0], split.Skip(1).ToArray());
+                }
+
+                static Func<IStateAction?> CommadAction((string Command, string[] args) commandTuple)
+                {
+                    var (command, args) = commandTuple;
+
+                    return command switch
+                    {
+                        "exit" => () =>
+                                  {
+                                      Console.WriteLine("Beende Anwendung");
+                                      Context.System.Terminate();
+                                      return null;
+                                  },
+                        _ => () =>
+                             {
+                                 Console.WriteLine("Unkanntes kommando");
+                                 return null;
+                             }
+                    };
+                }
+
                 Receive<AppRoute>(Start);
                 Receive<IOperationResult>(ActionResult);
                 
-                WhenReceive<Starter>(start 
+                WhenReceiveSafe<Starter>(start 
                                          => start
-                                            .Select(_ => Console.ReadLine())
-                                           .ToUnit());
+                                            .SelectMany(_ =>
+                                                        {
+                                                            Console.WriteLine();
+                                                            return Task.Run(Console.ReadLine);
+                                                        })
+                                           .Select(ParseCommand)
+                                           .Select(CommadAction)
+                                           .ObserveOn(ActorScheduler.CurrentSelf)
+                                           .Select(c => c())
+                                           .ExecuteCommands(invoker));
             }
 
             private void ActionResult(IOperationResult obj)
             {
-                switch (obj.Outcome)
+                Console.WriteLine();
+                if(obj.Ok)
+                    Console.WriteLine("Kommando Ausgeführt");
+                else
                 {
-                    case NewUserCommand:
-                        if(obj.Ok)
-                            Console.WriteLine();
-                        break;
+                    switch (obj.Outcome)
+                    {
+                        case NewUserCommand:
+                            Console.WriteLine("Benutzer Konnte nicght erstellt werden:");
+                            break;
+                    }
+
+                    Console.WriteLine(obj.Error);
                 }
-                
+
                 Self.Tell(Starter.Inst);
             }
 
@@ -195,7 +237,7 @@ namespace TestApp
 
             private sealed record Starter
             {
-                public static Starter Inst = new();
+                public static readonly Starter Inst = new();
             }
         }
         
@@ -215,11 +257,14 @@ namespace TestApp
         
         private static async Task Main(string[] args)
         {
+            Console.Title = "Test App";
+            
             using var system = ActorApplication.Create(args)
+                                                .ConfigureLogging((_, lg) => lg.WriteTo.Console())
                                                .ConfigureAutoFac(b =>
                                                                  {
                                                                      b.RegisterType<AppRoute>().As<IAppRoute>();
-                                                                     b.RegisterStateManager(true, (builder, context) => builder.AddFromAssembly<Program>(context));
+                                                                     b.RegisterStateManager(true, (builder, context) => builder.AddFromAssembly<UserData>(context));
                                                                  })
                                                .Build();
 

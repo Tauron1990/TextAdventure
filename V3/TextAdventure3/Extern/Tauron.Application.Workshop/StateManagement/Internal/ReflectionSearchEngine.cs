@@ -115,12 +115,9 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                         continue;
 
                     var parms = method.GetParameters();
-                    if(parms.Length != 2)
+                    if(parms.Length == 0)
                         continue;
-                    if(!parms[0].ParameterType.IsGenericType)
-                        continue;
-                    if(parms[0].ParameterType.GetGenericTypeDefinition() != typeof(MutatingContext<>))
-                        continue;
+                        
                     methods[parms[1].ParameterType] = method;
                 }
 
@@ -134,6 +131,8 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                         continue;
 
                     var validatorType = potenialValidator.GetInterface(typeof(IValidator<>).Name);
+                    if (validatorType == null && potenialValidator.IsGenericType && potenialValidator.GetGenericTypeDefinition() == typeof(IValidator<>))
+                        validatorType = potenialValidator;
                     if(validatorType == null)
                         continue;
                     var validator = property.GetValue(null);

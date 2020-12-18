@@ -164,10 +164,10 @@ namespace Tauron.Akka
 
         #endregion
 
-        protected void ObservableReceiveSafe<TEvent>(Func<IObservable<TEvent>, IObservable<Unit>> handler) 
+        protected void WhenReceiveSafe<TEvent>(Func<IObservable<TEvent>, IObservable<Unit>> handler) 
             => AddResource(new ObservableInvoker<TEvent, Unit>(handler, DefaultError, this, Self).Construct());
 
-        protected void ObservableReceiveSafe<TEvent>(Func<IObservable<TEvent>, IObservable<TEvent>> handler) 
+        protected void WhenReceiveSafe<TEvent>(Func<IObservable<TEvent>, IObservable<TEvent>> handler) 
             => AddResource(new ObservableInvoker<TEvent, TEvent>(handler, DefaultError, this, Self).Construct());
 
         protected void WhenReceive<TEvent>(Func<IObservable<TEvent>, IObservable<Unit>> handler)

@@ -1,1 +1,1 @@
-
+https://www.red-gate.com/simple-talk/dotnet/net-development/building-an-angularjs-application-with-asp-net-core/
