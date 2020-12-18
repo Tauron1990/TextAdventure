@@ -108,9 +108,11 @@ namespace Tauron
 
         public static IDisposable Subscribe<TEvent>(this IObservable<TEvent> observable, IActorRef actor) 
             => observable.Subscribe(evt => actor.Tell(evt), e => actor.Tell(new Status.Failure(e)), () => actor.Tell(new Status.Success(Unit.Default)));
-
-
+        
         public static IObservable<IActorRef> NotNobody(this IObservable<IActorRef> observable) 
             => observable.Where(a => !a.IsNobody());
+
+        public static IObservable<Unit> ToUnit<TSource>(this IObservable<TSource> input)
+            => input.Select(_ => Unit.Default);
     }
 }

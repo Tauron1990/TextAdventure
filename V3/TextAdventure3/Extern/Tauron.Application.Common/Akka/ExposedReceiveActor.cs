@@ -34,7 +34,22 @@ namespace Tauron.Akka
         {
             Receive<TransmitError>(e => e.ErrorHandler(e.Error));
         }
-        
+
+        protected override bool AroundReceive(Receive receive, object message)
+        {
+            switch (message)
+            {
+                case TransmitError error:
+                    error.ErrorHandler(error.Error);
+                    return true;
+                case TransmitAction action:
+                    action.Action();
+                    return true;
+            }
+            
+            return base.AroundReceive(receive, message);
+        }
+
         public void AddResource(IDisposable res)
             => _resources.Add(res);
 
@@ -160,6 +175,12 @@ namespace Tauron.Akka
 
         protected void WhenReceive<TEvent>(Func<IObservable<TEvent>, IObservable<TEvent>> handler)
             => AddResource(new ObservableInvoker<TEvent, TEvent>(handler, ThrowError, this, Self).Construct());
+
+        protected void WhenReceive<TEvent>(Func<IObservable<TEvent>, IObservable<Unit>> handler, Func<Exception, bool> errorHandler)
+            => AddResource(new ObservableInvoker<TEvent, Unit>(handler, errorHandler, this, Self).Construct());
+
+        protected void WhenReceive<TEvent>(Func<IObservable<TEvent>, IObservable<TEvent>> handler, Func<Exception, bool> errorHandler)
+            => AddResource(new ObservableInvoker<TEvent, TEvent>(handler, errorHandler, this, Self).Construct());
 
         private bool ThrowError(Exception e)
         {
@@ -305,7 +326,8 @@ namespace Tauron.Akka
             }
         }
 
-        private sealed record TransmitError(Exception Error, Action<Exception> ErrorHandler);
+        public sealed record TransmitError(Exception Error, Action<Exception> ErrorHandler);
 
+        public sealed record TransmitAction(Action Action);
     }
 }

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.DI.Core;
@@ -8,6 +9,7 @@ using Autofac;
 using FluentValidation;
 using JetBrains.Annotations;
 using Newtonsoft.Json;
+using Tauron;
 using Tauron.Akka;
 using Tauron.Application.Workshop.Mutating;
 using Tauron.Application.Workshop.Mutating.Changes;
@@ -141,7 +143,7 @@ namespace TestApp
                                                                                      };
 
             [Reducer]
-            public static ReducerResult<UserData> NewUserCommand(MutatingContext<UserData> context, NewUserCommand command) 
+            public static ReducerResult<UserData> RunNewUserCommand(MutatingContext<UserData> context, NewUserCommand command) 
                 => !context.Data.IsNew 
                        ? ReducerResult.Fail(context, "User Existiert Schon") 
                        : ReducerResult.Sucess(context.WithChange(new NewUserEvent(command.Name, context.Data.Id, context.Data.CreationTime)));
@@ -167,7 +169,9 @@ namespace TestApp
                 Receive<IOperationResult>(ActionResult);
                 
                 WhenReceive<Starter>(start 
-                                         => start);
+                                         => start
+                                            .Select(_ => Console.ReadLine())
+                                           .ToUnit());
             }
 
             private void ActionResult(IOperationResult obj)
