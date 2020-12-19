@@ -1,7 +1,7 @@
 ﻿using System;
 using JetBrains.Annotations;
 
-namespace Tauron.Application.Wpf.AppCore
+namespace Tauron.Application.CommonUI.AppCore
 {
     [PublicAPI]
     public interface IMainWindow : IWindowProvider

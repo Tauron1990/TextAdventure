@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using FluentValidation;
 using JetBrains.Annotations;
 using Tauron.Application.Workshop.Mutating;
+using Tauron.ObservableExt;
 
 namespace Tauron.Application.Workshop.StateManagement
 {
@@ -18,7 +19,7 @@ namespace Tauron.Application.Workshop.StateManagement
 
         public virtual Func<IObservable<MutatingContext<TData>>, IObservable<ReducerResult<TData>>> Reduce(IStateAction action)
         {
-            IObservable<ReducerResult<TData>> ErrorHandler(Exception e)
+            static IObservable<ReducerResult<TData>> ErrorHandler(Exception e)
                 => Observable.Return(new ReducerResult<TData>(null, new[] { e.Message }));
 
             return state =>
@@ -26,10 +27,17 @@ namespace Tauron.Application.Workshop.StateManagement
                        var typedAction = (TAction) action;
                        var validation = Validator?.Validate(typedAction);
 
-                       var invalid = state.Where(_ => validation != null && !validation.IsValid).Select(c => ReducerResult.Fail(c, validation!.Errors.Select(f => f.ErrorMessage)));
-                       var runner = Reduce(state.Where(_ => validation == null || validation.IsValid), typedAction).Catch<ReducerResult<TData>, Exception>(ErrorHandler);
-
-                       return invalid.Concat(runner);
+                       return 
+                           state.ConditionalSelect()
+                                .ToResult<ReducerResult<TData>>(b =>
+                                                                {
+                                                                    b.When(_ => validation != null && !validation.IsValid,
+                                                                           context => context.Select(c => ReducerResult.Fail(c, validation!.Errors.Select(f => f.ErrorMessage))));
+                                                                    b.When(_ => validation == null || validation.IsValid,
+                                                                           context =>
+                                                                               Reduce(context.Where(_ => validation == null || validation.IsValid), typedAction)
+                                                                                  .Catch<ReducerResult<TData>, Exception>(ErrorHandler));
+                                                                });
                    };
         }
 

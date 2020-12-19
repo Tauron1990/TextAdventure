@@ -29,7 +29,7 @@ namespace Tauron.Application.Workshop.Mutation
             }
         }
 
-        private ILoggingAdapter Log => Context.GetLogger();
+        private static ILoggingAdapter Log => Context.GetLogger();
 
         private void Mutation(ISyncMutation obj)
         {

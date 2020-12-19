@@ -7,7 +7,7 @@ using Tauron.Application.Workshop.Mutation;
 
 namespace Tauron.Application.Workshop.Core
 {
-    public sealed class WorkspaceSuperviserActor : ExposedReceiveActor
+    public sealed class WorkspaceSuperviserActor : ExpandedReceiveActor
     {
         private ImmutableDictionary<IActorRef, Action> _intrest = ImmutableDictionary<IActorRef, Action>.Empty;
 

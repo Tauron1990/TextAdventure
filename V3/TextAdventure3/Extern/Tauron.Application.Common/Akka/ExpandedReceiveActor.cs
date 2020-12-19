@@ -11,13 +11,13 @@ using JetBrains.Annotations;
 
 namespace Tauron.Akka
 {
-    public interface IExposedReceiveActor
+    public interface IExpandedReceiveActor
     {
         IActorDsl Exposed { get; }
     }
 
     [PublicAPI]
-    public class ExposedReceiveActor : ReceiveActor, IActorDsl, IExposedReceiveActor
+    public class ExpandedReceiveActor : ReceiveActor, IActorDsl, IExpandedReceiveActor
     {
         private readonly CompositeDisposable _resources = new();
         private Action<Exception, IActorContext>? _onPostRestart;
@@ -30,7 +30,7 @@ namespace Tauron.Akka
 
         public static IUntypedActorContext ExposedContext => Context;
 
-        public ExposedReceiveActor()
+        public ExpandedReceiveActor()
         {
             Receive<TransmitError>(e => e.ErrorHandler(e.Error));
         }

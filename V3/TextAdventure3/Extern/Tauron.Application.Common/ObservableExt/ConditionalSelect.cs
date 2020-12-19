@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
+using System.Reactive.Subjects;
 using JetBrains.Annotations;
 
 namespace Tauron.ObservableExt
@@ -24,7 +26,7 @@ namespace Tauron.ObservableExt
             var setup = new ConditionalSelectBuilder<TSource, TResult>();
             builder(setup);
 
-            return setup.Build(_observable.Publish().RefCount()).Merge();
+            return setup.Build(_observable).Merge();
         }
 
         public IObservable<TSource> ToSame(Action<ConditionalSelectBuilder<TSource, TSource>> builder)
@@ -44,8 +46,10 @@ namespace Tauron.ObservableExt
             return this;
         }
 
-        public IEnumerable<IObservable<TResult>> Build(IObservable<TSource> source)
+        public IEnumerable<IObservable<TResult>> Build(IObservable<TSource> rawRource)
         {
+            var source = rawRource.Publish().RefCount(_registrations.Count);
+            
             foreach (var (when, then) in _registrations)
                 yield return then(source.Where(when));
         }

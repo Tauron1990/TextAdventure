@@ -1,4 +1,4 @@
-﻿namespace Tauron.Application.Wpf.AppCore
+﻿namespace Tauron.Application.CommonUI.AppCore
 {
     public interface ISplashScreen : IWindowProvider
     {

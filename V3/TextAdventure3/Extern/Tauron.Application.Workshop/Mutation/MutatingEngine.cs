@@ -53,6 +53,7 @@ namespace Tauron.Application.Workshop.Mutation
                 transform(sender.AsObservable()).NotNull().Subscribe(_responder);
                 sender.OnNext(_dataSource.GetData());
                 sender.OnCompleted();
+                sender.Dispose();
             }
 
             return new DataMutation<TData>(Runner, name, hash);
@@ -100,9 +101,18 @@ namespace Tauron.Application.Workshop.Mutation
 
         public IDataMutation CreateMutate(string name, IQuery query, Func<IObservable<TData>, IObservable<TData?>> transform)
         {
-            void Runner() => _responder.Push(query, transform(Observable.StartAsync(() => _dataSource.GetData(query))).NotNull());
+            async Task Runner()
+            {
+                var sender = new Subject<TData>();
+                _responder.Push(query, transform(sender).NotNull());
 
-            return new DataMutation<TData>(Runner, name, query.ToHash());
+                var data = await _dataSource.GetData(query);
+                
+                sender.OnNext(data);
+                sender.OnCompleted();
+            }
+
+            return new AsyncDataMutation<TData>(Runner, name, query.ToHash());
         }
         
         public IEventSource<TRespond> EventSource<TRespond>(Func<TData, TRespond> transformer, Func<TData, bool>? where = null)
@@ -140,9 +150,8 @@ namespace Tauron.Application.Workshop.Mutation
 
                                    return Unit.Default;
                                })
-                   .Finally(() => _completer(query))
                    .Timeout(TimeSpan.FromMinutes(10))
-                   .SingleTimeSubscribe();
+                   .Subscribe();
             }
 
             public IDisposable Subscribe(IObserver<TData> observer) => _handler.Subscribe(observer);

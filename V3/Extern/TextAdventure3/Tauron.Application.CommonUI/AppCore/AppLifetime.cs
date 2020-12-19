@@ -1,23 +1,25 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
 using System.Threading;
 using System.Threading.Tasks;
-using System.Windows;
 using Akka.Actor;
 using Autofac;
 using Tauron.Host;
 
-namespace Tauron.Application.Wpf.AppCore
+namespace Tauron.Application.CommonUI.AppCore
 {
     public sealed class AppLifetime : IAppRoute
     {
         private readonly ILifetimeScope _factory;
-        private readonly TaskCompletionSource<int> _shutdownWaiter = new TaskCompletionSource<int>();
-        private System.Windows.Application? _internalApplication;
+        private readonly CommonUIFramework _framework;
+        private readonly TaskCompletionSource<int> _shutdownWaiter = new();
+        private IUIApplication? _internalApplication;
 
-        public AppLifetime(ILifetimeScope factory)
+        public AppLifetime(ILifetimeScope factory, CommonUIFramework framework)
         {
             _factory = factory;
+            _framework = framework;
         }
 
         public Task WaitForStartAsync(ActorSystem system)
@@ -36,10 +38,10 @@ namespace Tauron.Application.Wpf.AppCore
             {
                 using var scope = _factory.BeginLifetimeScope();
 
-                _internalApplication = scope.ResolveOptional<IAppFactory>()?.Create() ?? new System.Windows.Application();
+                _internalApplication = scope.ResolveOptional<IAppFactory>()?.Create() ?? _framework.CreateDefault();
                 _internalApplication.ShutdownMode = ShutdownMode.OnExplicitShutdown;
 
-                _internalApplication.Startup += (sender, args) =>
+                _internalApplication.Startup += (_, _) =>
                 {
                     // ReSharper disable AccessToDisposedClosure
                     var splash = scope.ResolveOptional<ISplashScreen>()?.Window;
@@ -47,7 +49,7 @@ namespace Tauron.Application.Wpf.AppCore
 
                     var mainWindow = scope.Resolve<IMainWindow>();
                     mainWindow.Window.Show();
-                    mainWindow.Shutdown += (o, eventArgs)
+                    mainWindow.Shutdown += (_, _)
                         => ShutdownApp();
 
                     splash?.Hide();
@@ -59,12 +61,13 @@ namespace Tauron.Application.Wpf.AppCore
                 _shutdownWaiter.SetResult(_internalApplication.Run());
             }
 
-            Thread uiThread = new Thread(Runner)
+            Thread uiThread = new(Runner)
             {
                 Name = "UI Thread",
                 IsBackground = true
             };
-            uiThread.SetApartmentState(ApartmentState.STA);
+            if(RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                uiThread.SetApartmentState(ApartmentState.STA);
             uiThread.Start();
 
             return Task.CompletedTask;

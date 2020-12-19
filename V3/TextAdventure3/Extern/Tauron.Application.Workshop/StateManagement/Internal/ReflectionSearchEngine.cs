@@ -15,7 +15,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 {
     public class ReflectionSearchEngine
     {
-        private static readonly MethodInfo ConfigurateStateMethod = typeof(ReflectionSearchEngine).GetMethod(nameof(ConfigurateState), BindingFlags.Instance | BindingFlags.NonPublic)
+        private static readonly MethodInfo ConfigurateStateMethod = typeof(ReflectionSearchEngine).GetMethod(nameof(ConfigurateState), BindingFlags.Static | BindingFlags.NonPublic)
          ?? throw new InvalidOperationException("Method not Found");
 
         private readonly Assembly _assembly;
@@ -85,14 +85,14 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
                 var dataType = type.BaseType.GetGenericArguments()[0];
                 var actualMethod = ConfigurateStateMethod.MakeGenericMethod(dataType);
-                actualMethod.Invoke(this, new object?[] {type, builder, factory, reducers, key});
+                actualMethod.Invoke(null, new object?[] {type, builder, factory, reducers, key});
             }
 
             foreach (var processor in processors) 
                 builder.Superviser.CreateAnonym(processor, $"Processor--{processor.Name}");
         }
 
-        private void ConfigurateState<TData>(Type target, ManagerBuilder builder, IDataSourceFactory factory, GroupDictionary<Type, Type> reducerMap, string? key)
+        private static void ConfigurateState<TData>(Type target, ManagerBuilder builder, IDataSourceFactory factory, GroupDictionary<Type, Type> reducerMap, string? key)
             where TData : class, IStateEntity
         {
             var config = builder.WithDataSource(factory.Create<TData>());

@@ -15,13 +15,13 @@ namespace Tauron.Akka
 
         public static IScheduler CurrentSelf => new ActorScheduler();
 
-        public static IScheduler From(IActorRef actor) => new ActorScheduler();
+        public static IScheduler From(IActorRef actor) => new ActorScheduler(actor);
         
         private ActorScheduler(IActorRef target)
             => _targetActor = target;
         
         private ActorScheduler()
-            : this(ExposedReceiveActor.ExposedContext.Self) { }
+            : this(ExpandedReceiveActor.ExposedContext.Self) { }
         
         public override IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
         {
@@ -36,13 +36,13 @@ namespace Tauron.Akka
             }
             
             if (target == TimeSpan.Zero)
-                _targetActor.Tell(new ExposedReceiveActor.TransmitAction(TryRun));
+                _targetActor.Tell(new ExpandedReceiveActor.TransmitAction(TryRun));
             else
             {
                 var timerDispose = new SingleAssignmentDisposable();
                 Timer timer = new(o =>
                                   {
-                                      _targetActor.Tell(new ExposedReceiveActor.TransmitAction(TryRun));
+                                      _targetActor.Tell(new ExpandedReceiveActor.TransmitAction(TryRun));
                                       ((IDisposable)o!).Dispose();
                                   }, timerDispose, dueTime, Timeout.InfiniteTimeSpan);
                 

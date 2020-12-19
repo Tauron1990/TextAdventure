@@ -3,21 +3,18 @@ using Autofac;
 using JetBrains.Annotations;
 using Tauron.Host;
 
-namespace Tauron.Application.Wpf.AppCore
+namespace Tauron.Application.CommonUI.AppCore
 {
     [PublicAPI]
     public sealed class WpfConfiguration
     {
         internal readonly ContainerBuilder ServiceCollection;
 
-        public WpfConfiguration(ContainerBuilder serviceCollection)
-        {
-            ServiceCollection = serviceCollection;
-        }
+        public WpfConfiguration(ContainerBuilder serviceCollection) => ServiceCollection = serviceCollection;
 
-        public WpfConfiguration WithAppFactory(Func<System.Windows.Application> factory)
+        public WpfConfiguration WithAppFactory(Func<IUIApplication> factory)
         {
-            ServiceCollection.Register(context => new DelegateAppFactory(factory)).As<IAppFactory>().IfNotRegistered(typeof(IAppFactory));
+            ServiceCollection.Register(_ => new DelegateAppFactory(factory)).As<IAppFactory>().IfNotRegistered(typeof(IAppFactory));
             return this;
         }
 

@@ -15,7 +15,7 @@ namespace Tauron
             return value;
         }
 
-        public static TValue DisposeWith<TValue>(this TValue value, ExposedReceiveActor cd)
+        public static TValue DisposeWith<TValue>(this TValue value, ExpandedReceiveActor cd)
             where TValue : IDisposable
         {
             cd.AddResource(value);

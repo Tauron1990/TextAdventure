@@ -105,7 +105,7 @@ namespace TestApp
                     if (data.Delete && _datas.ContainsKey(data.Id))
                         _datas.TryRemove(data.Id, out _);
                     else
-                        _datas[data.Id] = data;
+                        _datas[data.Id] = data with{IsNew = false};
 
                     return Task.CompletedTask;
                 }
@@ -156,7 +156,7 @@ namespace TestApp
 
         #endregion
 
-        public sealed class ConsoleActor : ExposedReceiveActor
+        public sealed class ConsoleActor : ExpandedReceiveActor
         {
             public ConsoleActor(IActionInvoker invoker)
             {
@@ -178,6 +178,11 @@ namespace TestApp
 
                     return command switch
                     {
+                        "new" => () =>
+                                 {
+                                     Console.Write("Neuer Benutzer: ");
+                                     return new NewUserCommand(args.FirstOrDefault() ?? string.Empty);
+                                 },
                         "exit" => () =>
                                   {
                                       Console.WriteLine("Beende Anwendung");
@@ -211,7 +216,6 @@ namespace TestApp
 
             private void ActionResult(IOperationResult obj)
             {
-                Console.WriteLine();
                 if(obj.Ok)
                     Console.WriteLine("Kommando Ausgeführt");
                 else
@@ -219,7 +223,7 @@ namespace TestApp
                     switch (obj.Outcome)
                     {
                         case NewUserCommand:
-                            Console.WriteLine("Benutzer Konnte nicght erstellt werden:");
+                            Console.WriteLine("Benutzer Konnte nicht erstellt werden:");
                             break;
                     }
 
@@ -260,11 +264,13 @@ namespace TestApp
             Console.Title = "Test App";
             
             using var system = ActorApplication.Create(args)
-                                                .ConfigureLogging((_, lg) => lg.WriteTo.Console())
                                                .ConfigureAutoFac(b =>
                                                                  {
                                                                      b.RegisterType<AppRoute>().As<IAppRoute>();
-                                                                     b.RegisterStateManager(true, (builder, context) => builder.AddFromAssembly<UserData>(context));
+                                                                     b.RegisterStateManager(true, (builder, context) =>
+                                                                                                      builder
+                                                                                                         .AddFromAssembly<UserData>(context)
+                                                                                                         .WithDefaultSendback(true));
                                                                  })
                                                .Build();
 
