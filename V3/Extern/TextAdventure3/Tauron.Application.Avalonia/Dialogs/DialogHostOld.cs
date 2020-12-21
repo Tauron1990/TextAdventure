@@ -13,7 +13,7 @@ namespace Tauron.Application.Avalonia.Dialogs
     [DefaultProperty("Main")]
     [TemplatePart(Name = "DialogContent", Type = typeof(ContentControl))]
     [TemplatePart(Name = "MainContent", Type = typeof(ContentControl))]
-    public class DialogHost : Control
+    public class DialogHostOld : Control
     {
         static DialogHost() => DefaultStyleKeyProperty.OverrideMetadata(typeof(DialogHost), new FrameworkPropertyMetadata(typeof(DialogHost)));
 
