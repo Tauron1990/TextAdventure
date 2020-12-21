@@ -1,9 +1,10 @@
-﻿using System;
-using System.ComponentModel;
-using System.Threading.Tasks;
+﻿using System.ComponentModel;
 using System.Windows;
 using System.Windows.Controls;
+using Autofac;
 using JetBrains.Annotations;
+using Tauron.Application.CommonUI.Dialogs;
+using Tauron.Host;
 
 namespace Tauron.Application.Wpf.Dialogs
 {
@@ -36,37 +37,35 @@ namespace Tauron.Application.Wpf.Dialogs
 
         public DialogHost()
         {
-            DialogCoordinator
-               .InternalInstance
-               .HideDialogEvent += () =>
-                                   {
-                                       if (MainContent != null)
-                                       {
-                                           MainContent.IsEnabled = true;
-                                           MainContent.Visibility = Visibility.Visible;
-                                       }
+            var coordinator = (IDialogCoordinatorUIEvents) ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
 
-                                       if (DialogContent == null) return;
-                                       DialogContent.Content = null;
-                                       DialogContent.IsEnabled = false;
-                                       DialogContent.Visibility = Visibility.Collapsed;
-                                   };
+            coordinator.HideDialogEvent += () =>
+                                           {
+                                               if (MainContent != null)
+                                               {
+                                                   MainContent.IsEnabled = true;
+                                                   MainContent.Visibility = Visibility.Visible;
+                                               }
 
-            DialogCoordinator
-               .InternalInstance
-               .ShowDialogEvent += o =>
-                                   {
-                                       if (MainContent != null)
-                                       {
-                                           MainContent.IsEnabled = false;
-                                           MainContent.Visibility = Visibility.Collapsed;
-                                       }
+                                               if (DialogContent == null) return;
+                                               DialogContent.Content = null;
+                                               DialogContent.IsEnabled = false;
+                                               DialogContent.Visibility = Visibility.Collapsed;
+                                           };
 
-                                       if (DialogContent == null) return;
-                                       DialogContent.Content = o;
-                                       DialogContent.IsEnabled = true;
-                                       DialogContent.Visibility = Visibility.Visible;
-                                   };
+            coordinator.ShowDialogEvent += o =>
+                                           {
+                                               if (MainContent != null)
+                                               {
+                                                   MainContent.IsEnabled = false;
+                                                   MainContent.Visibility = Visibility.Collapsed;
+                                               }
+
+                                               if (DialogContent == null) return;
+                                               DialogContent.Content = o;
+                                               DialogContent.IsEnabled = true;
+                                               DialogContent.Visibility = Visibility.Visible;
+                                           };
         }
 
         private ContentControl? DialogContent { get; set; }

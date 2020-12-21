@@ -4,5 +4,6 @@
     {
         void Show();
         void Hide();
+        bool? ShowDialog();
     }
 }

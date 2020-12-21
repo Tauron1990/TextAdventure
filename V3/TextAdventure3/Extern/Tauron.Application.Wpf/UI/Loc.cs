@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Windows.Markup;
-using Akka.Util.Internal;
 using JetBrains.Annotations;
 using Tauron.Host;
 using Tauron.Localization;
@@ -12,7 +11,7 @@ namespace Tauron.Application.Wpf.UI
     [PublicAPI]
     public sealed class Loc : UpdatableMarkupExtension
     {
-        private static Dictionary<string, object?> _cache = new Dictionary<string, object?>();
+        private static Dictionary<string, object?> _cache = new();
 
         public Loc(string entryName) => EntryName = entryName;
 

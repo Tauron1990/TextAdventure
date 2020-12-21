@@ -1,11 +1,21 @@
 ﻿using System;
 using System.Threading.Tasks;
+using JetBrains.Annotations;
 
-namespace Tauron.Application.Wpf.Dialogs
+namespace Tauron.Application.CommonUI.Dialogs
 {
+    public interface IDialogCoordinatorUIEvents
+    {
+        event Action<object>? ShowDialogEvent;
+
+        event Action? HideDialogEvent;
+    }
+
+
+    [PublicAPI]
     public interface IDialogCoordinator
     {
-        public event Action<System.Windows.Window>? OnWindowConstructed;
+        event Action<IWindow>? OnWindowConstructed;
 
         Task<bool?> ShowMessage(string title, string message, Action<bool?>? result);
 

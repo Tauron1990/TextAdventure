@@ -2,7 +2,7 @@
 using System.Windows.Input;
 using JetBrains.Annotations;
 
-namespace Tauron.Application.Wpf.Commands
+namespace Tauron.Application.CommonUI.Commands
 {
     [PublicAPI]
     public class SimpleCommand : CommandBase
@@ -28,9 +28,9 @@ namespace Tauron.Application.Wpf.Commands
 
         public SimpleCommand(Func<bool>? canExecute, Action execute)
         {
-            _execute = o => execute();
+            _execute = _ => execute();
             if (canExecute != null)
-                _canExecute = o => canExecute();
+                _canExecute = _ => canExecute();
         }
 
         public SimpleCommand(Action execute)
@@ -47,9 +47,8 @@ namespace Tauron.Application.Wpf.Commands
 
         public override void Execute(object? parameter)
         {
-            if (parameter == null)
-                parameter = _parameter;
-            _execute?.Invoke(parameter);
+            parameter ??= _parameter;
+            _execute(parameter);
         }
     }
 }

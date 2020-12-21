@@ -1,7 +1,8 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using JetBrains.Annotations;
 
-namespace Tauron.Application.Wpf.Commands
+namespace Tauron.Application.CommonUI.Commands
 {
     public sealed class EventData
     {
@@ -16,7 +17,7 @@ namespace Tauron.Application.Wpf.Commands
         [NotNull] public object Sender { get; }
     }
 
-    /// <summary>The method command.</summary>
+    [PublicAPI]
     public sealed class MethodCommand : CommandBase
     {
         private readonly MethodInfo _method;
@@ -34,16 +35,16 @@ namespace Tauron.Application.Wpf.Commands
 
         private object? Context { get; }
 
-        public override void Execute(object parameter)
+        public override void Execute(object? parameter)
         {
-            var temp = (EventData) parameter;
+            var temp = parameter as EventData;
             var args = _methodType switch
             {
-                MethodType.Zero => new object[0],
-                MethodType.One => new object[] {temp},
+                MethodType.Zero => Array.Empty<object>(),
+                MethodType.One => new object?[] {temp},
                 MethodType.Two => new[] {temp?.Sender, temp?.EventArgs},
                 MethodType.EventArgs => new[] {temp?.EventArgs},
-                _ => new object[0]
+                _ => Array.Empty<object>()
             };
 
             _method.InvokeFast(Context, args);

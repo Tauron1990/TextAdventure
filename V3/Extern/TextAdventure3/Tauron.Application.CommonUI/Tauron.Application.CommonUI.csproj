@@ -12,4 +12,8 @@
     <ProjectReference Include="..\..\..\TextAdventure3\Extern\Tauron.Application.Workshop\Tauron.Application.Workshop.csproj" />
   </ItemGroup>
 
+	<ItemGroup>
+	  <Folder Include="UI\" />
+	</ItemGroup>
+
 </Project>
