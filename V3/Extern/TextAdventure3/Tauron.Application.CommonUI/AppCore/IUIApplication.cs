@@ -27,6 +27,6 @@ namespace Tauron.Application.CommonUI.AppCore
     [PublicAPI]
     public interface IUIDispatcher
     {
-        void Invoke(Action action);
+        void Post(Action action);
     }
 }

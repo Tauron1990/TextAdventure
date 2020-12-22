@@ -1,6 +1,6 @@
 ﻿namespace Tauron.Application.CommonUI
 {
-    public interface IWindow
+    public interface IWindow : IUIElement
     {
         void Show();
         void Hide();

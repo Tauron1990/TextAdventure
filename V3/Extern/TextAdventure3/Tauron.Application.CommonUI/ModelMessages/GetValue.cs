@@ -1,8 +1,7 @@
 ﻿using System.Diagnostics.CodeAnalysis;
-using Amadevus.RecordGenerator;
 using JetBrains.Annotations;
 
-namespace Tauron.Application.Wpf.ModelMessages
+namespace Tauron.Application.CommonUI.ModelMessages
 {
     public sealed class GetValueRequest
     {

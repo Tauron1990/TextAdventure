@@ -18,7 +18,7 @@ namespace Tauron.Application.Wpf
             public InternalDispatcher(Dispatcher dispatcher) 
                 => _dispatcher = dispatcher;
 
-            public void Invoke(Action action) => _dispatcher.Invoke(action);
+            public void Post(Action action) => _dispatcher.InvokeAsync(action);
         }
         
         private sealed class InternalApplication : IUIApplication

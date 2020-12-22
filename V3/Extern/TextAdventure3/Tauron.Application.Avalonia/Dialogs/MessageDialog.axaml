@@ -9,8 +9,10 @@
     <dialogs:DialogBase.Content>
         <Grid RowDefinitions="Auto,Auto" ColumnDefinitions="*,Auto,Auto">
             <TextBlock Name="ContentBox" Grid.Row="0" Grid.Column="0" Grid.ColumnSpan="2" Margin="5" />
+            <!-- ReSharper disable once Xaml.InvalidType -->
             <Button Content="{ui:Loc Common_OK}" Click="Ok_OnClick" Grid.Row="1" Grid.Column="2" MinWidth="100"
                     Margin="5" IsDefault="True" />
+            <!-- ReSharper disable once Xaml.InvalidType -->
             <Button Content="{ui:Loc Common_Cancel}" Click="Cancel_OnClick" Name="CancelButton" Grid.Row="1"
                     Grid.Column="1" MinWidth="100" Margin="5" IsCancel="True" />
         </Grid>

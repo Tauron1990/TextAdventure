@@ -1,4 +1,4 @@
-﻿namespace Tauron.Application.Wpf.ModelMessages
+﻿namespace Tauron.Application.CommonUI.ModelMessages
 {
     public sealed class UnloadEvent
     {
