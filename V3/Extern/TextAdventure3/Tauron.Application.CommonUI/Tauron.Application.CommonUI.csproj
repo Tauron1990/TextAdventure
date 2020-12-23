@@ -5,15 +5,15 @@
     <Nullable>enable</Nullable>
   </PropertyGroup>
 
+  <ItemGroup>
+    <PackageReference Include="DynamicData" Version="7.1.1" />
+  </ItemGroup>
+
 	<ItemGroup>
     <ProjectReference Include="..\..\..\TextAdventure3\Extern\Tauron.Application.Common\Tauron.Application.Common.csproj" />
     <ProjectReference Include="..\..\..\TextAdventure3\Extern\Tauron.Application.Logging\Tauron.Application.Logging.csproj" />
     <ProjectReference Include="..\..\..\TextAdventure3\Extern\Tauron.Application.Settings\Tauron.Application.Settings.csproj" />
     <ProjectReference Include="..\..\..\TextAdventure3\Extern\Tauron.Application.Workshop\Tauron.Application.Workshop.csproj" />
   </ItemGroup>
-
-	<ItemGroup>
-	  <Folder Include="UI\" />
-	</ItemGroup>
 
 </Project>

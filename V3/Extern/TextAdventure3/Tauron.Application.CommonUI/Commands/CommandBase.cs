@@ -7,8 +7,12 @@ namespace Tauron.Application.CommonUI.Commands
     [PublicAPI]
     public abstract class CommandBase : ICommand
     {
-        public event EventHandler? CanExecuteChanged;
-        
+        public event EventHandler? CanExecuteChanged
+        {
+            add { throw new NotImplementedException(); }
+            remove { throw new NotImplementedException(); }
+        }
+
         public virtual bool CanExecute(object? parameter) => true;
 
         public abstract void Execute(object? parameter);
