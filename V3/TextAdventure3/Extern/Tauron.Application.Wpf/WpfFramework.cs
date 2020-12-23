@@ -46,20 +46,13 @@ namespace Tauron.Application.Wpf
                 };
                 set
                 {
-                    switch (value)
+                    _application.ShutdownMode = value switch
                     {
-                        case ShutdownMode.OnLastWindowClose:
-                            _application.ShutdownMode = System.Windows.ShutdownMode.OnLastWindowClose;
-                            break;
-                        case ShutdownMode.OnMainWindowClose:
-                            _application.ShutdownMode = System.Windows.ShutdownMode.OnMainWindowClose;
-                            break;
-                        case ShutdownMode.OnExplicitShutdown:
-                            _application.ShutdownMode = System.Windows.ShutdownMode.OnExplicitShutdown;
-                            break;
-                        default:
-                            throw new ArgumentOutOfRangeException(nameof(value), value, null);
-                    }
+                        ShutdownMode.OnLastWindowClose => System.Windows.ShutdownMode.OnLastWindowClose,
+                        ShutdownMode.OnMainWindowClose => System.Windows.ShutdownMode.OnMainWindowClose,
+                        ShutdownMode.OnExplicitShutdown => System.Windows.ShutdownMode.OnExplicitShutdown,
+                        _ => throw new ArgumentOutOfRangeException(nameof(value), value, null)
+                    };
                 }
             }
 

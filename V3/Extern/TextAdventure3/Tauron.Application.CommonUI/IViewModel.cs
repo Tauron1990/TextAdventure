@@ -1,7 +1,7 @@
 ﻿using System;
 using Akka.Actor;
 
-namespace Tauron.Application.Wpf
+namespace Tauron.Application.CommonUI
 {
     public interface IViewModel
     {

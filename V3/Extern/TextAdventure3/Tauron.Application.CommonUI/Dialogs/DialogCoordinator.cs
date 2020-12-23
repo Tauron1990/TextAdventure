@@ -29,7 +29,7 @@ namespace Tauron.Application.CommonUI.Dialogs
             return resultTask.Task;
         }
 
-        public void ShowMessage(string title, string message) => ShowDialog(_framework.CreateDefaultMessageContent(title, message, b => HideDialog(), false));
+        public void ShowMessage(string title, string message) => ShowDialog(_framework.CreateDefaultMessageContent(title, message, _ => HideDialog(), false));
 
         public void ShowDialog(object dialog)
         {
@@ -39,7 +39,7 @@ namespace Tauron.Application.CommonUI.Dialogs
 
         public void HideDialog() => HideDialogEvent?.Invoke();
 
-        public bool? ShowModalMessageWindow(string title, string message)
+        public Task<bool?> ShowModalMessageWindow(string title, string message)
         {
             var window = _framework.CreateMessageDialog(title, message);
 

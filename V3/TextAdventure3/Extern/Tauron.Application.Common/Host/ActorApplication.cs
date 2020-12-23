@@ -197,7 +197,7 @@ namespace Tauron.Host
 
             private HostBuilderContext CreateHostBuilderContext(IHostEnvironment environment, IConfiguration configuration)
             {
-                return new HostBuilderContext(new Dictionary<object, object>(), configuration, environment);
+                return new(new Dictionary<object, object>(), configuration, environment);
             }
 
             private Config CreateAkkaConfig(HostBuilderContext context)

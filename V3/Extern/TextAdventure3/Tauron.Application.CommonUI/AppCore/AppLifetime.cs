@@ -56,7 +56,7 @@ namespace Tauron.Application.CommonUI.AppCore
                     // ReSharper restore AccessToDisposedClosure
                 };
 
-                system.RegisterOnTermination(() => _internalApplication.Dispatcher.Invoke(() => _internalApplication.Shutdown(0)));
+                system.RegisterOnTermination(() => _internalApplication.Dispatcher.Post(() => _internalApplication.Shutdown(0)));
 
                 _shutdownWaiter.SetResult(_internalApplication.Run());
             }

@@ -1,4 +1,5 @@
-﻿using System.Windows;
+﻿using System.Threading.Tasks;
+using System.Windows;
 using Tauron.Application.CommonUI;
 
 namespace Tauron.Application.Wpf.AppCore
@@ -11,6 +12,6 @@ namespace Tauron.Application.Wpf.AppCore
 
         public void Show() => _window.Show();
         public void Hide() => _window.Hide();
-        public bool? ShowDialog() => _window.ShowDialog();
+        public Task<bool?> ShowDialog() => _window.Dispatcher.InvokeAsync(() => _window.ShowDialog()).Task;
     }
 }

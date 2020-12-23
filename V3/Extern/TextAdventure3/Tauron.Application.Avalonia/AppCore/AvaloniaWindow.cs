@@ -1,15 +1,17 @@
-﻿using Tauron.Application.CommonUI;
+﻿using System.Threading.Tasks;
+using Avalonia.Controls;
+using Tauron.Application.CommonUI;
 
 namespace Tauron.Application.Avalonia.AppCore
 {
     public sealed class AvaloniaWindow : IWindow
     {
-        private readonly AvaloniaWindow _window;
+        private readonly Window _window;
 
-        public AvaloniaWindow(AvaloniaWindow window) => _window = window;
+        public AvaloniaWindow(Window window) => _window = window;
 
         public void Show() => _window.Show();
         public void Hide() => _window.Hide();
-        public bool? ShowDialog() => _window.ShowDialog();
+        public Task<bool?> ShowDialog() => _window.ShowDialog<bool?>((Window) _window.Owner);
     }
 }
