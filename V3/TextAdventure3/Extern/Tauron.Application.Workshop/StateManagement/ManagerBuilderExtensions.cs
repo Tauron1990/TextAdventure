@@ -55,7 +55,7 @@ namespace Tauron.Application.Workshop.StateManagement
         }
 
         public static ContainerBuilder RegisterStateManager(this ContainerBuilder builder, Action<ManagerBuilder, IComponentContext> configAction) 
-            => RegisterStateManager(builder, true, configAction);
+            => RegisterStateManager(builder, new AutofacOptions(), configAction);
 
         public static ContainerBuilder RegisterStateManager(this ContainerBuilder builder, bool registerWorkspaceSuperviser, Action<ManagerBuilder, IComponentContext> configAction) 
             => RegisterStateManager(builder, new AutofacOptions {RegisterSuperviser = registerWorkspaceSuperviser}, configAction);

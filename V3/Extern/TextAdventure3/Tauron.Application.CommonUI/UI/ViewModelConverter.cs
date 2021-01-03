@@ -1,24 +1,11 @@
-﻿using System;
-using System.Globalization;
-using JetBrains.Annotations;
-
-namespace Tauron.Application.CommonUI.UI
+﻿namespace Tauron.Application.CommonUI.UI
 {
-    [PublicAPI]
-    public sealed class ViewModelConverterExtension : ValueConverterFactoryBase
+    public class ViewModelConverter
     {
-        protected override IValueConverter Create()
-        {
-            return new ViewModelConverter();
-        }
-    }
-
-    public class ViewModelConverter : IValueConverter
-    {
-        public object Convert(object value, Type targetType, object parameter, CultureInfo culture)
+        public object Convert(object value)
         {
             //if(!(parameter is IView root)) return value;
-            if (!(value is IViewModel model)) return value;
+            if (value is not IViewModel model) return value;
 
             //var view = root.ViewManager.Get(model, root);
             //if (view != null)
@@ -31,9 +18,9 @@ namespace Tauron.Application.CommonUI.UI
             //root.ViewManager.ThenRegister(model, view, root);
         }
 
-        public object? ConvertBack(object value, Type targetType, object parameter, CultureInfo culture)
+        public object? ConvertBack(object value)
         {
-            return new FrameworkObject(value).DataContext;
+            return ((dynamic)value).DataContext;
         }
     }
 }

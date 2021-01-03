@@ -42,6 +42,20 @@ namespace Tauron
 
         public static IObservable<TResult> OnResult<TResult>(this IObservable<CallResult<TResult>> observable)
             => observable.Where(cr => cr is SucessCallResult<TResult>).Cast<SucessCallResult<TResult>>().Select(sr => sr.Result);
+
+        public static IObservable<TData> ConvertResult<TData, TResult>(this IObservable<CallResult<TResult>> result, Func<TResult, TData> onSucess, Func<Exception, TData> error) 
+            => result.Select(cr => cr.ConvertResult(onSucess, error));
+
+        public static TData ConvertResult<TData, TResult>(this CallResult<TResult> result, Func<TResult, TData> onSucess, Func<Exception, TData> error)
+        {
+            return result switch
+            {
+                SucessCallResult<TResult> sucess => onSucess(sucess.Result),
+                ErrorCallResult<TResult> err => error(err.Error),
+                _ => throw new InvalidOperationException("Incompatiple Call Result")
+            };
+        }
+
         public static TType AddAnd<TType>(this ICollection<TType> collection, TType item)
         {
             collection.Add(item);

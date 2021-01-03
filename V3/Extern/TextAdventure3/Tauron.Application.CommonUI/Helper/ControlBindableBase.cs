@@ -52,6 +52,8 @@ namespace Tauron.Application.CommonUI.Helper
             {
                 return null;
             }
+
+            public object Object => new();
         }
     }
 }

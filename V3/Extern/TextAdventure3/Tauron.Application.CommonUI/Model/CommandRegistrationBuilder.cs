@@ -10,13 +10,13 @@ namespace Tauron.Application.CommonUI.Model
     [PublicAPI]
     public sealed class CommandRegistrationBuilder
     {
-        private readonly Action<string, Action<object?>, IObservable<bool>?> _register;
+        private readonly Func<string, Action<object?>, IObservable<bool>?, UIPropertyBase> _register;
 
         private List<IObservable<bool>> _canExecute = new();
 
         private Delegate? _command;
 
-        internal CommandRegistrationBuilder(Action<string, Action<object?>, IObservable<bool>?> register, IExpandedReceiveActor target)
+        internal CommandRegistrationBuilder(Func<string, Action<object?>, IObservable<bool>?, UIPropertyBase> register, IExpandedReceiveActor target)
         {
             Target = target;
             _register = register;
@@ -79,26 +79,18 @@ namespace Tauron.Application.CommonUI.Model
             return this;
         }
 
-        public void ThenRegister(string name)
+        public UIPropertyBase? ThenRegister(string name)
         {
-            if (_command == null) return;
+            if (_command == null) return null;
 
-            IObservable<bool> canExec;
-
-            switch (_canExecute.Count)
+            var canExec = _canExecute.Count switch
             {
-                case 0:
-                    canExec = Observable.Return(true);
-                    break;
-                case 1:
-                    canExec = _canExecute[0];
-                    break;
-                default:
-                    canExec = _canExecute.CombineLatest(list => list.All(b => b));
-                    break;
-            }
-            
-            _register(name, (Action<object?>) _command, canExec);
+                0 => null,
+                1 => _canExecute[0],
+                _ => _canExecute.CombineLatest(list => list.All(b => b))
+            };
+
+            return _register(name, (Action<object?>) _command, canExec);
         }
 
         private sealed class ActionMapper

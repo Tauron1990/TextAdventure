@@ -1,0 +1,72 @@
+﻿<hlp:UserControl x:Class="TextAdventure.Editor.Views.DashboardView"
+             xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+             xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+             xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006" 
+             xmlns:d="http://schemas.microsoft.com/expression/blend/2008" 
+             xmlns:hlp="http://schemas.TauronWpf.com"
+             xmlns:local="clr-namespace:TextAdventure.Editor.Views"
+             xmlns:mat="http://materialdesigninxaml.net/winfx/xaml/themes"
+             xmlns:viewModels="clr-namespace:TextAdventure.Editor.ViewModels"
+             mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:DashboardViewModel, IsDesignTimeCreatable=False}"
+             d:DesignHeight="450" d:DesignWidth="800">
+    <UserControl.Resources>
+        <ResourceDictionary>
+            <ResourceDictionary.MergedDictionaries>
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Button.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Card.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.CheckBox.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Flipper.xaml" />
+                <ResourceDictionary Source="pack://application:,,,/MaterialDesignThemes.Wpf;component/Themes/MaterialDesignTheme.Popupbox.xaml" />
+            </ResourceDictionary.MergedDictionaries>
+        </ResourceDictionary>
+    </UserControl.Resources>
+    <WrapPanel>
+        <mat:Flipper Width="250" Height="300" Style="{StaticResource MaterialDesignCardFlipper}" Margin="15" IsEnabled="{hlp:ActorBinding IsValid}" IsFlipped="{hlp:ActorBinding IsCommonDataInEdit}">
+            <mat:Flipper.FrontContent>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <mat:ColorZone Mode="PrimaryLight" Padding="10">
+                        <mat:PackIcon Kind="Information" VerticalAlignment="Center" HorizontalAlignment="Center" Width="80" Height="80"/>
+                    </mat:ColorZone>
+
+                    <TextBlock Grid.Row="1" Text="Name:" FontSize="10" Margin="15, 0"/>
+                    <TextBlock Grid.Row="2" Text="{hlp:ActorBinding GameName}" Margin="15, 5"/>
+
+                    <TextBlock Grid.Row="3" Text="Version:" FontSize="10" Margin="15, 0"/>
+                    <TextBlock Grid.Row="4" Text="{hlp:ActorBinding GameVersion}" Margin="15, 5"/>
+
+                    <Button Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Content="Beabeiten" Command="{hlp:ActorBinding EditCommonCommand}"/>
+                </Grid>
+            </mat:Flipper.FrontContent>
+            <mat:Flipper.BackContent>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition/>
+                    </Grid.RowDefinitions>
+                    <mat:ColorZone Mode="PrimaryLight" Padding="10">
+                        <mat:PackIcon Kind="Edit" VerticalAlignment="Center" HorizontalAlignment="Center" Width="80" Height="80"/>
+                    </mat:ColorZone>
+                    <Button Grid.Row="0" Margin="5" VerticalAlignment="Top" HorizontalAlignment="Left" Style="{StaticResource MaterialDesignFlatButton}"
+                            Command="{hlp:ActorBinding EditCommonBackCommand}">
+                        <mat:PackIcon Kind="ChevronLeft" Foreground="Black"/>
+                    </Button>
+
+                    <TextBox Grid.Row="1" mat:HintAssist.Hint="Spiel Name" mat:HintAssist.IsFloating="True" Margin="5" Text="{hlp:ActorBinding GameName}"/>
+                    <TextBox Grid.Row="2" mat:HintAssist.Hint="Spiel Version" mat:HintAssist.IsFloating="True" Margin="5" Text="{hlp:ActorBinding GameVersion}"/>
+
+                    <Button Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Content="Anwenden" Command="{hlp:ActorBinding ApplyCommonEditCommand}"/>
+                </Grid>
+            </mat:Flipper.BackContent>
+        </mat:Flipper>
+    </WrapPanel>
+</hlp:UserControl>

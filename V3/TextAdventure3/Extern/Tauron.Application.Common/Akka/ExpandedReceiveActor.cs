@@ -11,13 +11,18 @@ using JetBrains.Annotations;
 
 namespace Tauron.Akka
 {
+    [PublicAPI]
     public interface IExpandedReceiveActor
     {
         IActorDsl Exposed { get; }
+
+        void AddResource(IDisposable res);
+
+        void RemoveResources(IDisposable res);
     }
 
     [PublicAPI]
-    public class ExpandedReceiveActor : ReceiveActor, IActorDsl, IExpandedReceiveActor
+    public class ExpandedReceiveActor : ReceiveActor, IActorDsl, IExpandedReceiveActor, IDisposable
     {
         private readonly CompositeDisposable _resources = new();
         private Action<Exception, IActorContext>? _onPostRestart;
@@ -53,6 +58,9 @@ namespace Tauron.Akka
         public void AddResource(IDisposable res)
             => _resources.Add(res);
 
+        public void RemoveResources(IDisposable res)
+            => _resources.Remove(res);
+        
         protected internal ILoggingAdapter Log { get; } = Context.GetLogger();
 
         #region ActorDsl
@@ -138,13 +146,7 @@ namespace Tauron.Akka
             OnPreRestart?.Invoke(reason, message);
             base.PreRestart(reason, message);
         }
-
-        public override void AroundPostStop()
-        {
-            base.AroundPostStop();
-            _resources.Dispose();
-        }
-
+        
         protected override void PostStop()
         {
             _onPostStop?.Invoke(Context);
@@ -329,5 +331,7 @@ namespace Tauron.Akka
         public sealed record TransmitError(Exception Error, Action<Exception> ErrorHandler);
 
         public sealed record TransmitAction(Action Action);
+
+        public virtual void Dispose() => _resources.Dispose();
     }
 }

@@ -1,4 +1,4 @@
 ﻿namespace Tauron.Application.CommonUI.ModelMessages
 {
-    public sealed record UnloadEvent(string Key);
+    public sealed record UnloadEvent;
 }

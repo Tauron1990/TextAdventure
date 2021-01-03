@@ -110,6 +110,9 @@ namespace Tauron.Application.Workshop.StateManagement
             private readonly bool _sendBack;
             private readonly IStateAction _action;
 
+            private IObserver<IReducerResult>? _result;
+            private IObserver<Unit>? _workCompled;
+
             public ResultInvoker(EffectInvoker effectInvoker, MutatingEngine mutatingEngine, IActorRef sender, bool sendBack, IStateAction action)
             {
                 _effectInvoker = effectInvoker;
@@ -146,7 +149,7 @@ namespace Tauron.Application.Workshop.StateManagement
                 => Interlocked.Increment(ref _pending);
 
             public IObserver<IReducerResult> AddResult()
-                => new AnonymousObserver<IReducerResult>(n => _results.Add(n), _ => {});
+                => _result ??= new AnonymousObserver<IReducerResult>(n => _results.Add(n), _ => {});
 
             public IObserver<Unit> WorkCompled()
             {
@@ -158,7 +161,7 @@ namespace Tauron.Application.Workshop.StateManagement
                     _mutatingEngine.Mutate(this);
                 }
 
-                return new AnonymousObserver<Unit>(_ => { },
+                return _workCompled ??= new AnonymousObserver<Unit>(_ => { },
                                                    e =>
                                                    {
                                                        _results.Add(new ErrorResult(e));

@@ -22,7 +22,15 @@ namespace Tauron.Application.Workshop.StateManagement
         public async Task<TData?> Query(IQuery query)
         {
             var source = _source;
-            return source == null ? null : (await source.GetData(query)).Data;
+            try
+            {
+                return source == null ? null : (await source.GetData(query)).Data;
+            }
+            finally
+            {
+                if(source != null)
+                    await source.OnCompled(query);
+            }
         }
     }
 }

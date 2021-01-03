@@ -4,6 +4,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using Akka.Actor;
 using JetBrains.Annotations;
+using Tauron.Akka;
 
 namespace Tauron
 {
@@ -114,5 +115,28 @@ namespace Tauron
 
         public static IObservable<Unit> ToUnit<TSource>(this IObservable<TSource> input)
             => input.Select(_ => Unit.Default);
+
+        public static IObservable<Unit> ToParent<TMessage>(this IObservable<TMessage> source)
+            => ToParent(source, ExpandedReceiveActor.ExposedContext);
+
+        public static IObservable<Unit> ToParent<TMessage>(this IObservable<TMessage> source, IUntypedActorContext context) 
+            => source.Do(m => context.Parent.Tell(m)).ToUnit();
+
+        public static IObservable<Unit> ToSender<TMessage>(this IObservable<TMessage> source)
+            => ToParent(source, ExpandedReceiveActor.ExposedContext);
+
+        public static IObservable<Unit> ToSender<TMessage>(this IObservable<TMessage> source, IUntypedActorContext context)
+            => source.Do(m => context.Sender.Tell(m)).ToUnit();
+        
+        public static IObservable<Unit> ToActor<TMessage>(this IObservable<TMessage> source, IActorRef target)
+            => source.Do(m => target.Tell(m)).ToUnit();
+
+        public static IObservable<Unit> ToActor<TMessage>(this IObservable<TMessage> source, Func<IActorRef> target)
+            => source.Do(m => target().Tell(m)).ToUnit();
+
+        public static IObservable<Unit> ToActor<TMessage>(this IObservable<TMessage> source, Func<TMessage, IActorRef> target)
+            => source.Do(m => target(m).Tell(m)).ToUnit();
+
+        public static IObservable<TType> Isonlate<TType>(this IObservable<TType> obs) => obs.Publish().RefCount();
     }
 }

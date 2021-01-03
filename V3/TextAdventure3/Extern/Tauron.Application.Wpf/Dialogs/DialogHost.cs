@@ -11,8 +11,8 @@ namespace Tauron.Application.Wpf.Dialogs
     [PublicAPI]
     [System.Windows.Markup.ContentProperty("Main")]
     [DefaultProperty("Main")]
-    [TemplatePart(Name = "DialogContent", Type = typeof(ContentControl))]
-    [TemplatePart(Name = "MainContent", Type = typeof(ContentControl))]
+    [TemplatePart(Name = "DialogContent", Type = typeof(ContentPresenter))]
+    [TemplatePart(Name = "MainContent", Type = typeof(ContentPresenter))]
     public class DialogHost : Control
     {
         static DialogHost() => DefaultStyleKeyProperty.OverrideMetadata(typeof(DialogHost), new FrameworkPropertyMetadata(typeof(DialogHost)));
@@ -37,7 +37,10 @@ namespace Tauron.Application.Wpf.Dialogs
 
         public DialogHost()
         {
-            var coordinator = (IDialogCoordinatorUIEvents) ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
+            if(!ActorApplication.IsStarted)
+                return;
+
+            var coordinator = (IDialogCoordinatorUIEvents)ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
 
             coordinator.HideDialogEvent += () =>
                                            {
@@ -68,14 +71,14 @@ namespace Tauron.Application.Wpf.Dialogs
                                            };
         }
 
-        private ContentControl? DialogContent { get; set; }
+        private ContentPresenter? DialogContent { get; set; }
 
-        private ContentControl? MainContent { get; set; }
+        private ContentPresenter? MainContent { get; set; }
 
         public override void OnApplyTemplate()
         {
-            MainContent = GetTemplateChild("MainContent") as ContentControl;
-            DialogContent = GetTemplateChild("DialogContent") as ContentControl;
+            MainContent = GetTemplateChild("MainContent") as ContentPresenter;
+            DialogContent = GetTemplateChild("DialogContent") as ContentPresenter;
 
             if (MainContent != null)
                 MainContent.Content = Main;

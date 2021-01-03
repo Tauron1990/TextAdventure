@@ -1,5 +1,7 @@
 ﻿using Autofac;
 using JetBrains.Annotations;
+using Tauron.Akka;
+using Tauron.Application.CommonUI.Helper;
 
 namespace Tauron.Application.CommonUI.Model
 {
@@ -12,7 +14,7 @@ namespace Tauron.Application.CommonUI.Model
             model ??= actor.LifetimeScope.Resolve<IViewModel<TModel>>();
 
             if (!model.IsInitialized)
-                model.InitModel(ExposedReceiveActor.ExposedContext, name);
+                model.InitModel(ExpandedReceiveActor.ExposedContext, name);
 
             return new UIModel<TModel>(actor.RegisterProperty<IViewModel<TModel>>(name).WithDefaultValue(model).Property);
         }

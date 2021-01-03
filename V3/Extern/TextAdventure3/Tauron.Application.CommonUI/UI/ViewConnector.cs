@@ -1,41 +1,23 @@
 ﻿using System;
 using System.Globalization;
+using Tauron.Application.CommonUI.AppCore;
 using Tauron.Application.CommonUI.Helper;
+using Tauron.Application.CommonUI.ModelMessages;
 
 namespace Tauron.Application.CommonUI.UI
 {
     public sealed class ViewConnector : ModelConnectorBase<ViewConnector>
     {
-        private readonly Dispatcher _dispatcher;
+        private readonly IUIDispatcher _dispatcher;
         private readonly Action<object> _updater;
-        private readonly string _viewModelKey = Guid.NewGuid().ToString();
-
-        private ViewManager _manager = ViewManager.Manager;
-
-        public ViewConnector(string name, DataContextPromise promise, Action<object> updater, Dispatcher dispatcher)
+        
+        public ViewConnector(string name, DataContextPromise promise, Action<object> updater, IUIDispatcher dispatcher)
             : base(name, promise)
         {
             _updater = updater;
             _dispatcher = dispatcher;
         }
-
-        protected override void OnLoad()
-        {
-            if(View == null) return;
-            _manager = View.ViewManager;
-            _manager.RegisterConnector(_viewModelKey, this);
-
-            base.OnLoad();
-        }
-
-        protected override void OnUnload()
-        {
-            if(View == null) return;
-            _manager.UnregisterConnector(_viewModelKey);
-
-            base.OnUnload();
-        }
-
+        
         protected override void NoDataContextFound() => _updater($"No Data Context Found for {Name}");
 
         protected override void ValidateCompled(ValidatingEvent obj)
@@ -49,10 +31,16 @@ namespace Tauron.Application.CommonUI.UI
             var converter = new ViewModelConverter();
             if (!(obj.Value is IViewModel viewModel)) return;
 
-            var view = _dispatcher.Invoke(() => converter.Convert(viewModel, GetType(), View, CultureInfo.CurrentUICulture) as IView);
-            if (view == null) return;
+            var viewTask = _dispatcher.InvokeAsync(() => converter.Convert(viewModel) as IView);
 
-            _updater(view);
+            viewTask.ContinueWith(t =>
+                                  {
+                                      var view = t.Result;
+
+                                      if (view == null) return;
+
+                                      _updater(view);
+                                  });
         }
 
         public override string ToString() => "View Connector Loading...";

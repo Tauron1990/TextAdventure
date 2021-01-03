@@ -1,48 +1,71 @@
 ﻿using System;
+using System.Reactive;
+using System.Reactive.Linq;
+using JetBrains.Annotations;
+using Tauron.Operations;
 
 namespace Tauron.Application.CommonUI.Model
 {
+    [PublicAPI]
     public abstract class UIPropertyBase
     {
-        private bool _isSetLocked;
-        
-        protected UIPropertyBase(string name)
-        {
-            Name = name;
-            IsValid = QueryProperty.Create<bool>(a => IsValidSetter = a);
-        }
-
-        internal Action<bool> IsValidSetter { get; private set; } = b => { };
-
         public string Name { get; }
 
-        public IQueryProperty<bool> IsValid { get; }
+        public IObservable<bool> IsValid => Validator.Select(e => e == null);
 
-        protected internal object? InternalValue { get; internal set; }
-        internal Func<object?, string?>? Validator { get; set; }
+        public abstract IObservable<Error?> Validator { get; }
 
-        public event Action? PropertyValueChanged;
+        public abstract IObservable<Unit> PropertyValueChanged { get; }
+        protected internal abstract object? ObjectValue { get; set; }
 
-        internal event Action? PriorityChanged;
+        protected internal abstract UIPropertyBase LockSet();
 
-        internal UIPropertyBase LockSet()
-        {
-            _isSetLocked = true;
-            return this;
-        }
-
-        protected internal void SetValue(object? value)
-        {
-            if (_isSetLocked) return;
-
-            InternalValue = value;
-            OnPropertyValueChanged();
-        }
-
-        private void OnPropertyValueChanged()
-        {
-            PriorityChanged?.Invoke();
-            PropertyValueChanged?.Invoke();
-        }
+        public UIPropertyBase(string name) => Name = name;
     }
+
+    //[PublicAPI]
+    //public abstract class UIPropertyBaseOld
+    //{
+    //    private bool _isSetLocked;
+    //    private readonly Lazy<RxVar<bool>> _isValid = new(() => false.ToRx());
+        
+    //    protected UIPropertyBase(string name)
+    //    {
+    //        Name = name;
+    //        IsValidSetter = b => IsValid.Value = b;
+    //    }
+
+    //    internal Action<bool> IsValidSetter { get; }
+
+    //    public string Name { get; }
+
+    //    public RxVar<bool> IsValid => _isValid.Value;
+
+    //    protected internal object? InternalValue { get; internal set; }
+    //    internal Func<object?, string?>? Validator { get; set; }
+
+    //    public event Action? PropertyValueChanged;
+
+    //    internal event Action? PriorityChanged;
+
+    //    internal UIPropertyBase LockSet()
+    //    {
+    //        _isSetLocked = true;
+    //        return this;
+    //    }
+
+    //    protected internal void SetValue(object? value)
+    //    {
+    //        if (_isSetLocked) return;
+
+    //        InternalValue = value;
+    //        OnPropertyValueChanged();
+    //    }
+
+    //    private void OnPropertyValueChanged()
+    //    {
+    //        PriorityChanged?.Invoke();
+    //        PropertyValueChanged?.Invoke();
+    //    }
+    //}
 }

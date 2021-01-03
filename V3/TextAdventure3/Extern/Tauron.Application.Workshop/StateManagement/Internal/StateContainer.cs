@@ -60,20 +60,20 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                                           where reducerFactory.ShouldReduceStateForAction(action)
                                           select reducerFactory.Reduce(action)).TakeUntil(cancel);
 
-                                     var processor = data.SelectMany(d =>
-                                                                         reducer.Aggregate(
-                                                                                           Observable.Return(d).Select(dd => ReducerResult.Sucess(dd) with { StartLine = true }).SingleAsync(),
-                                                                                           (observable, reducerBuilder) =>
-                                                                                           {
-                                                                                               return observable
-                                                                                                     .ConditionalSelect()
-                                                                                                     .ToSame(b =>
-                                                                                                             {
-                                                                                                                 b.When(r => !r.IsOk || r.Data == null, o => o.Do(_ => cancel.OnNext(Unit.Default)))
-                                                                                                                  .When(r => r.IsOk && r.Data != null,
-                                                                                                                        o => reducerBuilder(o.Select(d => d.Data!)));
-                                                                                                             });
-                                                                                           })).Switch().Publish().RefCount();
+                                     var processor = startData.SelectMany(d =>
+                                                                              reducer.Aggregate(
+                                                                                                Observable.Return(d).Select(dd => ReducerResult.Sucess(dd) with { StartLine = true }).SingleAsync(),
+                                                                                                (observable, reducerBuilder) =>
+                                                                                                {
+                                                                                                    return observable
+                                                                                                          .ConditionalSelect()
+                                                                                                          .ToSame(b =>
+                                                                                                                  {
+                                                                                                                      b.When(r => !r.IsOk || r.Data == null, o => o.Do(_ => cancel.OnNext(Unit.Default)))
+                                                                                                                       .When(r => r.IsOk && r.Data != null,
+                                                                                                                             o => reducerBuilder(o.Select(d => d.Data!)));
+                                                                                                                  });
+                                                                                                })).Switch().Publish().RefCount();
 
                                      subs.Add(processor.Select(_ => Unit.Default).Subscribe(onCompled));
                                      subs.Add(processor.Cast<IReducerResult>().Subscribe(sendResult));

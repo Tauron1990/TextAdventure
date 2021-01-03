@@ -1,12 +1,9 @@
 ﻿using System;
-using System.ComponentModel;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
 using System.Threading;
 using System.Threading.Tasks;
-using Akka.Util;
 using JetBrains.Annotations;
-using Tauron.Akka;
 
 namespace Tauron.Application.CommonUI.AppCore
 {
@@ -40,6 +37,7 @@ namespace Tauron.Application.CommonUI.AppCore
         Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action);
 
         Task<TResult> InvokeAsync<TResult>(Func<TResult> action);
+        bool CheckAccess();
     }
     
     public sealed class DispatcherScheduler : LocalScheduler

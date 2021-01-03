@@ -15,7 +15,7 @@ namespace Tauron.Application.CommonUI.Model
         {
             Property = property;
             _collection = property.Value;
-            property.PropertyValueChanged += () => _collection = property.Value;
+            property.Subscribe(c => _collection = c);
         }
 
         public UIProperty<IObservableCollection<TData>> Property { get; }

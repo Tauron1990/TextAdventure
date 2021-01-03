@@ -1,5 +1,4 @@
-﻿using Avalonia.Controls;
-using Tauron.Application.CommonUI;
+﻿using Tauron.Application.CommonUI;
 using Tauron.Application.CommonUI.AppCore;
 
 namespace Tauron.Application.Avalonia.AppCore

@@ -46,6 +46,15 @@ namespace Tauron.Application.CommonUI.Model
         public TState GetState<TState>(string key = "") where TState : class 
             => ActionInvoker.GetState<TState>(key) ?? throw new InvalidOperationException("No such State Found");
 
+        public void ConfigurateState<TState>(Action<TState> toConfig) 
+            where TState : class => ConfigurateState(string.Empty, toConfig);
+
+        public void ConfigurateState<TState>(string key, Action<TState> toConfig) where TState : class
+        {
+            var state = GetState<TState>(key);
+            toConfig(state);
+        }
+
         public void WhenActionComnpled<TAction>(Action<IOperationResult> opsAction)
             where TAction : IStateAction
         {

@@ -7,7 +7,7 @@ namespace Tauron.Application.CommonUI.Commands
     [PublicAPI]
     public class SimpleCommand : CommandBase
     {
-        public static ICommand Empty = new SimpleCommand(() => { });
+        public static readonly ICommand Empty = new SimpleCommand(() => { });
 
         private readonly Func<object?, bool>? _canExecute;
 

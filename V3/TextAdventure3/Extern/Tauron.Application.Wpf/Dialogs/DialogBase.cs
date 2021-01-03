@@ -1,5 +1,8 @@
 ﻿using System;
 using System.ComponentModel;
+using System.Reactive.Linq;
+using System.Reactive.Subjects;
+using System.Reactive.Threading.Tasks;
 using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Controls;
@@ -19,7 +22,7 @@ namespace Tauron.Application.Wpf.Dialogs
     public abstract class DialogBase : Control
     {
         public static readonly DependencyProperty DialogTitleFontSizeProperty = DependencyProperty.Register(
-            "DialogTitleFontSize", typeof(int), typeof(DialogBase), new PropertyMetadata(25));
+            "DialogTitleFontSize", typeof(double), typeof(DialogBase), new PropertyMetadata((double)30));
 
         public static readonly DependencyProperty ContentProperty = DependencyProperty.Register(
             "Content", typeof(object), typeof(DialogBase), new PropertyMetadata(default,
@@ -52,9 +55,9 @@ namespace Tauron.Application.Wpf.Dialogs
 
         public DialogBase() => Loaded += OnLoaded;
 
-        public int DialogTitleFontSize
+        public double DialogTitleFontSize
         {
-            get => (int) GetValue(DialogTitleFontSizeProperty);
+            get => (double) GetValue(DialogTitleFontSizeProperty);
             set => SetValue(DialogTitleFontSizeProperty, value);
         }
 
@@ -143,14 +146,30 @@ namespace Tauron.Application.Wpf.Dialogs
 
             base.OnApplyTemplate();
         }
+    }
 
-        public Task<TResult> MakeTask<TResult>(Func<TaskCompletionSource<TResult>, object> factory)
+    public static class DialogExtensions
+    {
+        public static Task<TResult> MakeTask<TResult>(this FrameworkElement ele, Func<TaskCompletionSource<TResult>, object> factory)
         {
             var source = new TaskCompletionSource<TResult>();
 
-            DataContext = factory(source);
+            ele.DataContext = factory(source);
+            if (ele.DataContext is IDisposable disposable)
+                ele.Unloaded += (_, _) => disposable.Dispose();
 
             return source.Task;
+        }
+
+        public static Task<TResult> MakeTask<TResult>(this FrameworkElement ele, Func<IObserver<TResult>, object> factory)
+        {
+            var subject = new Subject<TResult>();
+
+            ele.DataContext = factory(subject);
+            if (ele.DataContext is IDisposable disposable)
+                ele.Unloaded += (_, _) => disposable.Dispose();
+
+            return subject.FirstAsync().ToTask();
         }
     }
 }

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Threading;
 using Akka.Actor;
+using JetBrains.Annotations;
 
 namespace Tauron.Application.CommonUI.Model
 {
@@ -14,12 +15,13 @@ namespace Tauron.Application.CommonUI.Model
         internal abstract void Init(IActorRef actor);
     }
 
+    [PublicAPI]
     public sealed class ViewModelActorRef<TModel> : ViewModelActorRef,  IViewModel<TModel>
         where TModel : UiActor
     {
         private bool _isInitialized;
 
-        private List<Action>? _waiter = new List<Action>();
+        private List<Action>? _waiter = new();
         private  IActorRef _actor = ActorRefs.Nobody;
 
         public override IActorRef Actor => _actor;

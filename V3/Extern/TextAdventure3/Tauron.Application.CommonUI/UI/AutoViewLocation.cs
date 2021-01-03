@@ -9,7 +9,7 @@ namespace Tauron.Application.CommonUI.UI
     [PublicAPI]
     public sealed class AutoViewLocation
     {
-        private static readonly Dictionary<Type, Type> Views = new Dictionary<Type, Type>();
+        private static readonly Dictionary<Type, Type> Views = new();
 
         private readonly ILifetimeScope _provider;
 
@@ -20,14 +20,11 @@ namespace Tauron.Application.CommonUI.UI
 
         public static AutoViewLocation Manager => ActorApplication.Application.Continer.Resolve<AutoViewLocation>();
 
-        public static void AddPair(Type view, Type model)
-        {
-            Views[model] = view;
-        }
+        public static void AddPair(Type view, Type model) => Views[model] = view;
 
         public IView? ResolveView(object viewModel)
         {
-            if (!(viewModel is IViewModel model))
+            if (viewModel is not IViewModel model)
                 return null;
 
             var type = model.ModelType;

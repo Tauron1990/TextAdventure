@@ -1,4 +1,5 @@
-﻿using Autofac;
+﻿
+using Autofac;
 using Autofac.Features.ResolveAnything;
 using Tauron.Akka;
 using Tauron.Application;
@@ -16,7 +17,7 @@ namespace Tauron
             builder.RegisterGeneric(typeof(ActorRefFactory<>)).AsSelf();
             builder.RegisterGeneric(typeof(DefaultActorRef<>)).As(typeof(IDefaultActorRef<>));
             builder.RegisterGeneric(typeof(SyncActorRef<>)).As(typeof(ISyncActorRef<>));
-
+            
             builder.RegisterType<TauronEnviroment>().As<ITauronEnviroment>();
         }
     }

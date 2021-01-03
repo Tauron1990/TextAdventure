@@ -3,5 +3,6 @@
     public interface IUIObject
     {
         IUIObject? GetPerent();
+        object Object { get; }
     }
 }

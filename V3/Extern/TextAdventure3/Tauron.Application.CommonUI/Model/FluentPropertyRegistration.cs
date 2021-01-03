@@ -1,5 +1,8 @@
 ﻿using System;
+using System.Reactive;
+using System.Reactive.Linq;
 using JetBrains.Annotations;
+using Tauron.Operations;
 
 namespace Tauron.Application.CommonUI.Model
 {
@@ -8,46 +11,51 @@ namespace Tauron.Application.CommonUI.Model
     {
         internal FluentPropertyRegistration(string name, UiActor actor)
         {
+            Actor = actor;
             Property = new UIProperty<TData>(name);
             actor.RegisterProperty(Property);
         }
 
         public UIProperty<TData> Property { get; }
 
-        public FluentPropertyRegistration<TData> WithValidator(Func<TData, string?> validator)
-        {
-            Property.Validator = o =>
-            {
-                if (o is TData value)
-                    return validator(value);
-                return null;
-            };
+        public UiActor Actor { get; }
 
+        public FluentPropertyRegistration<TData> WithValidator(Func<IObservable<TData>, IObservable<Error?>> validator)
+        {
+            Property.SetValidator(validator);
             return this;
         }
 
         public FluentPropertyRegistration<TData> WithDefaultValue(TData data)
         {
-            Property.InternalValue = data;
+            Property.Set(data);
             return this;
         }
 
         public FluentPropertyRegistration<TData> OnChange(Action changed)
         {
-            Property.PropertyValueChanged += changed;
+            Property.Subscribe(_ => changed()).DisposeWith(Actor);
             return this;
         }
 
         public FluentPropertyRegistration<TData> OnChange(Action<TData> changed)
         {
-            Property.PropertyValueChangedFunc += changed;
+            Property.Subscribe(changed).DisposeWith(Actor);
             return this;
         }
 
-
-        public static implicit operator UIProperty<TData>(FluentPropertyRegistration<TData> config)
+        public FluentPropertyRegistration<TData> OnChange(Action<IObservable<Unit>> changed)
         {
-            return config.Property;
+            changed(Property.Select(_ => Unit.Default));
+            return this;
         }
+
+        public FluentPropertyRegistration<TData> OnChange(Action<IObservable<TData>> changed)
+        {
+            changed(Property);
+            return this;
+        }
+
+        public static implicit operator UIProperty<TData>(FluentPropertyRegistration<TData> config) => config.Property;
     }
 }

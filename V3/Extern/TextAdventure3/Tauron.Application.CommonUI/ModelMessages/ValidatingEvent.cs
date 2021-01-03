@@ -1,7 +1,9 @@
-﻿namespace Tauron.Application.CommonUI.ModelMessages
+﻿using Tauron.Operations;
+
+namespace Tauron.Application.CommonUI.ModelMessages
 {
-    public sealed record ValidatingEvent(string? Reason, string Name)
+    public sealed record ValidatingEvent(Error? Reason, string Name)
     {
-        public bool Error => !string.IsNullOrWhiteSpace(Reason);
+        public bool Error => Reason != null;
     }
 }

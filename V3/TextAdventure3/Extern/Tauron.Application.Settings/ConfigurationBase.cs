@@ -51,12 +51,12 @@ namespace Tauron.Application.Settings
         }
 
         [return: MaybeNull]
-        protected TValue GetValue<TValue>(Func<string, TValue> converter, TValue defaultValue = default, [CallerMemberName] string? name = null)
+        protected TValue GetValue<TValue>(Func<string, TValue> converter, TValue? defaultValue = default, [CallerMemberName] string? name = null)
         {
             try
             {
                 _loader.Wait();
-                if (string.IsNullOrEmpty(name)) return default;
+                if (string.IsNullOrEmpty(name)) return default!;
 
                 return _dic.TryGetValue(name, out var value) ? converter(value) : defaultValue;
             }

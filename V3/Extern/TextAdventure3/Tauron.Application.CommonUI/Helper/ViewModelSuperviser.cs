@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Diagnostics;
 using Akka.Actor;
 using Akka.Actor.Internal;
 using Akka.DI.Core;
 using Akka.Event;
 using Akka.Util;
+using Tauron.Akka;
 using Tauron.Application.CommonUI.Model;
 
 namespace Tauron.Application.CommonUI.Helper
@@ -51,7 +53,7 @@ namespace Tauron.Application.CommonUI.Helper
         }
     }
 
-    public sealed class ViewModelSuperviserActor : ExposedReceiveActor
+    public sealed class ViewModelSuperviserActor : ExpandedReceiveActor
     {
         private int _count;
 
@@ -79,7 +81,7 @@ namespace Tauron.Application.CommonUI.Helper
         {
             private readonly Func<IDecider> _decider;
 
-            private readonly ConcurrentDictionary<IActorRef, IDecider> _deciders = new ConcurrentDictionary<IActorRef, IDecider>();
+            private readonly ConcurrentDictionary<IActorRef, IDecider> _deciders = new();
 
             private CircuitBreakerStrategy(Func<IDecider> decider) 
                 => _decider = decider;
@@ -116,10 +118,10 @@ namespace Tauron.Application.CommonUI.Helper
         private sealed class CircuitBreakerDecider : IDecider
         {
             private readonly ILoggingAdapter _log;
+            private readonly Stopwatch _time = new();
 
             private InternalState _currentState = InternalState.Closed;
-
-            private int _stateAtempt;
+            
             private int _restartAtempt;
 
             public CircuitBreakerDecider(ILoggingAdapter log) => _log = log;
@@ -134,7 +136,7 @@ namespace Tauron.Application.CommonUI.Helper
                     case DeathPactException d:
                         _log.Error(d, "DeathPactException In Model");
                         return Directive.Escalate;
-                    case ActorKilledException _:
+                    case ActorKilledException:
                         return Directive.Stop;
                 }
 
@@ -143,23 +145,27 @@ namespace Tauron.Application.CommonUI.Helper
                 switch (_currentState)
                 {
                     case InternalState.Closed:
-                        _stateAtempt = 1;
-                        _currentState = InternalState.HalfOpen;
-                        return Directive.Resume;
-                    case InternalState.HalfOpen when _stateAtempt > 5:
-                        _stateAtempt = 0;
-                        _restartAtempt++;
+                        _time.Restart();
+                        _restartAtempt = 1;
+                        return Directive.Restart;
+                    case InternalState.HalfOpen:
+                        if (_time.Elapsed > TimeSpan.FromMinutes(2))
+                        {
+                            _currentState = InternalState.Closed;
+                            return Directive.Restart;
+                        }
+                        else
+                            _restartAtempt++;
 
-                        if (_restartAtempt > 2)
+                        _time.Restart();
+
+                        if (_restartAtempt > 6)
                             return Directive.Escalate;
                         else
                         {
                             _currentState = InternalState.Closed;
                             return Directive.Restart;
                         }
-                    case InternalState.HalfOpen:
-                        _stateAtempt++;
-                        return Directive.Resume;
                     default:
                         throw new ArgumentOutOfRangeException();
                 }

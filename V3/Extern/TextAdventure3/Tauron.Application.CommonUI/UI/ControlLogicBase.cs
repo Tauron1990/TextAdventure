@@ -3,13 +3,14 @@ using Akka.Actor;
 using JetBrains.Annotations;
 using Serilog;
 using Tauron.Application.CommonUI.Helper;
+using Tauron.Application.CommonUI.ModelMessages;
 using Tauron.Host;
 
 namespace Tauron.Application.CommonUI.UI
 {
     [PublicAPI]
     public abstract class ControlLogicBase<TControl> : IView
-        where TControl : FrameworkElement, IView
+        where TControl : IUIElement, IView
     {
         protected readonly ControlBindLogic BindLogic;
 
@@ -30,40 +31,17 @@ namespace Tauron.Application.CommonUI.UI
             WireUpLoaded();
             // ReSharper disable once VirtualMemberCallInConstructor
             WireUpUnloaded();
-
-            userControl.DataContextChanged += (sender, args) =>
-            {
-                Logger.Debug("DataContext Changed Revert");
-                if (args.NewValue != model)
-                    ((FrameworkElement) sender).DataContext = model;
-            };
         }
 
-        public void Register(string key, IControlBindable bindable, DependencyObject affectedPart)
-        {
-            BindLogic.Register(key, bindable, affectedPart);
-            CommandManager.InvalidateRequerySuggested();
-        }
+        public void Register(string key, IControlBindable bindable, IUIObject affectedPart) => BindLogic.Register(key, bindable, affectedPart);
 
-        public void CleanUp(string key)
-        {
-            BindLogic.CleanUp(key);
-        }
-
-        public string Key { get; } = Guid.NewGuid().ToString();
-        public ViewManager ViewManager => ViewManager.Manager;
-
+        public void CleanUp(string key) => BindLogic.CleanUp(key);
+        
         public event Action? ControlUnload;
 
-        protected virtual void WireUpLoaded()
-        {
-            UserControl.Loaded += (sender, args) => UserControlOnLoaded();
-        }
+        protected virtual void WireUpLoaded() => UserControl.Loaded.Subscribe(_ => UserControlOnLoaded());
 
-        protected virtual void WireUpUnloaded()
-        {
-            UserControl.Unloaded += (sender, args) => UserControlOnUnloaded();
-        }
+        protected virtual void WireUpUnloaded() => UserControl.Unloaded.Subscribe(_ =>  UserControlOnUnloaded());
 
         protected virtual void UserControlOnUnloaded()
         {
@@ -71,7 +49,7 @@ namespace Tauron.Application.CommonUI.UI
             {
                 Logger.Debug("Control Unloaded {Element}", UserControl.GetType());
                 BindLogic.CleanUp();
-                Model.Actor.Tell(new UnloadEvent(UserControl.Key));
+                Model.Actor.Tell(new UnloadEvent());
             }
             catch (Exception e)
             {
@@ -96,11 +74,7 @@ namespace Tauron.Application.CommonUI.UI
                 }
             }
 
-            Model.AwaitInit(() =>
-            {
-                Model.Actor.Tell(new InitEvent(UserControl.Key));
-                CommandManager.InvalidateRequerySuggested();
-            });
+            Model.AwaitInit(() => Model.Actor.Tell(new InitEvent()));
         }
     }
 }

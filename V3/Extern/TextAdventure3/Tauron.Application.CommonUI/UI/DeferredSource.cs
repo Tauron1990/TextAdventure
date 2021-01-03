@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using Akka.Actor;
 using JetBrains.Annotations;
 using Tauron.Application.CommonUI.Helper;
+using Tauron.Application.CommonUI.ModelMessages;
 
 namespace Tauron.Application.CommonUI.UI
 {
@@ -43,7 +44,7 @@ namespace Tauron.Application.CommonUI.UI
             }
         }
 
-        public IEnumerable GetErrors(string propertyName)
+        public IEnumerable GetErrors(string? propertyName)
         {
             yield return _error;
         }
@@ -64,7 +65,7 @@ namespace Tauron.Application.CommonUI.UI
 
         protected override void ValidateCompled(ValidatingEvent msg)
         {
-            _error = msg.Reason;
+            _error = msg.Reason?.Info;
             HasErrors = msg.Error;
         }
 

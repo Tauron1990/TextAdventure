@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Reactive.Concurrency;
 using System.Reactive.Disposables;
+using System.Reactive.Linq;
 using System.Threading;
 using Akka.Actor;
 using JetBrains.Annotations;
@@ -9,7 +10,7 @@ using IScheduler = System.Reactive.Concurrency.IScheduler;
 namespace Tauron.Akka
 {
     [PublicAPI]
-    public class ActorScheduler : LocalScheduler
+    public sealed class ActorScheduler : LocalScheduler
     {
         private readonly IActorRef _targetActor;
 
@@ -50,6 +51,14 @@ namespace Tauron.Akka
             }
 
             return disposable;
+        }
+    }
+
+    public static class ActorSchedulerExtensions
+    {
+        public static IObservable<TType> ObserveOnSelf<TType>(this IObservable<TType> observable)
+        {
+            return observable.ObserveOn(ActorScheduler.CurrentSelf);
         }
     }
 }

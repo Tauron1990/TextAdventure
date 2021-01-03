@@ -38,18 +38,16 @@ namespace Tauron.Application.CommonUI.Helper
                     modelAction(model, view);
                     return;
                 }
-
+                
                 void OnElementOnDataContextChanged(object newValue)
                 {
                     if (newValue is IViewModel localModel)
                         modelAction(localModel, view);
                     else
                         _noContext?.Invoke();
-
-                    _element.DataContextChanged -= OnElementOnDataContextChanged;
                 }
 
-                _element.DataContextChanged += OnElementOnDataContextChanged;
+                _element.DataContextChanged.SingleTimeSubscribe(OnElementOnDataContextChanged);
             }
             else
                 _noContext?.Invoke();
@@ -68,8 +66,6 @@ namespace Tauron.Application.CommonUI.Helper
         {
             void OnLoad()
             {
-                elementBase.Loaded -= OnLoad;
-
                 var root = ControlBindLogic.FindRoot(elementBase);
                 if (root is IView control && root is IUIElement {DataContext: IViewModel model})
                 {
@@ -82,7 +78,7 @@ namespace Tauron.Application.CommonUI.Helper
                     _noContext?.Invoke();
             }
 
-            elementBase.Loaded += OnLoad;
+            elementBase.Loaded.SingleTimeSubscribe(_ => OnLoad());
         }
 
         public override void OnUnload(Action unload) => _unload = unload;
@@ -95,7 +91,7 @@ namespace Tauron.Application.CommonUI.Helper
     [PublicAPI]
     public sealed class ControlBindLogic
     {
-        private readonly Dictionary<string, (IDisposable Disposer, IControlBindable Binder)> _binderList = new Dictionary<string, (IDisposable Disposer, IControlBindable Binder)>();
+        private readonly Dictionary<string, (IDisposable Disposer, IControlBindable Binder)> _binderList = new();
         private readonly object _dataContext;
         private readonly ILogger _log;
 
@@ -143,12 +139,11 @@ namespace Tauron.Application.CommonUI.Helper
             {
                 void OnElementOnUnloaded()
                 {
-                    disposer?.Dispose();
+                    disposer.Dispose();
                     _binderList.Remove(key);
-                    element.Unloaded -= OnElementOnUnloaded;
                 }
 
-                element.Unloaded += OnElementOnUnloaded;
+                element.Unloaded.SingleTimeSubscribe(_ => OnElementOnUnloaded());
             }
 
             _binderList[key] = (disposer, bindable);
@@ -171,9 +166,9 @@ namespace Tauron.Application.CommonUI.Helper
             do
             {
                 // ReSharper disable once SuspiciousTypeConversion.Global
-                if (affected is IBinderControllable binder)
+                if (affected?.Object is IBinderControllable binder)
                 {
-                    Log.Debug("Root Found for {Element}", affected?.GetType());
+                    Log.Debug("Root Found for {Element}", affected.GetType());
                     return binder;
                 }
                 affected = affected?.GetPerent();
@@ -190,9 +185,9 @@ namespace Tauron.Application.CommonUI.Helper
             {
                 affected = affected?.GetPerent();
                 // ReSharper disable once SuspiciousTypeConversion.Global
-                if (affected is not IView binder) continue;
+                if (affected?.Object is not IView binder) continue;
 
-                Log.Debug("View Found for {Element}", affected?.GetType());
+                Log.Debug("View Found for {Element}", affected.GetType());
                 return binder;
             } while (affected != null);
 
@@ -206,10 +201,10 @@ namespace Tauron.Application.CommonUI.Helper
             do
             {
                 affected = affected?.GetPerent();
-                switch (affected)
+                switch (affected?.Object)
                 {
                     case IUIElement {DataContext: IViewModel model}:
-                        Log.Debug("DataContext Found for {Element}", affected?.GetType());
+                        Log.Debug("DataContext Found for {Element}", affected.GetType());
                         return model;
                 }
             } while (affected != null);
@@ -234,7 +229,7 @@ namespace Tauron.Application.CommonUI.Helper
         public static void MakeLazy(IUIElement target, string? newValue, string? oldValue, Action<string?, string?, IBinderControllable, IUIObject> runner)
         {
             var temp = new LazyHelper(target, newValue, oldValue, runner);
-            target.Loaded += temp.ElementOnLoaded;
+            target.Loaded.SingleTimeSubscribe(_ => temp.ElementOnLoaded());
         }
 
         private class LazyHelper
@@ -254,17 +249,10 @@ namespace Tauron.Application.CommonUI.Helper
 
             public void ElementOnLoaded()
             {
-                try
-                {
-                    var root = FindRoot(_target);
-                    if (root == null) return;
+                var root = FindRoot(_target);
+                if (root == null) return;
 
-                    _runner(_oldValue, _newValue, root, _target);
-                }
-                finally
-                {
-                    _target.Loaded -= ElementOnLoaded;
-                }
+                _runner(_oldValue, _newValue, root, _target);
             }
         }
     }

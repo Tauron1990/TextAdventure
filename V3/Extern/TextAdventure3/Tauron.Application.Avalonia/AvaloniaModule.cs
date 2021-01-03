@@ -9,7 +9,9 @@ namespace Tauron.Application.Avalonia
     {
         protected override void Load(ContainerBuilder builder)
         {
-            builder.RegisterType<AvaloniaFramework>().As<CommonUIFramework>();
+            builder.RegisterModule<CommonUiModule>();
+            builder.Register(_ => AvaloniaFramework.UIDispatcher);
+            builder.RegisterType<AvaloniaFramework>().As<CommonUIFramework>().SingleInstance();
             base.Load(builder);
         }
     }

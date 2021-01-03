@@ -111,7 +111,9 @@ namespace Tauron.Application.CommonUI.Helper
             {
                 var dead = new List<WeakDelegate>();
                 foreach (var weakDelegate in Actions.ToArray())
+                {
                     if (weakDelegate.IsAlive)
+                    {
                         try
                         {
                             weakDelegate.Invoke();
@@ -120,8 +122,10 @@ namespace Tauron.Application.CommonUI.Helper
                         {
                             // ignored
                         }
+                    }
                     else
                         dead.Add(weakDelegate);
+                }
 
                 dead.ForEach(del => Actions.Remove(del));
             }

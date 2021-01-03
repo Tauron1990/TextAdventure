@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using System.Windows;
 using System.Windows.Threading;
 using Tauron.Application.CommonUI;
@@ -19,15 +20,26 @@ namespace Tauron.Application.Wpf
                 => _dispatcher = dispatcher;
 
             public void Post(Action action) => _dispatcher.InvokeAsync(action);
+
+            public Task InvokeAsync(Action action) => _dispatcher.InvokeAsync(action).Task;
+
+            public async Task<TResult> InvokeAsync<TResult>(Func<Task<TResult>> action)
+            {
+                var res = await _dispatcher.InvokeAsync(action).Task;
+                return await res;
+            }
+
+            public Task<TResult> InvokeAsync<TResult>(Func<TResult> action) => _dispatcher.InvokeAsync(action).Task;
+            public bool CheckAccess() => _dispatcher.CheckAccess();
         }
         
-        private sealed class InternalApplication : IUIApplication
+        public sealed class DelegateApplication : IUIApplication
         {
             private readonly System.Windows.Application _application;
             
-            public InternalApplication()
+            public DelegateApplication(System.Windows.Application application)
             {
-                _application = new System.Windows.Application();
+                _application = application;
                 Dispatcher = new InternalDispatcher(_application.Dispatcher);
                 _application.Startup += (_, _) => OnStartup();
             }
@@ -63,12 +75,17 @@ namespace Tauron.Application.Wpf
             public int Run() => _application.Run();
             private void OnStartup() => Startup?.Invoke(this, EventArgs.Empty);
         }
-        
-        public override IUIApplication CreateDefault() => new InternalApplication();
+
+        public static IUIDispatcher Dispatcher(Dispatcher dispatcher)
+            => new InternalDispatcher(dispatcher);
+
+        public WpfFramework() => NeedFullSync = false;
+
+        public override IUIApplication CreateDefault() => new DelegateApplication(new System.Windows.Application());
 
         public override IWindow CreateMessageDialog(string title, string message)
         {
-            var window = new Window();
+            var window = new System.Windows.Window();
             window.Content = new MessageDialog(title, message, b => window.DialogResult = b, true) { Margin = new Thickness(10) };
 
             window.SizeToContent = SizeToContent.WidthAndHeight;

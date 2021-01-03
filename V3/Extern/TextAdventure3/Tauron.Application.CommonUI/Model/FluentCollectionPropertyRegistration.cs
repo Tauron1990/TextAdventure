@@ -12,14 +12,11 @@ namespace Tauron.Application.CommonUI.Model
     public sealed class FluentCollectionPropertyRegistration<TData>
     {
         private readonly UiActor _actor;
-        private readonly IUIDispatcher _dispatcher;
         private ObservableCollectionExtended<TData> _collection = new();
-        private bool _isAsync;
 
-        internal FluentCollectionPropertyRegistration(string name, UiActor actor, IUIDispatcher dispatcher)
+        internal FluentCollectionPropertyRegistration(string name, UiActor actor)
         {
             _actor = actor;
-            _dispatcher = dispatcher;
             Property = new UIProperty<IObservableCollection<TData>>(name);
             Property.Set(_collection);
             actor.RegisterProperty(Property);
@@ -43,7 +40,7 @@ namespace Tauron.Application.CommonUI.Model
             subscriber ??= set => set.Subscribe();
 
             return subscriber(source
-                             .ObserveOn(DispatcherScheduler.From(_dispatcher))
+                             .ObserveOn(DispatcherScheduler.From(_actor.Dispatcher))
                              .Bind(_collection));
         }
         
