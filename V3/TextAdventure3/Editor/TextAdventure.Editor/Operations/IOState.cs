@@ -20,11 +20,14 @@ namespace TextAdventure.Editor.Operations
         {
             ProjectLoaded = engine.EventSource<IOData, ProjectLoadedEvent>();
             ProjectLoadFailed = engine.EventSource<IOData, LoadFailedEvent>();
+            ProjectSaved = engine.EventSource<IOData, ProjectSaveEvent>();
         }
 
         public IEventSource<ProjectLoadedEvent> ProjectLoaded { get; }
 
         public IEventSource<LoadFailedEvent> ProjectLoadFailed { get; }
+
+        public IEventSource<ProjectSaveEvent> ProjectSaved { get; }
 
         public IObservable<GameProject> RawProject 
             => Query(EmptyQuery.Instance)

@@ -7,7 +7,7 @@ namespace TextAdventure.Editor.Operations
     [Effect]
     public sealed class SaveInvoker : IEffect
     {
-        public void Handle(IStateAction action, IActionInvoker dispatcher) { dispatcher.Run(new SaveCommand()); }
+        public void Handle(IStateAction action, IActionInvoker dispatcher) => dispatcher.Run(new SaveCommand());
         public bool ShouldReactToAction(IStateAction action) => action is ISaveRelevant;
     }
 }

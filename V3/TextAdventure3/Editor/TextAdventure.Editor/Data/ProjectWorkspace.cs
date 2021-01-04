@@ -12,7 +12,7 @@ namespace TextAdventure.Editor.Data
     public sealed class ProjectWorkspace : MapSourceFactory
     {
         private readonly SemaphoreSlim _semaphore = new(1, 1);
-        private volatile IOData _currentProject = new();
+        private IOData _currentProject = new();
 
         public ProjectWorkspace()
         {
@@ -64,7 +64,7 @@ namespace TextAdventure.Editor.Data
         private sealed class IOSource : SyncSource<IOData>
         {
             public IOSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater) : base(semaphore, provider, updater) { }
-            protected override Task<IOData> SetDataImpl(IQuery query, IOData data, IOData project) => Task.FromResult(project);
+            protected override Task<IOData> SetDataImpl(IQuery query, IOData data, IOData project) => Task.FromResult(data);
 
             protected override Task<IOData> GetDataImpl(IQuery query, IOData project) => Task.FromResult(project);
         }

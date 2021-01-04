@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Autofac;
 using JetBrains.Annotations;
+using Tauron.Akka;
 using Tauron.Application.CommonUI.AppCore;
 using Tauron.Application.Workshop.Mutation;
 using Tauron.Application.Workshop.StateManagement;
@@ -123,7 +124,7 @@ namespace Tauron.Application.CommonUI.Model
             }
 
             public void ToObservable(Action<IObservable<TEvent>> observableAction)
-                => observableAction(_eventSource);
+                => observableAction(_eventSource.ObserveOnSelf());
         }
     }
 

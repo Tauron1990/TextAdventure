@@ -82,7 +82,6 @@ namespace TextAdventure.Editor.ViewModels
                                                  var (_, newName, _) = c;
                                                  CommonCardData.GameName += CurrentProject.Value.GameName;
                                                  CommonCardData.GameVersion += CurrentProject.Value.GameVersion.ToString();
-                                                 this.SendEvent(new MainWindowMessage(newName));
                                              })
                                   .DisposeWith(this);
                              });

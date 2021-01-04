@@ -57,6 +57,10 @@ namespace TextAdventure.Editor.ViewModels
                                                                         WindowTitle += $"Text Adventure Editor ({project.GameName} -- {project.GameVersion})";
                                                                         Messages.Value.Enqueue($"Laden Erfolgreich: {source}");
                                                                     }).DisposeWith(this);
+
+                                          s.ProjectSaved.Subscribe(ps => Messages.Value.Enqueue(ps.IsOk ? "Projekt geschpeichert" : $"Speichern Fehlgeschlagen: {ps.Error}")).DisposeWith(this);
+
+
                                       });
 
             this.SubscribeToEvent<MainWindowMessage>(msg => Messages.Value.Enqueue(msg.Message));

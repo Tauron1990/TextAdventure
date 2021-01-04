@@ -52,15 +52,13 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
                                      var subs = new CompositeDisposable(3);
                                      var cancel = new Subject<Unit>();
                                      subs.Add(cancel);
-                                     
-                                     var startData = Observable.Using(() => subs, _ => data);
 
                                      var reducer =
                                          (from reducerFactory in reducers.ToObservable()
                                           where reducerFactory.ShouldReduceStateForAction(action)
                                           select reducerFactory.Reduce(action)).TakeUntil(cancel);
 
-                                     var processor = startData.SelectMany(d =>
+                                     var processor = data.SelectMany(d =>
                                                                               reducer.Aggregate(
                                                                                                 Observable.Return(d).Select(dd => ReducerResult.Sucess(dd) with { StartLine = true }).SingleAsync(),
                                                                                                 (observable, reducerBuilder) =>
@@ -77,6 +75,7 @@ namespace Tauron.Application.Workshop.StateManagement.Internal
 
                                      subs.Add(processor.Select(_ => Unit.Default).Subscribe(onCompled));
                                      subs.Add(processor.Cast<IReducerResult>().Subscribe(sendResult));
+                                     subs.Add(processor.Subscribe(_ => {}, () => subs.Dispose()));
                                      
                                      return processor.Where(r => r.IsOk && !r.StartLine).Select(r => r.Data);
                                  }
