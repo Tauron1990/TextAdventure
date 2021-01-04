@@ -34,43 +34,43 @@ namespace Tauron
             }
         }
 
-        public static TResult To<TInput, TResult>(this TInput input, Func<TInput, TResult> transformer)
-            => transformer(input);
-
         //public static TResult To<TInput, TResult>(this TInput input, Func<TInput, TResult> transformer)
-        //    where TInput : class where TResult : class
         //    => transformer(input);
 
-        public static TType DoAnd<TType>(this TType item, params Action<TType>[] todo)
-        {
-            foreach (var action in todo) 
-                action(item);
-            return item;
-        }
+        ////public static TResult To<TInput, TResult>(this TInput input, Func<TInput, TResult> transformer)
+        ////    where TInput : class where TResult : class
+        ////    => transformer(input);
 
-        public static void When<TType>(this TType target, Func<TType, bool> when, Action<TType> then)
-        {
-            if (when(target))
-                then(target);
-        }
+        //public static TType DoAnd<TType>(this TType item, params Action<TType>[] todo)
+        //{
+        //    foreach (var action in todo) 
+        //        action(item);
+        //    return item;
+        //}
 
-        public static void When<TType>(this TType target, Func<TType, bool> when, Action then)
-        {
-            if (when(target))
-                then();
-        }
+        //public static void When<TType>(this TType target, Func<TType, bool> when, Action<TType> then)
+        //{
+        //    if (when(target))
+        //        then(target);
+        //}
 
-        public static TResult When<TType, TResult>(this TType target, TResult defaultValue, Func<TType, bool> when, Func<TType, TResult> then) 
-            => when(target) ? then(target) : defaultValue;
+        //public static void When<TType>(this TType target, Func<TType, bool> when, Action then)
+        //{
+        //    if (when(target))
+        //        then();
+        //}
 
-        public static TResult When<TType, TResult>(this TType target, Func<TType, bool> when, Func<TResult> then, TResult falseValue)
-            => when(target) ? then() : falseValue;
+        //public static TResult When<TType, TResult>(this TType target, TResult defaultValue, Func<TType, bool> when, Func<TType, TResult> then) 
+        //    => when(target) ? then(target) : defaultValue;
 
-        public static void WhenNotEmpty(this string? target, Action<string> then)
-        {
-            if (string.IsNullOrWhiteSpace(target)) return;
-            then(target);
-        }
+        //public static TResult When<TType, TResult>(this TType target, Func<TType, bool> when, Func<TResult> then, TResult falseValue)
+        //    => when(target) ? then() : falseValue;
+
+        //public static void WhenNotEmpty(this string? target, Action<string> then)
+        //{
+        //    if (string.IsNullOrWhiteSpace(target)) return;
+        //    then(target);
+        //}
         
         public static DateTime CutSecond(this DateTime source)
         {

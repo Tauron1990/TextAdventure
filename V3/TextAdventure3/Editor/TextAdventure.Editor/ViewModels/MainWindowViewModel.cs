@@ -59,7 +59,7 @@ namespace TextAdventure.Editor.ViewModels
                                                                     }).DisposeWith(this);
                                       });
 
-            this.SubscribeToEvent<IMainWindowMessage>(msg => Messages.Value.Enqueue(msg));
+            this.SubscribeToEvent<MainWindowMessage>(msg => Messages.Value.Enqueue(msg.Message));
         }
 
         public UIModel<DashboardViewModel> Dashboard { get; }

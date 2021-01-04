@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
@@ -319,6 +320,9 @@ namespace Tauron.Application.CommonUI.Model
             _propertys.Add(prop.Name, data);
         }
 
+        public UIProperty<TData> Property<TData>(Expression<Func<UIProperty<TData>>> propName) 
+            => (UIProperty<TData>) _propertys[Reflex.PropertyName(propName)].PropertyBase;
+
         #endregion
 
         private sealed class PropertyTermination
@@ -418,7 +422,13 @@ namespace Tauron.Application.CommonUI.Model
                 if (canExecute == null)
                     _canExecute.OnNext(true);
                 else
-                    _disposable.Disposable = canExecute.Subscribe(_canExecute);
+                {
+                    _disposable.Disposable = canExecute.Subscribe(b =>
+                                                                  {
+                                                                      _canExecute.OnNext(b);
+                                                                      _dispatcher.Post(RaiseCanExecuteChanged);
+                                                                  });
+                }
             }
 
             public override void Execute(object? parameter) => _self.Tell(new CommandExecuteEvent(_name, parameter));

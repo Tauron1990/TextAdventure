@@ -61,8 +61,14 @@
                         <mat:PackIcon Kind="ChevronLeft" Foreground="Black"/>
                     </Button>
 
-                    <TextBox Grid.Row="1" mat:HintAssist.Hint="Spiel Name" mat:HintAssist.IsFloating="True" Margin="5" Text="{hlp:ActorBinding GameName}"/>
-                    <TextBox Grid.Row="2" mat:HintAssist.Hint="Spiel Version" mat:HintAssist.IsFloating="True" Margin="5" Text="{hlp:ActorBinding GameVersion}"/>
+                    <AdornerDecorator  Grid.Row="1">
+                        <TextBox mat:HintAssist.Hint="Spiel Name" mat:HintAssist.IsFloating="True"
+                                 Margin="5" Text="{hlp:ActorBinding GameName}" />
+                    </AdornerDecorator>
+                    <AdornerDecorator Grid.Row="2">
+                        <TextBox  mat:HintAssist.Hint="Spiel Version" mat:HintAssist.IsFloating="True"
+                                 Margin="5" Text="{hlp:ActorBinding GameVersion}" />
+                    </AdornerDecorator>
 
                     <Button Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Content="Anwenden" Command="{hlp:ActorBinding ApplyCommonEditCommand}"/>
                 </Grid>

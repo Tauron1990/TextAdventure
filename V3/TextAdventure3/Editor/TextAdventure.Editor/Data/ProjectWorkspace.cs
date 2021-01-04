@@ -17,6 +17,7 @@ namespace TextAdventure.Editor.Data
         public ProjectWorkspace()
         {
             Register<IOSource, IOData>(() => new IOSource(_semaphore, () => _currentProject, data => _currentProject = data));
+            Register<CommonDataSource, CommonData>(() => new CommonDataSource(_semaphore, () => _currentProject, data => _currentProject = data));
         }
 
         private abstract class SyncSource<TData> : IExtendedDataSource<TData>
@@ -66,6 +67,23 @@ namespace TextAdventure.Editor.Data
             protected override Task<IOData> SetDataImpl(IQuery query, IOData data, IOData project) => Task.FromResult(project);
 
             protected override Task<IOData> GetDataImpl(IQuery query, IOData project) => Task.FromResult(project);
+        }
+        private sealed class CommonDataSource : SyncSource<CommonData>
+        {
+            public CommonDataSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater) 
+                : base(semaphore, provider, updater) { }
+            protected override Task<CommonData> GetDataImpl(IQuery query, IOData project)
+                => Task.FromResult(new CommonData(project.Project.GameName, project.Project.GameVersion));
+
+            protected override Task<IOData> SetDataImpl(IQuery query, CommonData data, IOData project) 
+                => Task.FromResult(project with
+                                   {
+                                       Project = project.Project with
+                                                 {
+                                                     GameName = data.Name, 
+                                                     GameVersion = data.Version
+                                                 }
+                                   });
         }
     }
 }

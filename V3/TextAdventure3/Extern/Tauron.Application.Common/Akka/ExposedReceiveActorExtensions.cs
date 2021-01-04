@@ -21,7 +21,7 @@ namespace Tauron.Akka
         public static void SubscribeToEvent<TEvent>(this IExpandedReceiveActor actor, Action<TEvent> handler) 
             => new EventHolder<TEvent>(actor, handler).Register();
 
-        public static void SendEvent<TType>(TType evt)
+        public static void SendEvent<TType>(this IExpandedReceiveActor actor, TType evt) 
             => ExpandedReceiveActor.ExposedContext.System.EventStream.Publish(evt);
 
         private sealed class EventHolder<TEvent>

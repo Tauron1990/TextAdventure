@@ -121,6 +121,9 @@ namespace Tauron.Application.CommonUI.Model
                 _eventSource.RespondOn(_actor.Self);
                 _actor.Receive(action);
             }
+
+            public void ToObservable(Action<IObservable<TEvent>> observableAction)
+                => observableAction(_eventSource);
         }
     }
 
