@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using System.Reactive.Linq;
+using System.Windows;
 using Autofac;
 using JetBrains.Annotations;
 using MaterialDesignExtensions.Controls;
@@ -24,7 +25,7 @@ namespace TextAdventure.Editor.ViewModels
         public MainWindowViewModel(ILifetimeScope lifetimeScope, IUIDispatcher dispatcher, IActionInvoker actionInvoker)
             : base(lifetimeScope, dispatcher, actionInvoker)
         {
-            Messages = RegisterProperty<ISnackbarMessageQueue>(nameof(Messages)).WithDefaultValue(new SnackbarMessageQueue(TimeSpan.FromSeconds(5)));
+            Messages = RegisterProperty<ISnackbarMessageQueue>(nameof(Messages)).WithDefaultValue(new SnackbarMessageQueue(TimeSpan.FromSeconds(5), Application.Current.Dispatcher));
             WindowTitle = RegisterProperty<string>(nameof(WindowTitle)).WithDefaultValue("Text Adventure Editor");
             Dashboard = this.RegisterViewModel<DashboardViewModel>(nameof(Dashboard));
 
@@ -32,7 +33,6 @@ namespace TextAdventure.Editor.ViewModels
                         .ThenFlow(o => o.Dialog(this).Of<NewProjectDialog, TryLoadProjectCommand?>()
                                         .ToActionInvoker(ActionInvoker))
                         .ThenRegister("NewProject");
-
 
             OpenProject = NewCommad
                          .ThenFlow(o => o.Select(_ => new OpenDirectoryDialogArguments {CurrentDirectory = NewProjectDialogModel.ProjectPath()})
@@ -63,6 +63,20 @@ namespace TextAdventure.Editor.ViewModels
 
                                       });
 
+            this.SubscribeToEvent<MainWindowCommand>(msg =>
+                                                     {
+                                                         switch (msg.Command)
+                                                         {
+                                                             case MainWindowCommand.CommandType.Open:
+                                                                 InvokeCommand("OpenProject");
+                                                                 break;
+                                                             case MainWindowCommand.CommandType.New:
+                                                                 InvokeCommand("NewProject");
+                                                                 break;
+                                                             default:
+                                                                 throw new ArgumentOutOfRangeException();
+                                                         }
+                                                     });
             this.SubscribeToEvent<MainWindowMessage>(msg => Messages.Value.Enqueue(msg.Message));
         }
 

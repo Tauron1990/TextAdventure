@@ -22,6 +22,8 @@ namespace TextAdventure.Editor.ViewModels
         public DashboardViewModel(ILifetimeScope lifetimeScope, IUIDispatcher dispatcher, IActionInvoker actionInvoker)
             : base(lifetimeScope, dispatcher, actionInvoker)
         {
+            #region Common Card
+
             CommonCardData = new CommonCard
                 (
                  isCommonDataInEdit: RegisterProperty<bool>(nameof(CommonCard.IsCommonDataInEdit)).WithDefaultValue(false),
@@ -41,6 +43,7 @@ namespace TextAdventure.Editor.ViewModels
                                                           })),
 
                  editCommonCommand: NewCommad
+                                   .WithCanExecute(IsValid)
                                    .WithExecute(() => CommonCardData!.IsCommonDataInEdit += true)
                                    .ThenRegister(nameof(CommonCard.EditCommonCommand)),
 
@@ -54,12 +57,22 @@ namespace TextAdventure.Editor.ViewModels
 
                  applyCommonEditCommand: NewCommad
                                         .WithCanExecute(from nameValid in Property(() => CommonCardData!.GameName).IsValid
-                                                        from versionValid in Property(() => CommonCardData!.GameVersion).IsValid 
+                                                        from versionValid in Property(() => CommonCardData!.GameVersion).IsValid
                                                         select nameValid && versionValid)
                                         .ThenFlow(o => o.Select(_ => new ChangeGameNameCommand(CommonCardData!.GameName.Value, CommonCardData.GameVersion.Value))
                                                         .ToActionInvoker(ActionInvoker))
-                                        .ThenRegister(nameof(CommonCard.ApplyCommonEditCommand))
+                                        .ThenRegister(nameof(CommonCard.ApplyCommonEditCommand)),
+
+                 newCommand: NewCommad
+                            .WithExecute(() => Context.System.EventStream.Publish(MainWindowCommand.New()))
+                            .ThenRegister(nameof(CommonCard.NewCommand)),
+
+                 openCommand: NewCommad
+                             .WithExecute(() => Context.System.EventStream.Publish(MainWindowCommand.Open()))
+                             .ThenRegister(nameof(CommonCard.OpenCommand))
                 );
+
+            #endregion
 
             WhenStateChanges<CommonDataState>()
                .FromEvent(cd => cd.NameChanged)
@@ -80,7 +93,7 @@ namespace TextAdventure.Editor.ViewModels
                                   .Subscribe(c =>
                                              {
                                                  var (_, newName, _) = c;
-                                                 CommonCardData.GameName += CurrentProject.Value.GameName;
+                                                 CommonCardData.GameName += newName;
                                                  CommonCardData.GameVersion += CurrentProject.Value.GameVersion.ToString();
                                              })
                                   .DisposeWith(this);
@@ -93,11 +106,23 @@ namespace TextAdventure.Editor.ViewModels
 
                                      }).DisposeWith(this);
         }
-
+        
         private CommonCard CommonCardData { get; }
+
+        private EntitiesCard EntitiesCardData { get; }
+
+        private sealed class EntitiesCard
+        {
+            public EntitiesCard(UIPropertyBase? editCommand) => EditCommand = editCommand;
+            public UIPropertyBase? EditCommand { get; }
+        }
 
         private sealed class CommonCard
         {
+            public UIPropertyBase? OpenCommand { get; }
+
+            public UIPropertyBase? NewCommand { get; }
+
             public UIPropertyBase? ApplyCommonEditCommand { get; }
 
             public UIPropertyBase? EditCommonBackCommand { get; }
@@ -110,7 +135,7 @@ namespace TextAdventure.Editor.ViewModels
 
             public UIProperty<string> GameVersion { get; set; }
 
-            public CommonCard(UIPropertyBase? applyCommonEditCommand, UIPropertyBase? editCommonBackCommand, UIPropertyBase? editCommonCommand, UIProperty<bool> isCommonDataInEdit, UIProperty<string> gameName, UIProperty<string> gameVersion)
+            public CommonCard(UIPropertyBase? applyCommonEditCommand, UIPropertyBase? editCommonBackCommand, UIPropertyBase? editCommonCommand, UIProperty<bool> isCommonDataInEdit, UIProperty<string> gameName, UIProperty<string> gameVersion, UIPropertyBase? openCommand, UIPropertyBase? newCommand)
             {
                 ApplyCommonEditCommand = applyCommonEditCommand;
                 EditCommonBackCommand = editCommonBackCommand;
@@ -118,6 +143,8 @@ namespace TextAdventure.Editor.ViewModels
                 IsCommonDataInEdit = isCommonDataInEdit;
                 GameName = gameName;
                 GameVersion = gameVersion;
+                OpenCommand = openCommand;
+                NewCommand = newCommand;
             }
         }
     }

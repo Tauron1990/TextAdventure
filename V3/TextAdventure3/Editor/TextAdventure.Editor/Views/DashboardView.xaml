@@ -7,6 +7,7 @@
              xmlns:local="clr-namespace:TextAdventure.Editor.Views"
              xmlns:mat="http://materialdesigninxaml.net/winfx/xaml/themes"
              xmlns:viewModels="clr-namespace:TextAdventure.Editor.ViewModels"
+             xmlns:controls="clr-namespace:MaterialDesignExtensions.Controls;assembly=MaterialDesignExtensions"
              mc:Ignorable="d" d:DataContext="{d:DesignInstance viewModels:DashboardViewModel, IsDesignTimeCreatable=False}"
              d:DesignHeight="450" d:DesignWidth="800">
     <UserControl.Resources>
@@ -21,15 +22,16 @@
         </ResourceDictionary>
     </UserControl.Resources>
     <WrapPanel>
-        <mat:Flipper Width="250" Height="300" Style="{StaticResource MaterialDesignCardFlipper}" Margin="15" IsEnabled="{hlp:ActorBinding IsValid}" IsFlipped="{hlp:ActorBinding IsCommonDataInEdit}">
+        <mat:Flipper Width="250" Height="300" Style="{StaticResource MaterialDesignCardFlipper}" IsFlipped="{hlp:ActorBinding IsCommonDataInEdit}">
             <mat:Flipper.FrontContent>
                 <Grid>
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
                         <RowDefinition/>
                     </Grid.RowDefinitions>
                     <mat:ColorZone Mode="PrimaryLight" Padding="10">
@@ -43,6 +45,8 @@
                     <TextBlock Grid.Row="4" Text="{hlp:ActorBinding GameVersion}" Margin="15, 5"/>
 
                     <Button Grid.Row="5" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Content="Beabeiten" Command="{hlp:ActorBinding EditCommonCommand}"/>
+                    <Button Grid.Row="6" HorizontalAlignment="Left" Content="Neu" Margin="30,0" Command="{hlp:ActorBinding NewCommand}"/>
+                    <Button Grid.Row="6" HorizontalAlignment="Right" Content="Öffnen" Margin="25,0" Command="{hlp:ActorBinding OpenCommand}"/>
                 </Grid>
             </mat:Flipper.FrontContent>
             <mat:Flipper.BackContent>
@@ -73,6 +77,29 @@
                     <Button Grid.Row="3" HorizontalAlignment="Center" VerticalAlignment="Top" Margin="10" Content="Anwenden" Command="{hlp:ActorBinding ApplyCommonEditCommand}"/>
                 </Grid>
             </mat:Flipper.BackContent>
+        </mat:Flipper>
+        <mat:Flipper Width="250" Height="300" IsEnabled="{hlp:ActorBinding IsValid}" Style="{StaticResource MaterialDesignCardFlipper}">
+            <mat:Flipper.FrontContent>
+                <Grid>
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="2*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="*"/>
+                        <RowDefinition Height="2*"/>
+                    </Grid.RowDefinitions>
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition/>
+                        <ColumnDefinition/>
+                    </Grid.ColumnDefinitions>
+                    <mat:ColorZone Mode="PrimaryLight" VerticalAlignment="Stretch" HorizontalAlignment="Stretch" VerticalContentAlignment="Stretch" HorizontalContentAlignment="Stretch"
+                                   Grid.ColumnSpan="2">
+                        <TextBlock Foreground="Black" Text="Entities" TextAlignment="Center" VerticalAlignment="Center" FontSize="50" TextDecorations="Underline"/>
+                    </mat:ColorZone>
+                    <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Text="Menge:"/>
+                    <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="0"></TextBlock>
+                    <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Content="Editieren"/>
+                </Grid>
+            </mat:Flipper.FrontContent>
         </mat:Flipper>
     </WrapPanel>
 </hlp:UserControl>
