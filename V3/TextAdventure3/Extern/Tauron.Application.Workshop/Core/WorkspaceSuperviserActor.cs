@@ -7,65 +7,64 @@ using Tauron.Application.Workshop.Mutation;
 
 namespace Tauron.Application.Workshop.Core
 {
-    public sealed class WorkspaceSuperviserActor : ExpandedReceiveActor
+    public sealed class WorkspaceSuperviserActor : ObservableActor
     {
         private ImmutableDictionary<IActorRef, Action> _intrest = ImmutableDictionary<IActorRef, Action>.Empty;
 
         public WorkspaceSuperviserActor()
         {
-            Receive<SuperviseActorBase>(CreateActor);
+            Receive<SuperviseActorBase>(obs => obs.SubscribeWithStatus(CreateActor));
 
-            Receive<WatchIntrest>(wi =>
-            {
-                ImmutableInterlocked.AddOrUpdate(ref _intrest, wi.Target, _ => wi.OnRemove, (_, action) => action.Combine(wi.OnRemove) ?? wi.OnRemove);
-                Context.Watch(wi.Target);
-            });
-            Receive<Terminated>(t =>
-            {
-                if (!_intrest.TryGetValue(t.ActorRef, out var action)) return;
+            Receive<WatchIntrest>(obs => obs.SubscribeWithStatus(wi =>
+                                                                 {
+                                                                     ImmutableInterlocked.AddOrUpdate(ref _intrest, 
+                                                                                                      wi.Target, _ => wi.OnRemove,
+                                                                                                      (_, action) => action.Combine(wi.OnRemove) ?? wi.OnRemove);
+                                                                     Context.Watch(wi.Target);
+                                                                 }));
+            Receive<Terminated>(obs => obs.SubscribeWithStatus(t =>
+                                                               {
+                                                                   if (!_intrest.TryGetValue(t.ActorRef, out var action)) return;
 
-                action();
-                _intrest = _intrest.Remove(t.ActorRef);
-            });
+                                                                   action();
+                                                                   _intrest = _intrest.Remove(t.ActorRef);
+                                                               }));
         }
 
         private void CreateActor(SuperviseActorBase obj)
         {
             Props? props = null;
-            
+
             try
             {
                 props = obj.Props(Context);
                 var newActor = Context.ActorOf(props, obj.Name);
 
-                if(Sender.IsNobody()) return;
+                if (Sender.IsNobody()) return;
                 Sender.Tell(new NewActor(newActor));
             }
             catch (Exception e)
             {
                 Log.Error(e, "Error on Create an new Actor {TypeName}", props?.TypeName ?? "Unkowen");
 
-                if(Sender.IsNobody()) return;
+                if (Sender.IsNobody()) return;
                 Sender.Tell(new NewActor(ActorRefs.Nobody));
             }
         }
 
-        protected override SupervisorStrategy SupervisorStrategy()
-        {
-            return new OneForOneStrategy(
-                Decider.From(Directive.Resume, 
-                    Directive.Stop.When<ActorInitializationException>(),
-                    Directive.Stop.When<ActorKilledException>(), 
-                    Directive.Stop.When<DeathPactException>()));
-        }
+        protected override SupervisorStrategy SupervisorStrategy() => new OneForOneStrategy(
+            Decider.From(Directive.Resume,
+                         Directive.Stop.When<ActorInitializationException>(),
+                         Directive.Stop.When<ActorKilledException>(),
+                         Directive.Stop.When<DeathPactException>()));
 
         internal abstract class SuperviseActorBase
         {
+            protected SuperviseActorBase(string name) => Name = name;
+
             public abstract Func<IUntypedActorContext, Props> Props { get; }
 
             public string Name { get; }
-
-            protected SuperviseActorBase(string name) => Name = name;
         }
 
         internal sealed class SupervisePropsActor : SuperviseActorBase
@@ -90,9 +89,9 @@ namespace Tauron.Application.Workshop.Core
 
         internal sealed class NewActor
         {
-            public IActorRef ActorRef { get; }
-
             public NewActor(IActorRef actorRef) => ActorRef = actorRef;
+
+            public IActorRef ActorRef { get; }
         }
     }
 }

@@ -8,17 +8,20 @@ namespace Tauron.Application.Workshop
     [PublicAPI]
     public static class EventSourceExtensions
     {
-        public static void RespondOnEventSource<TData>(this IExpandedReceiveActor actor, IEventSource<TData> eventSource, Action<TData> action)
+        public static void RespondOnEventSource<TData>(this IObservableActor actor, IEventSource<TData> eventSource, Action<TData> action)
         {
-            eventSource.RespondOn(ExpandedReceiveActor.ExposedContext.Self);
-            actor.Exposed.Receive<TData>((data, _) => action(data));
+            eventSource.RespondOn(ObservableActor.ExposedContext.Self);
+            actor.Receive<TData>(obs => obs.SubscribeWithStatus(action));
         }
 
         public static void RespondOn<TData>(this IEventSource<TData> source, Action<TData> action)
-            => source.RespondOn(null, action);
+        {
+            source.RespondOn(null, action);
+        }
 
         public static MutateClass<TRecieve, TMutator> Mutate<TRecieve, TMutator>(
-            this IObservable<TRecieve> selector, TMutator mutator) => new(mutator, selector);
+            this IObservable<TRecieve> selector, TMutator mutator)
+            => new(mutator, selector);
 
 
         #region Mutate
@@ -40,8 +43,7 @@ namespace Tauron.Application.Workshop
                 return eventSource(_mutator);
             }
 
-            public void With(Func<TMutator, Action<TRecieve>> run) 
-                => _selector.Subscribe(run(_mutator));
+            public IDisposable With(Func<TMutator, Action<TRecieve>> run) => _selector.Subscribe(run(_mutator));
         }
 
         #endregion

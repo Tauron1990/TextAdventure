@@ -11,12 +11,6 @@ namespace Tauron.Application.Workshop.Analyzing.Rules
     public abstract class RuleBase<TWorkspace, TData> : IRule<TWorkspace, TData>
         where TWorkspace : WorkspaceBase<TData> where TData : class
     {
-        private sealed class InternalRuleActor : ExpandedReceiveActor
-        {
-            public InternalRuleActor(Action<IExpandedReceiveActor> constructor) 
-                => constructor(this);
-        }
-
         protected TWorkspace Workspace { get; private set; } = null!;
 
         public abstract string Name { get; }
@@ -27,9 +21,16 @@ namespace Tauron.Application.Workshop.Analyzing.Rules
             return superviser.ActorOf(() => new InternalRuleActor(ActorConstruct), Name);
         }
 
-        protected abstract void ActorConstruct(IExpandedReceiveActor actor);
+        protected abstract void ActorConstruct(IObservableActor actor);
 
         protected void SendIssues(IEnumerable<Issue.IssueCompleter> issues, IActorContext context)
-            => context.Parent.Tell(new RuleIssuesChanged<TWorkspace, TData>(this, issues));
+        {
+            context.Parent.Tell(new RuleIssuesChanged<TWorkspace, TData>(this, issues));
+        }
+
+        private sealed class InternalRuleActor : ObservableActor
+        {
+            public InternalRuleActor(Action<IObservableActor> constructor) => constructor(this);
+        }
     }
 }

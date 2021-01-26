@@ -1,6 +1,5 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Diagnostics.CodeAnalysis;
 using System.Globalization;
 using JetBrains.Annotations;
 
@@ -32,6 +31,14 @@ namespace Tauron
                 if (resource is IDisposable d)
                     d.Dispose();
             }
+        }
+
+        public static bool WhenTrue(this bool input, Action run)
+        {
+            if (input)
+                run();
+
+            return input;
         }
 
         //public static TResult To<TInput, TResult>(this TInput input, Func<TInput, TResult> transformer)
@@ -71,11 +78,8 @@ namespace Tauron
         //    if (string.IsNullOrWhiteSpace(target)) return;
         //    then(target);
         //}
-        
-        public static DateTime CutSecond(this DateTime source)
-        {
-            return new(source.Year, source.Month, source.Day, source.Hour, source.Minute, 0);
-        }
+
+        public static DateTime CutSecond(this DateTime source) => new(source.Year, source.Month, source.Day, source.Hour, source.Minute, 0);
 
         public static T? GetService<T>(this IServiceProvider provider)
             where T : class
@@ -86,10 +90,7 @@ namespace Tauron
             return temp as T;
         }
 
-        public static bool IsAlive<TType>(this WeakReference<TType> reference) where TType : class
-        {
-            return reference.TryGetTarget(out _);
-        }
+        public static bool IsAlive<TType>(this WeakReference<TType> reference) where TType : class => reference.TryGetTarget(out _);
 
         public static DateTime Round(this DateTime source, RoundType type)
         {
@@ -123,10 +124,8 @@ namespace Tauron
         }
 
         [StringFormatMethod("format")]
-        public static string SFormat(this string format, params object[] args) 
-            => string.Format(CultureInfo.InvariantCulture, format, args);
+        public static string SFormat(this string format, params object[] args) => string.Format(CultureInfo.InvariantCulture, format, args);
 
-        public static TType? TypedTarget<TType>(this WeakReference<TType> reference) where TType : class 
-            => (reference.TryGetTarget(out var obj) ? obj : null)!;
+        public static TType? TypedTarget<TType>(this WeakReference<TType> reference) where TType : class => (reference.TryGetTarget(out var obj) ? obj : null)!;
     }
 }

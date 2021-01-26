@@ -4,6 +4,7 @@ using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading;
 using Akka.Actor;
+using Akka.Actor.Internal;
 using JetBrains.Annotations;
 using IScheduler = System.Reactive.Concurrency.IScheduler;
 
@@ -14,16 +15,15 @@ namespace Tauron.Akka
     {
         private readonly IActorRef _targetActor;
 
+        private ActorScheduler(IActorRef target) => _targetActor = target;
+
+        private ActorScheduler()
+            : this(ObservableActor.ExposedContext.Self) { }
+
         public static IScheduler CurrentSelf => new ActorScheduler();
 
         public static IScheduler From(IActorRef actor) => new ActorScheduler(actor);
-        
-        private ActorScheduler(IActorRef target)
-            => _targetActor = target;
-        
-        private ActorScheduler()
-            : this(ExpandedReceiveActor.ExposedContext.Self) { }
-        
+
         public override IDisposable Schedule<TState>(TState state, TimeSpan dueTime, Func<IScheduler, TState, IDisposable> action)
         {
             var target = Scheduler.Normalize(dueTime);
@@ -32,21 +32,27 @@ namespace Tauron.Akka
 
             void TryRun()
             {
-                if(disposable.IsDisposed) return;
+                if (disposable.IsDisposed) return;
                 disposable.Disposable = action(this, state);
             }
-            
+
             if (target == TimeSpan.Zero)
-                _targetActor.Tell(new ExpandedReceiveActor.TransmitAction(TryRun));
+            {
+                var currentCell = InternalCurrentActorCellKeeper.Current;
+                if(currentCell != null && currentCell.Self.Equals(_targetActor))
+                    TryRun();
+                else
+                    _targetActor.Tell(new ObservableActor.TransmitAction(TryRun));
+            }
             else
             {
                 var timerDispose = new SingleAssignmentDisposable();
                 Timer timer = new(o =>
                                   {
-                                      _targetActor.Tell(new ExpandedReceiveActor.TransmitAction(TryRun));
-                                      ((IDisposable)o!).Dispose();
+                                      _targetActor.Tell(new ObservableActor.TransmitAction(TryRun));
+                                      ((IDisposable) o!).Dispose();
                                   }, timerDispose, dueTime, Timeout.InfiniteTimeSpan);
-                
+
                 timerDispose.Disposable = timer;
             }
 
@@ -56,9 +62,6 @@ namespace Tauron.Akka
 
     public static class ActorSchedulerExtensions
     {
-        public static IObservable<TType> ObserveOnSelf<TType>(this IObservable<TType> observable)
-        {
-            return observable.ObserveOn(ActorScheduler.CurrentSelf);
-        }
+        public static IObservable<TType> ObserveOnSelf<TType>(this IObservable<TType> observable) => observable.ObserveOn(ActorScheduler.CurrentSelf);
     }
 }
