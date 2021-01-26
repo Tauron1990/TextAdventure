@@ -97,7 +97,7 @@
                     </mat:ColorZone>
                     <TextBlock Grid.Row="1" Grid.Column="0" VerticalAlignment="Center" HorizontalAlignment="Center" Text="Menge:"/>
                     <TextBlock Grid.Row="1" Grid.Column="1" VerticalAlignment="Center" HorizontalAlignment="Center" Text="0"></TextBlock>
-                    <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Content="Editieren"/>
+                    <Button Grid.Row="3" Grid.Column="0" Grid.ColumnSpan="2" HorizontalAlignment="Center" VerticalAlignment="Top" Content="Editieren" Command="{hlp:ActorBinding EditCommand}"/>
                 </Grid>
             </mat:Flipper.FrontContent>
         </mat:Flipper>

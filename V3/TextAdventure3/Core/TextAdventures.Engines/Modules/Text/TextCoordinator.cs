@@ -1,16 +1,15 @@
 ﻿using System.Threading.Tasks;
+using Tauron.Features;
 using TextAdventures.Engine.Actors;
 using TextAdventures.Engine.Systems;
 
 namespace TextAdventures.Engine.Modules.Text
 {
-    public sealed class TextCoordinator : CoordinatorProcess, IConsumeEvent<UpdateTextLayerEvent>
+    public sealed class TextCoordinator : CoordinatorProcess<EmptyState>, IConsumeEvent<UpdateTextLayerEvent>
     {
-        private readonly Task<TextLayerComponent> _textData;
+        private Task<TextLayerComponent> _textData = Task.FromCanceled<TextLayerComponent>();
         private TextLayerComponent TextData => _textData.Result;
 
-        public TextCoordinator() 
-            => _textData = GetGlobalComponent<TextLayerComponent>();
 
         public void Process(UpdateTextLayerEvent evt)
         {

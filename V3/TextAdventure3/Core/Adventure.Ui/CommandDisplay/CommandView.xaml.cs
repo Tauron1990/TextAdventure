@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using TextAdventures.Engine.CommandSystem;
 
 namespace Adventure.Ui.CommandDisplay
 {

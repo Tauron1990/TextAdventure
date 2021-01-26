@@ -1,37 +1,35 @@
-﻿using Akka.Actor;
+﻿using System;
+using System.Reactive.Linq;
+using Akka.Actor;
 using JetBrains.Annotations;
+using Tauron;
+using Tauron.Features;
 using TextAdventures.Engine.Data;
 
 namespace TextAdventures.Engine.Actors
 {
     [PublicAPI]
-    public abstract class GameProcess : ReceiveActor
+    public abstract class GameProcess<TState> : ActorFeatureBase<TState>
     {
         public GameCore Game => Context.System.GetExtension<GameCore>();
-
-        protected GameProcess()
+        
+        protected override void Config()
         {
-            Receive<LoadingCompled>(LoadingCompled);
-            Receive<PreInitStage>(PreInitHandler);
+            SupervisorStrategy = new OneForOneStrategy(_ => Directive.Escalate);
+
+            Receive<PreInitStage>(obs => obs.Select(p =>
+                                                    {
+                                                        PreInit(p.Event, p.State);
+                                                        return p.Event;
+                                                    })
+                                            .ToSender());
+
+            Receive<LoadingCompled>(obs => obs.Subscribe(LoadingCompled));
         }
+        
+        protected virtual void PreInit(PreInitStage msg, TState state) { }
 
-        private void PreInitHandler(PreInitStage obj)
-        {
-            try
-            {
-                PreInit(obj);
-            }
-            finally
-            {
-                Sender.Tell(obj);
-            }
-        }
-
-        protected virtual void PreInit(PreInitStage msg) { }
-
-        protected virtual void LoadingCompled(LoadingCompled obj) { }
-
-        protected override SupervisorStrategy SupervisorStrategy()
-            => new OneForOneStrategy(_ => Directive.Escalate);
+        protected virtual void LoadingCompled(StatePair<LoadingCompled, TState> message) { }
+        
     }
 }

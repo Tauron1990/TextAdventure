@@ -8,9 +8,13 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Akka.Streams" Version="1.4.12" />
-    <PackageReference Include="Be.Vlaanderen.Basisregisters.Generators.Guid.Deterministic" Version="2.2.7" />
-    <PackageReference Include="JetBrains.Annotations" Version="2020.2.0-eap" />
+    <PackageReference Include="Akka.Streams" Version="1.4.16" />
+    <PackageReference Include="Be.Vlaanderen.Basisregisters.Generators.Guid.Deterministic" Version="2.2.9" />
+    <PackageReference Include="JetBrains.Annotations" Version="2020.3.0" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\..\Extern\Tauron.Application.Common\Tauron.Application.Common.csproj" />
   </ItemGroup>
 
 </Project>

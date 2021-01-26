@@ -17,6 +17,7 @@ using Tauron.Application.CommonUI.AppCore;
 using Tauron.Application.CommonUI.Commands;
 using Tauron.Application.CommonUI.Helper;
 using Tauron.Application.CommonUI.ModelMessages;
+using Tauron.ObservableExt;
 using Tauron.Operations;
 
 namespace Tauron.Application.CommonUI.Model
@@ -94,141 +95,6 @@ namespace Tauron.Application.CommonUI.Model
 
         #endregion
 
-        private sealed class PropertyTermination
-        {
-            public PropertyTermination(IActorRef actorRef, string name)
-            {
-                ActorRef = actorRef;
-                Name = name;
-            }
-
-            public IActorRef ActorRef { get; }
-
-            public string Name { get; }
-        }
-
-        private sealed class CommandRegistration
-        {
-            public CommandRegistration(Action<object?> command, Func<bool> canExecute)
-            {
-                Command = command;
-                CanExecute = canExecute;
-            }
-
-            public Action<object?> Command { get; }
-
-            public Func<bool> CanExecute { get; }
-        }
-
-        private sealed class InvokeHelper
-        {
-            private readonly Delegate _method;
-            private readonly MethodType _methodType;
-
-            public InvokeHelper(Delegate del)
-            {
-                _method = del;
-                var method = del.Method;
-
-                _methodType = (MethodType) method.GetParameters().Length;
-                if (_methodType != MethodType.One) return;
-                if (method.GetParameters()[0].ParameterType != typeof(EventData)) _methodType = MethodType.EventArgs;
-            }
-
-            public void Execute(EventData? parameter)
-            {
-                var args = _methodType switch
-                           {
-                               MethodType.Zero      => Array.Empty<object>(),
-                               MethodType.One       => new object[] {parameter!},
-                               MethodType.Two       => new[] {parameter?.Sender, parameter?.EventArgs},
-                               MethodType.EventArgs => new[] {parameter?.EventArgs},
-                               _                    => Array.Empty<object>()
-                           };
-
-                _method.Method.InvokeFast(_method.Target, args);
-            }
-
-            private enum MethodType
-            {
-                Zero = 0,
-                One,
-                Two,
-                EventArgs
-            }
-        }
-
-        private sealed class PropertyData
-        {
-            public PropertyData(UIPropertyBase propertyBase) => PropertyBase = propertyBase;
-
-            public UIPropertyBase PropertyBase { get; }
-
-            public Error? Error { get; set; }
-
-            public List<IActorRef> Subscriptors { get; } = new();
-
-            public void SetValue(object value)
-            {
-                PropertyBase.ObjectValue = value;
-            }
-        }
-
-        private sealed class ActorCommand : CommandBase, IDisposable
-        {
-            private readonly BehaviorSubject<bool> _canExecute = new(false);
-            private readonly AtomicBoolean _deactivated = new();
-            private readonly IUIDispatcher _dispatcher;
-            private readonly SingleAssignmentDisposable _disposable = new();
-            private readonly string _name;
-            private readonly IActorRef _self;
-
-            public ActorCommand(string name, IActorRef self, IObservable<bool>? canExecute, IUIDispatcher dispatcher)
-            {
-                _name = name;
-                _self = self;
-                _dispatcher = dispatcher;
-                if (canExecute == null)
-                    _canExecute.OnNext(true);
-                else
-                {
-                    _disposable.Disposable = canExecute.Subscribe(b =>
-                                                                  {
-                                                                      _canExecute.OnNext(b);
-                                                                      _dispatcher.Post(RaiseCanExecuteChanged);
-                                                                  });
-                }
-            }
-
-            public void Dispose()
-            {
-                _canExecute.Dispose();
-                _disposable.Dispose();
-            }
-
-            public override void Execute(object? parameter)
-            {
-                _self.Tell(new CommandExecuteEvent(_name, parameter));
-            }
-
-            public override bool CanExecute(object? parameter) => _canExecute.Value;
-
-            public void Deactivate()
-            {
-                _deactivated.GetAndSet(true);
-                _canExecute.OnNext(false);
-                _canExecute.OnCompleted();
-                _dispatcher.Post(RaiseCanExecuteChanged);
-            }
-        }
-
-        private sealed class ReviveActor
-        {
-            public ReviveActor(KeyValuePair<string, PropertyData>[] data) => Data = data;
-
-            public KeyValuePair<string, PropertyData>[] Data { get; }
-        }
-
         #region Dispatcher
 
         public IUIDispatcher Dispatcher { get; }
@@ -289,7 +155,7 @@ namespace Tauron.Application.CommonUI.Model
 
                     _commandRegistrations.Add(key, new CommandRegistration(command, () => actorCommand.CanExecute(null)));
 
-                    return data.PropertyBase;
+                    return prop;
                 }, this);
 
         #endregion
@@ -457,8 +323,177 @@ namespace Tauron.Application.CommonUI.Model
             _propertys.Add(prop.Name, data);
         }
 
-        public UIProperty<TData> Property<TData>(Expression<Func<UIProperty<TData>>> propName) => (UIProperty<TData>) _propertys[Reflex.PropertyName(propName)].PropertyBase;
+        public IActorProperty<TData> Property<TData>(Expression<Func<UIProperty<TData>>> propName)
+        {
+            var prop = (UIProperty<TData>)_propertys[Reflex.PropertyName(propName)].PropertyBase;
+
+            return new ActorProperty<TData>(Self, prop);
+        }
 
         #endregion
+
+        private sealed class PropertyTermination
+        {
+            public PropertyTermination(IActorRef actorRef, string name)
+            {
+                ActorRef = actorRef;
+                Name = name;
+            }
+
+            public IActorRef ActorRef { get; }
+
+            public string Name { get; }
+        }
+
+        private sealed class CommandRegistration
+        {
+            public CommandRegistration(Action<object?> command, Func<bool> canExecute)
+            {
+                Command = command;
+                CanExecute = canExecute;
+            }
+
+            public Action<object?> Command { get; }
+
+            public Func<bool> CanExecute { get; }
+        }
+
+        private sealed class InvokeHelper
+        {
+            private readonly Delegate _method;
+            private readonly MethodType _methodType;
+
+            public InvokeHelper(Delegate del)
+            {
+                _method = del;
+                var method = del.Method;
+
+                _methodType = (MethodType)method.GetParameters().Length;
+                if (_methodType != MethodType.One) return;
+                if (method.GetParameters()[0].ParameterType != typeof(EventData)) _methodType = MethodType.EventArgs;
+            }
+
+            public void Execute(EventData? parameter)
+            {
+                var args = _methodType switch
+                {
+                    MethodType.Zero => Array.Empty<object>(),
+                    MethodType.One => new object[] { parameter! },
+                    MethodType.Two => new[] { parameter?.Sender, parameter?.EventArgs },
+                    MethodType.EventArgs => new[] { parameter?.EventArgs },
+                    _ => Array.Empty<object>()
+                };
+
+                _method.Method.InvokeFast(_method.Target, args);
+            }
+
+            private enum MethodType
+            {
+                Zero = 0,
+                One,
+                Two,
+                EventArgs
+            }
+        }
+
+        private sealed class PropertyData
+        {
+            public PropertyData(UIPropertyBase propertyBase) => PropertyBase = propertyBase;
+
+            public UIPropertyBase PropertyBase { get; }
+
+            public Error? Error { get; set; }
+
+            public List<IActorRef> Subscriptors { get; } = new();
+
+            public void SetValue(object value)
+            {
+                PropertyBase.ObjectValue = value;
+            }
+        }
+
+        private sealed class ActorCommand : CommandBase, IDisposable
+        {
+            private readonly BehaviorSubject<bool> _canExecute = new(false);
+            private readonly AtomicBoolean _deactivated = new();
+            private readonly IUIDispatcher _dispatcher;
+            private readonly SingleAssignmentDisposable _disposable = new();
+            private readonly string _name;
+            private readonly IActorRef _self;
+
+            public ActorCommand(string name, IActorRef self, IObservable<bool>? canExecute, IUIDispatcher dispatcher)
+            {
+                _name = name;
+                _self = self;
+                _dispatcher = dispatcher;
+                if (canExecute == null)
+                    _canExecute.OnNext(true);
+                else
+                {
+                    _disposable.Disposable = canExecute.Subscribe(b =>
+                    {
+                        _canExecute.OnNext(b);
+                        _dispatcher.Post(RaiseCanExecuteChanged);
+                    });
+                }
+            }
+
+            public void Dispose()
+            {
+                _canExecute.Dispose();
+                _disposable.Dispose();
+            }
+
+            public override void Execute(object? parameter)
+            {
+                _self.Tell(new CommandExecuteEvent(_name, parameter));
+            }
+
+            public override bool CanExecute(object? parameter) => _canExecute.Value;
+
+            public void Deactivate()
+            {
+                _deactivated.GetAndSet(true);
+                _canExecute.OnNext(false);
+                _canExecute.OnCompleted();
+                _dispatcher.Post(RaiseCanExecuteChanged);
+            }
+        }
+
+        private sealed class ReviveActor
+        {
+            public ReviveActor(KeyValuePair<string, PropertyData>[] data) => Data = data;
+
+            public KeyValuePair<string, PropertyData>[] Data { get; }
+        }
+
+        private sealed class ActorProperty<TData> : IActorProperty<TData>
+        {
+            private readonly IActorRef _actor;
+            private readonly UIProperty<TData> _prop;
+
+            public ActorProperty(IActorRef actor, UIProperty<TData> prop)
+            {
+                _actor = actor;
+                _prop = prop;
+            }
+
+            public IDisposable Subscribe(IObserver<TData> observer) => _prop.Subscribe(observer);
+
+            public IObservable<bool> IsValid => _prop.IsValid;
+
+            public TData Value
+            {
+                get => _prop.Value;
+                set => _actor.Tell(new SetValue(_prop.Name, value));
+            }
+        }
+    }
+
+    public interface IActorProperty<TData> : IObservable<TData>
+    {
+        public IObservable<bool> IsValid { get; }
+
+        public TData Value { get; set; }
     }
 }

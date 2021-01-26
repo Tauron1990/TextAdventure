@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.ComponentModel;
 using System.Diagnostics;
@@ -6,6 +7,7 @@ using System.Linq.Expressions;
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using System.Runtime.CompilerServices;
+using Akka.Util.Internal;
 using FastExpressionCompiler;
 using JetBrains.Annotations;
 
@@ -35,6 +37,7 @@ namespace Tauron.Application
     public abstract class ObservableObject : INotifyPropertyChangedMethod, IObservablePropertyChanged
     {
         private readonly Subject<string> _propertyChnaged = new();
+        private ConcurrentDictionary<string, object?>? _store;
 
         public event PropertyChangedEventHandler? PropertyChanged;
 
@@ -61,6 +64,44 @@ namespace Tauron.Application
             property = value;
             OnPropertyChangedExplicit(Argument.NotNull(name!, nameof(name)));
             changed();
+        }
+
+        public void SetProperty<TType>(TType value, [CallerMemberName] string? name = null)
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            _store ??= new ConcurrentDictionary<string, object?>();
+
+            if (EqualityComparer<TType>.Default.Equals(GetProperty<TType>(name), value)) return;
+
+            _store[name] = value;
+            OnPropertyChangedExplicit(Argument.NotNull(name!, nameof(name)));
+        }
+
+        public void SetProperty<TType>(TType value, Action changed, [CallerMemberName] string? name = null)
+        {
+            if (name == null) throw new ArgumentNullException(nameof(name));
+
+            _store ??= new ConcurrentDictionary<string, object?>();
+
+            if (EqualityComparer<TType>.Default.Equals(GetProperty<TType>(name), value)) return;
+
+            _store[name] = value;
+            OnPropertyChangedExplicit(Argument.NotNull(name!, nameof(name)));
+            changed();
+        }
+
+        public TType? GetProperty<TType>([CallerMemberName] string? name = null)
+        {
+            _store ??= new ConcurrentDictionary<string, object?>();
+
+#pragma warning disable CS8620 // Das Argument kann aufgrund von Unterschieden bei der NULL-Zulässigkeit von Verweistypen nicht für den Parameter verwendet werden.
+            return _store.GetValueOrDefault(name) switch
+#pragma warning restore CS8620 // Das Argument kann aufgrund von Unterschieden bei der NULL-Zulässigkeit von Verweistypen nicht für den Parameter verwendet werden.
+            {
+                TType value => value,
+                _ => default
+            };
         }
 
         public virtual void OnPropertyChanged(PropertyChangedEventArgs eventArgs)

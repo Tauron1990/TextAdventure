@@ -63,21 +63,21 @@ namespace TextAdventure.Editor.ViewModels
 
                                       });
 
-            this.SubscribeToEvent<MainWindowCommand>(msg =>
-                                                     {
-                                                         switch (msg.Command)
-                                                         {
-                                                             case MainWindowCommand.CommandType.Open:
-                                                                 InvokeCommand("OpenProject");
-                                                                 break;
-                                                             case MainWindowCommand.CommandType.New:
-                                                                 InvokeCommand("NewProject");
-                                                                 break;
-                                                             default:
-                                                                 throw new ArgumentOutOfRangeException();
-                                                         }
-                                                     });
-            this.SubscribeToEvent<MainWindowMessage>(msg => Messages.Value.Enqueue(msg.Message));
+            this.SubscribeToEvent<MainWindowCommand>(o => o.Subscribe(msg =>
+                                                                      {
+                                                                          switch (msg.Command)
+                                                                          {
+                                                                              case MainWindowCommand.CommandType.Open:
+                                                                                  InvokeCommand("OpenProject");
+                                                                                  break;
+                                                                              case MainWindowCommand.CommandType.New:
+                                                                                  InvokeCommand("NewProject");
+                                                                                  break;
+                                                                              default:
+                                                                                  throw new ArgumentOutOfRangeException();
+                                                                          }
+                                                                      }));
+            this.SubscribeToEvent<MainWindowMessage>(o => o.Subscribe(msg => Messages.Value.Enqueue(msg.Message)));
         }
 
         public UIModel<DashboardViewModel> Dashboard { get; }

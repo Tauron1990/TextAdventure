@@ -13,19 +13,17 @@ using TextAdventures.Engine.Data;
 namespace TextAdventures.Engine.Systems
 {
     [PublicAPI]
-    public abstract class CoordinatorProcess : GameProcess
+    public abstract class CoordinatorProcess<TState> : GameProcess<TState>
     {
-        private static readonly MethodInfo ReceiveConsumeMethod = typeof(CoordinatorProcess).GetMethod(nameof(ReceiveConsume), BindingFlags.Instance | BindingFlags.NonPublic)!;
-
-        protected CoordinatorProcess()
+        private static readonly MethodInfo ReceiveConsumeMethod = typeof(CoordinatorProcess<TState>).GetMethod(nameof(ReceiveConsume), BindingFlags.Instance | BindingFlags.NonPublic)!;
+        
+        protected override void Config()
         {
-            foreach (var @interface in GetType().GetInterfaces().Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IConsumeEvent<>)))
-            {
-                var materializer = Context.Materializer();
-                ReceiveConsumeMethod.MakeGenericMethod(@interface.GenericTypeArguments).Invoke(this, new object?[] {this, materializer});
+            base.Config();
+            var materializer = Context.Materializer();
 
-                Receive<Status.Failure>(f => throw f.Cause);
-            }
+            foreach (var @interface in GetType().GetInterfaces().Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IConsumeEvent<,>))) 
+                ReceiveConsumeMethod.MakeGenericMethod(@interface.GenericTypeArguments[0]).Invoke(this, new object?[] {this, materializer});
         }
 
         public Task<GameObject> GetObject(string name) 
@@ -55,9 +53,9 @@ namespace TextAdventures.Engine.Systems
             => Game.ObjectManager.Dispatch(command);
 
         [UsedImplicitly]
-        private void ReceiveConsume<T>(IConsumeEvent<T> self, ActorMaterializer materializer)
+        private void ReceiveConsume<T>(IConsumeEvent<T, TState> self, ActorMaterializer materializer)
         {
-            Receive<T>(self.Process);
+            Receive<T>(obs => self.Process(obs));
 
             Game.EventDispatcher.Event<T>()
                 .ContinueWith(ge =>

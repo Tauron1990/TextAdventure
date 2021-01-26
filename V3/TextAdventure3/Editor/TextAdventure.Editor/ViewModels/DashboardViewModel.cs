@@ -74,6 +74,15 @@ namespace TextAdventure.Editor.ViewModels
 
             #endregion
 
+            #region EntitiesData
+
+            EntitiesCardData = new EntitiesCard(
+                                                NewCommad
+                                                   .ThenRegister(nameof(EntitiesCard.EditCommand))
+                                               );
+
+            #endregion
+
             WhenStateChanges<CommonDataState>()
                .FromEvent(cd => cd.NameChanged)
                .ToObservable(o =>

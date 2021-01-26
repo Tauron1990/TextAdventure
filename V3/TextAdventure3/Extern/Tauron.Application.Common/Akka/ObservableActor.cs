@@ -126,7 +126,7 @@ namespace Tauron.Akka
 
         public void TellSelf(object msg) => _receiver.OnNext(msg);
 
-        protected virtual bool OnError(Status.Failure failure) => ThrowError(failure.Cause);
+        protected virtual bool OnError(Status.Failure failure) => true;
 
         protected IObservable<TEvent> GetSelector<TEvent>()
         {

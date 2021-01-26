@@ -117,10 +117,7 @@ namespace Tauron.ObservableExt
 
         public int CompareTo(T? other) => _comparer.Compare(Value, other);
 
-        public void Dispose()
-        {
-            _disposable.Dispose();
-        }
+        public void Dispose() => _disposable.Dispose();
 
         public bool Equals(RxVal<T>? other) => other != null && _equalityComparer.Equals(Value, other.Value);
 

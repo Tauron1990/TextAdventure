@@ -1,7 +1,10 @@
-﻿namespace TextAdventures.Engine.Systems
+﻿using System;
+using Tauron.Features;
+
+namespace TextAdventures.Engine.Systems
 {
-    public interface IConsumeEvent<TEvent>
+    public interface IConsumeEvent<TEvent, TState>
     {
-        void Process(TEvent evt);
+        IDisposable Process(IObservable<StatePair<TEvent, TState>> eventObservable);
     }
 }

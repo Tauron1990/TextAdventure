@@ -2,6 +2,7 @@
 using System.Collections.Immutable;
 using Akka.Actor;
 using JetBrains.Annotations;
+using Tauron.Features;
 using TextAdventures.Engine.Modules;
 
 namespace TextAdventures.Builder
@@ -11,13 +12,13 @@ namespace TextAdventures.Builder
     {
         private Action<Exception>? _error;
         private ImmutableList<GameObjectBlueprint> _gameObjectBlueprints;
-        private ImmutableDictionary<string, Props> _gameProcesses;
+        private ImmutableDictionary<string, IPreparedFeature> _gameProcesses;
         private ImmutableList<object> _gameMasterMessages;
 
         public World()
         {
             _gameObjectBlueprints = ImmutableList<GameObjectBlueprint>.Empty;
-            _gameProcesses = ImmutableDictionary<string, Props>.Empty;
+            _gameProcesses = ImmutableDictionary<string, IPreparedFeature>.Empty;
             _gameMasterMessages = ImmutableList<object>.Empty;
             Modules = ImmutableList<IModule>.Empty;
         }
@@ -48,10 +49,10 @@ namespace TextAdventures.Builder
             return this;
         }
 
-        public World WithProcess<TType>(string name, params object[] args)
+        public World WithProcess<TType>(string name, IPreparedFeature process)
             where TType : ActorBase
         {
-            _gameProcesses = _gameProcesses.Add(name, Props.Create<TType>(args));
+            _gameProcesses = _gameProcesses.Add(name, process);
             return this;
         }
 
