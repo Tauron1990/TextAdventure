@@ -2,30 +2,37 @@
 using System.Collections.Immutable;
 using System.IO;
 using System.Linq;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using Akka.Actor;
 using Newtonsoft.Json;
+using Tauron;
+using Tauron.Features;
 using TextAdventures.Builder;
 using TextAdventures.Engine.Actors;
 
 namespace TextAdventures.Engine.Storage
 {
-    public sealed class SaveGameManagerActor : GameProcess
+    public sealed class SaveGameManagerActor : GameProcess<SaveGameManagerActor.SgmState>
     {
-        private readonly IActorRef _objectManager;
-        private readonly GameProfile _profile;
+        public sealed record SgmState(IActorRef ObjectManager, GameProfile Profile);
 
-        public SaveGameManagerActor(GameProfile profile, IActorRef objectManager)
+        public static IPreparedFeature Prefab(GameProfile profile, IActorRef objectManager) 
+            => Feature.Create(() => new SaveGameManagerActor(), () => new SgmState(objectManager, profile));
+
+        protected override void Config()
         {
-            _profile = profile;
-            _objectManager = objectManager;
+            base.Config();
 
-            Receive<MakeSaveGame>(RunSave);
-            Receive<FillData>(DataFilled);
-            Receive<GameSetup>(SetupGame);
+            Receive<GameSetup>(obs => obs.SelectMany(SetupGame).ToSender());
+            Receive<FillData>(obs => obs.Select(s => s.Event).SubscribeWithStatus(DataFilled));
+            Receive<MakeSaveGame>(obs => obs.Select(RunSave));
         }
 
-        private void SetupGame(GameSetup obj)
+        private static IObservable<GameSetup> SetupGame(StatePair<GameSetup, SgmState> incomming)
         {
+            var (gameSetup, (objectManager, profile), _) = incomming;
+
             ImmutableDictionary<string, object?> DeserializeComponent(ComponentData data)
                 => data.Propertys.ToImmutableDictionary(d => d.Key,
                                                         d => JsonConvert.DeserializeObject(d.Value.Data, d.Value.Type));
@@ -33,17 +40,13 @@ namespace TextAdventures.Engine.Storage
             ImmutableDictionary<Type, ImmutableDictionary<string, object?>> DeserializeObject(ObjectData data) 
                 => data.Components.ToImmutableDictionary(d => d.ComponentType, DeserializeComponent);
 
-            if (_profile.Saves.TryGetValue(obj.SaveGame, out var path))
-            {
-                var list = JsonConvert.DeserializeObject<ObjectList>(File.ReadAllText(path));
+            if (!profile.Saves.TryGetValue(gameSetup.SaveGame, out var path)) return Observable.Return(gameSetup);
+            
+            var list = JsonConvert.DeserializeObject<ObjectList>(File.ReadAllText(path));
 
-                var sender = Sender;
+            return objectManager.Ask<UpdateData>(new UpdateData(list.Objects.ToImmutableDictionary(o => o.Key, o => DeserializeObject(o.Value))))
+                                .ToObservable().Select(_ => gameSetup);
 
-                _objectManager.Ask<UpdateData>(new UpdateData(list.Objects.ToImmutableDictionary(o => o.Key, o => DeserializeObject(o.Value))))
-                              .ContinueWith(_ => sender.Tell(obj));
-            }
-            else
-                Sender.Tell(obj);
         }
 
         private static void DataFilled(FillData obj)
@@ -69,13 +72,17 @@ namespace TextAdventures.Engine.Storage
             File.WriteAllText(targetPath, JsonConvert.SerializeObject(SerializeList(objectDatas)));
         }
 
-        private void RunSave(MakeSaveGame obj)
+        private static SgmState RunSave(StatePair<MakeSaveGame, SgmState> incomming)
         {
-            var profile = _profile.GetSaveGame(obj.Name);
+            var (obj, (objectManager, gameProfile), _) = incomming;
+
+            var profile = gameProfile.GetSaveGame(obj.Name);
             profile.Save();
 
             string saveGamePath = profile.Saves[obj.Name];
-            _objectManager.Tell(new FillData(saveGamePath, ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>>.Empty));
+            objectManager.Tell(new FillData(saveGamePath, ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>>.Empty));
+
+            return incomming.State with {Profile = profile};
         }
     }
 

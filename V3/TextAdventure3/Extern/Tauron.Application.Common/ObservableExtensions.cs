@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Reactive;
+using System.Reactive.Disposables;
 using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
@@ -46,6 +48,20 @@ namespace Tauron
                                          return Unit.Default;
                                      });
         }
+
+        public static IDisposable MultiSubscribe<TType>(this IObservable<TType> obs, Action<IObservable<TType>, Action<IDisposable>> subs)
+        {
+            var dispo = new CompositeDisposable();
+
+            subs(obs.Isonlate(), dispo.Add);
+
+            return dispo;
+        }
+
+        public static IObservable<TValue> Lookup<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
+            => Observable.Defer(() => dictionary.TryGetValue(key, out var value)
+                                          ? Observable.Return(value)
+                                          : Observable.Empty<TValue>());
 
         #region Send To Actor
 
@@ -115,6 +131,8 @@ namespace Tauron
         public static IDisposable SubscribeWithStatus<TMessage>(this IObservable<TMessage> source, Action<TMessage> onNext)
             => SubscribeWithStatus(source, null, onNext);
 
+        public static IDisposable SubscribeWithStatus<TMessage>(this IObservable<TMessage> source)
+            => SubscribeWithStatus(source, null, _ =>{});
 
         #endregion
     }

@@ -38,7 +38,7 @@ namespace Tauron.Features
 
         public ILoggingAdapter Log => _actor.Log;
 
-        public IObservable<TEvent> Receive<TEvent>() => _actor.Receive<TEvent>();
+        public IObservable<TEvent> Receive<TEvent>(object handler) => _actor.Receive<TEvent>();
 
         public IActorRef Self => _actor.Self;
 

@@ -6,7 +6,7 @@ namespace TextAdventures.Engine.Modules.Text
     {
         public override void Enrich(World world)
         {
-            world.WithProcess<TextCoordinator>("Text_Module_Coordinator")
+            world.WithProcess("Text_Module_Coordinator", TextCoordinator.Prefab())
                  .WithGlobalComponent(ComponentBlueprint.Single<TextLayerComponent>());
         }
     }

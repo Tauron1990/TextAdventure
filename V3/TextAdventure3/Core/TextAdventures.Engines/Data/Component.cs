@@ -8,7 +8,7 @@ namespace TextAdventures.Engine.Data
 
     public sealed record RespondGameObject(GameObject? GameObject);
 
-    public sealed record RespondGameComponent(object? Type);
+    public sealed record RespondGameComponent(object? Component);
 
     public sealed class ComponentObject
     {

@@ -27,10 +27,8 @@ namespace TextAdventures.Engine.Storage
                                                                              ImmutableDictionary<string, string>.Empty,
                                                                              Path.GetDirectoryName(path) ?? throw new InvalidOperationException("No valid Profile Path"));
 
-        public void Save()
-        {
-            File.WriteAllText(Path.Combine(RootPath, Name + ProfileExtension), JsonConvert.SerializeObject(this));
-        }
+        public void Save() 
+            => File.WriteAllText(Path.Combine(RootPath, Name + ProfileExtension), JsonConvert.SerializeObject(this));
 
         public static GameProfile GetDefault(string gameName, string? name = null)
         {

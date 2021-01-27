@@ -1,14 +1,17 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Reflection;
-using System.Threading.Tasks;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Dsl;
 using JetBrains.Annotations;
+using Tauron.Akka;
 using TextAdventures.Engine.Actors;
 using TextAdventures.Engine.CommandSystem;
 using TextAdventures.Engine.Data;
+using TextAdventures.Engine.Modules.Text;
 
 namespace TextAdventures.Engine.Systems
 {
@@ -16,27 +19,43 @@ namespace TextAdventures.Engine.Systems
     public abstract class CoordinatorProcess<TState> : GameProcess<TState>
     {
         private static readonly MethodInfo ReceiveConsumeMethod = typeof(CoordinatorProcess<TState>).GetMethod(nameof(ReceiveConsume), BindingFlags.Instance | BindingFlags.NonPublic)!;
-        
+        private readonly ConcurrentDictionary<Type, object> _components = new();
+        private readonly ConcurrentDictionary<string, IObservable<GameObject>> _objects = new();
+
         protected override void Config()
         {
             base.Config();
             var materializer = Context.Materializer();
 
-            foreach (var @interface in GetType().GetInterfaces().Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IConsumeEvent<,>))) 
+            foreach (var @interface in GetType().GetInterfaces().Where(t => t.IsGenericType && t.GetGenericTypeDefinition() == typeof(IConsumeEvent<,>)))
                 ReceiveConsumeMethod.MakeGenericMethod(@interface.GenericTypeArguments[0]).Invoke(this, new object?[] {this, materializer});
         }
 
-        public Task<GameObject> GetObject(string name) 
-            => Game.ObjectManager.GetObject(name)
-                   .ContinueWith(t => t.IsCompletedSuccessfully && t.Result != null ? t.Result : throw new InvalidOperationException("Object Not Found"));
+        public IObservable<GameObject> GetObject(string name)
+            => _objects.GetOrAdd(name, _ => Game.ObjectManager.GetObject(name)
+                                                .Select(o =>
+                                                        {
+                                                            if (o == null)
+                                                                throw new InvalidOperationException("Object Not Found");
+                                                            return o;
+                                                        }));
 
-        public Task<TType> GetGlobalComponent<TType>()
-            where TType : class => Game.ObjectManager.GetGlobalComponent<TType>()
-                                       .ContinueWith(t => t.IsCompletedSuccessfully && t.Result != null ? t.Result : throw new InvalidOperationException("Component Not Found"));
+        public IObservable<TType> GetGlobalComponent<TType>()
+            where TType : class
+            => (IObservable<TType>) _components.GetOrAdd(typeof(TType),
+                                                         _ => Game.ObjectManager
+                                                                  .GetGlobalComponent<TType>()
+                                                                  .Select(c =>
+                                                                          {
+                                                                              if (c == null)
+                                                                                  throw new InvalidOperationException("Component Not Found");
 
+                                                                              return c;
+                                                                          }));
+        
         protected void EmitEvents(params object[] events)
         {
-            foreach (var @event in events) 
+            foreach (var @event in events)
                 Game.EventDispatcher.Send(@event);
         }
 
@@ -55,13 +74,14 @@ namespace TextAdventures.Engine.Systems
         [UsedImplicitly]
         private void ReceiveConsume<T>(IConsumeEvent<T, TState> self, ActorMaterializer materializer)
         {
-            Receive<T>(obs => self.Process(obs));
+            Receive<T>(self.Process);
 
             Game.EventDispatcher.Event<T>()
-                .ContinueWith(ge =>
+                .ObserveOnSelf()
+                .Subscribe(ge =>
                               {
                                   var sink = Sink.ActorRef<T>(Self, PoisonPill.Instance);
-                                  ge.Result.Source.ToMaterialized(sink, Keep.Left).Run(materializer);
+                                  ge.Source.ToMaterialized(sink, Keep.Left).Run(materializer);
                               });
         }
     }

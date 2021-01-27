@@ -1,19 +1,26 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Reactive.Linq;
 using Akka;
 using Akka.Actor;
 using Akka.Streams;
 using Akka.Streams.Actors;
 using Akka.Streams.Dsl;
 using JetBrains.Annotations;
+using Tauron;
+using Tauron.Features;
 using TextAdventures.Engine.Actors;
 
 namespace TextAdventures.Engine.EventSystem
 {
-    public sealed class EventDispatcherActor : GameProcess
+    public sealed class EventDispatcherActor : GameProcess<EmptyState>
     {
-        public EventDispatcherActor()
+        public static IPreparedFeature Prefab() => Feature.Create(() => new EventDispatcherActor());
+
+        protected override void Config()
         {
+            base.Config();
+
             ActorMaterializer materializer = Context.Materializer();
 
             var source = Source.ActorPublisher<GameEvent>(Props.Create(() => new EventSender()));
@@ -22,8 +29,12 @@ namespace TextAdventures.Engine.EventSystem
             var (publisher, broadcastSource) = source.ToMaterialized(sink, Keep.Both).Run(materializer);
 
 
-            Receive<RequestEventSource>(r => Sender.Tell(r.Create(broadcastSource)));
-            ReceiveAny(o => publisher.Forward(o));
+            Receive<RequestEventSource>(obs => obs.Select(r => r.Event.Create(broadcastSource))
+                                                  .ToSender());
+
+            Receive<object>(obs => obs.Select(s => s.Event)
+                                      .Where(o => o is not RequestEventSource)
+                                      .ForwardToActor(publisher));
         }
 
         private sealed class EventSender : ActorPublisher<GameEvent>, IWithTimers

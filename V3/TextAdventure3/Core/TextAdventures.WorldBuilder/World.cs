@@ -49,8 +49,7 @@ namespace TextAdventures.Builder
             return this;
         }
 
-        public World WithProcess<TType>(string name, IPreparedFeature process)
-            where TType : ActorBase
+        public World WithProcess(string name, IPreparedFeature process)
         {
             _gameProcesses = _gameProcesses.Add(name, process);
             return this;

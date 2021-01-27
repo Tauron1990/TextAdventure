@@ -11,8 +11,10 @@ namespace TextAdventures.Engine.Actors
     [PublicAPI]
     public abstract class GameProcess<TState> : ActorFeatureBase<TState>
     {
-        public GameCore Game => Context.System.GetExtension<GameCore>();
-        
+        public GameCore Game { get; private set; }
+
+        protected GameProcess() => Game = Context.System.GetExtension<GameCore>();
+
         protected override void Config()
         {
             SupervisorStrategy = new OneForOneStrategy(_ => Directive.Escalate);

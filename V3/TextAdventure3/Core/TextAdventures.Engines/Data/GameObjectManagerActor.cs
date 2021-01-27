@@ -2,7 +2,10 @@
 using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.Linq;
+using System.Reactive.Linq;
 using Akka.Actor;
+using Tauron;
+using Tauron.Features;
 using TextAdventures.Builder;
 using TextAdventures.Engine.Actors;
 using TextAdventures.Engine.CommandSystem;
@@ -10,53 +13,46 @@ using TextAdventures.Engine.Storage;
 
 namespace TextAdventures.Engine.Data
 {
-    public sealed class GameObjectManagerActor : GameProcess
+    public sealed class GameObjectManagerActor : GameProcess<GameObjectManagerActor.GomState>
     {
+        public record GomState(ImmutableDictionary<Type, CommandProcessorBase> CommandProcessors, ImmutableDictionary<string, GameObject> GameObjects);
+
+        public static IPreparedFeature Prefab()
+            => Feature.Create(() => new GameObjectManagerActor(),
+                              () => new GomState(ImmutableDictionary<Type, CommandProcessorBase>.Empty, ImmutableDictionary<string, GameObject>.Empty));
+
         private const string GlobalGameObject = "Game_Global_GameObject_Container";
 
-        private readonly Dictionary<Type, CommandProcessorBase> _commandProcessors = new();
-        private readonly Dictionary<string, GameObject> _gameObjects = new();
 
-        public GameObjectManagerActor()
+        protected override void Config()
         {
             Receive<IGameCommand>(RunCommand);
-            Receive<RegisterCommandProcessorBase>(RegisterCommandProcessor);
+            Receive<RegisterCommandProcessorBase>(obs => obs.Select(s => s.State with{ CommandProcessors = s.State.CommandProcessors.Add(s.Event.CommandType, s.Event.CreateProcessor())}));
 
-            Receive<RequestGameComponent>(r =>
-                                          {
-                                              if (_gameObjects.TryGetValue(GlobalGameObject, out var gameObject) && gameObject.HasComponent(r.Type))
-                                              {
-                                                  Sender.Tell(gameObject.GetComponent(r.Type));
-                                                  return;
-                                              }
+            Receive<RequestGameComponent>(obs => obs.Select(s =>
+                                                            {
+                                                                var (requestGameComponent, state, _) = s;
+                                                                if (state.GameObjects.TryGetValue(GlobalGameObject, out var gameObject) && gameObject.HasComponent(requestGameComponent.Type))
+                                                                    return new RespondGameComponent(gameObject.GetComponent(requestGameComponent.Type));
+                                                                return new RespondGameComponent(null);
+                                                            }).ToSender());
 
-                                              Sender.Tell(new RespondGameComponent(null));
-                                          });
-            Receive<RequestGameObject>(r =>
-                                       {
-                                           if (_gameObjects.TryGetValue(r.Name, out var gameObject))
-                                           {
-                                               Sender.Tell(new RespondGameObject(gameObject));
-                                               return;
-                                           }
+            Receive<ComponentBlueprint>(obs => obs.Select(statePair => statePair.State.GameObjects.TryGetValue(GlobalGameObject, out var target) 
+                                                                           ? (statePair, target) 
+                                                                           : (statePair, new GameObject(GlobalGameObject, ImmutableDictionary<Type, ComponentObject>.Empty)))
+                                                  .Select(d =>
+                                                          {
+                                                              var ((evt, state, _), obj) = d;
 
-                                           Sender.Tell(new RespondGameObject(null));
-                                       });
+                                                              var comp = CreateComponent(evt);
+                                                              obj = obj with {Components = obj.Components.Add(comp.ComponentType, comp)};
 
-            Receive<ComponentBlueprint>(UpdateGlobalObject);
-            Receive<GameSetup>(SetupGame);
+                                                              return state with {GameObjects = state.GameObjects.SetItem(GlobalGameObject, obj)};
+                                                          }));
 
-            Receive<FillData>(FillSaveData);
-            Receive<UpdateData>(UpdateSaveData);
-        }
+            Receive<UpdateData>(obs => obs.Finally());
 
-        private void UpdateGlobalObject(ComponentBlueprint blueprint)
-        {
-            if (!_gameObjects.TryGetValue(GlobalGameObject, out var gameObject)) 
-                gameObject = new GameObject(GlobalGameObject, ImmutableDictionary<Type, ComponentObject>.Empty);
-
-            var comp = CreateComponent(blueprint);
-            _gameObjects[GlobalGameObject] = gameObject with{Components = gameObject.Components.Add(comp.ComponentType, comp)};
+            base.Config();
         }
 
         private void UpdateSaveData(UpdateData updateData)
@@ -76,7 +72,7 @@ namespace TextAdventures.Engine.Data
                         {
                             componentObject = new ComponentObject(
                                                                   Activator.CreateInstance(componetDataValue.Key)
-                                                               ?? throw new InvalidOperationException($"Componet Could not Created {componetDataValue.Key}"));
+                                                                  ?? throw new InvalidOperationException($"Componet Could not Created {componetDataValue.Key}"));
 
                             componentData = componentData.Add(componentObject.ComponentType, componentObject);
                         }
@@ -93,6 +89,36 @@ namespace TextAdventures.Engine.Data
                 Sender.Tell(updateData);
             }
         }
+
+        private IDisposable RunCommand(IObservable<StatePair<IGameCommand, GomState>> commandObservable)
+        {
+            IEnumerable<(GameObject obj, object componet)> GetComponents(Type targetType, IGameCommand command, ImmutableDictionary<string, GameObject> gameObjects)
+            {
+                if (string.IsNullOrWhiteSpace(command.Target))
+                {
+                    foreach (var gameObject in gameObjects.Select(p => p.Value).Where(gameObject => gameObject.HasComponent(targetType)))
+                        yield return (gameObject, gameObject.GetComponent(targetType));
+                }
+                else if (gameObjects.TryGetValue(command.Target, out var gameObject) && gameObject.HasComponent(targetType))
+                    yield return (gameObject, gameObject.GetComponent(targetType));
+            }
+
+            return commandObservable.SelectMany(statePair => statePair.State.CommandProcessors.Lookup(statePair.Event.GetType()).Select(processorBase => (processorBase, statePair)))
+                                    .SelectMany(processor => GetComponents(processor.processorBase.Component, processor.statePair.Event, processor.statePair.State.GameObjects)
+                                                   .Select(component => (component, processor.processorBase, processor.statePair.Event)))
+                                    .Where(processor => processor.processorBase.CanProcess(processor.component.componet))
+                                    .ToUnit(processor => processor.processorBase.Run(Game, processor.component.componet, processor.component.obj, processor.Event))
+                                    .SubscribeWithStatus();
+        }
+
+        public GameObjectManagerActor()
+        {
+            Receive<GameSetup>(SetupGame);
+
+            Receive<FillData>(FillSaveData);
+            Receive<UpdateData>(UpdateSaveData);
+        }
+
 
         private void FillSaveData(FillData data)
         {
@@ -121,29 +147,7 @@ namespace TextAdventures.Engine.Data
             }
         }
 
-        private void RunCommand(IGameCommand command)
-        {
-            if (!_commandProcessors.TryGetValue(command.GetType(), out var processor)) return;
 
-            var game = Context.System.GetExtension<GameCore>();
-
-            IEnumerable<(GameObject obj, object componet)> GetComponents(Type targetType)
-            {
-                if (string.IsNullOrWhiteSpace(command.Target))
-                {
-                    foreach (var gameObject in _gameObjects.Select(p => p.Value).Where(gameObject => gameObject.HasComponent(targetType)))
-                        yield return (gameObject, gameObject.GetComponent(targetType));
-                }
-                else if (_gameObjects.TryGetValue(command.Target, out var gameObject) && gameObject.HasComponent(targetType))
-                    yield return (gameObject, gameObject.GetComponent(targetType));
-            }
-
-            foreach (var (gameObject, componet) in GetComponents(processor.Component).Where(c => processor.CanProcess(c.componet)))
-                processor.Run(game, componet, gameObject, command);
-        }
-
-        private void RegisterCommandProcessor(RegisterCommandProcessorBase message)
-            => _commandProcessors.Add(message.CommandType, message.CreateProcessor());
 
         private void SetupGame(GameSetup setup)
         {

@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Reactive.Linq;
+using System.Reactive.Threading.Tasks;
 using Akka.Actor;
 using JetBrains.Annotations;
 using TextAdventures.Engine.CommandSystem;
@@ -15,15 +17,15 @@ namespace TextAdventures.Engine.Data
         public void Dispatch(IGameCommand command)
             => _objectManager.Tell(command);
 
-        public Task<GameObject?> GetObject(string name)
+        public IObservable<GameObject?> GetObject(string name)
             => _objectManager
               .Ask<RespondGameObject>(new RequestGameObject(name))
-              .ContinueWith(t => t.IsCompletedSuccessfully ? t.Result.GameObject : null);
+              .ToObservable().Select(r => r.GameObject);
 
-        public Task<TType?> GetGlobalComponent<TType>()
+        public IObservable<TType?> GetGlobalComponent<TType>()
             where TType : class
             => _objectManager
               .Ask<RespondGameComponent>(new RequestGameComponent(typeof(TType)))
-              .ContinueWith(t => t.IsCompletedSuccessfully ? t.Result.Type as TType : null);
+              .ToObservable().Select(r => r.Component as TType);
     }
 }

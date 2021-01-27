@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Reactive.Threading.Tasks;
 using Akka.Actor;
 using JetBrains.Annotations;
 
@@ -12,11 +13,11 @@ namespace TextAdventures.Engine.EventSystem
         public EventDispatcher(IActorRef dispatcher)
             => Dispatcher = dispatcher;
 
-        public Task<GenericEventResponse<TEvent>> Event<TEvent>()
-            => Dispatcher.Ask<GenericEventResponse<TEvent>>(new GenericEventRequest<TEvent>());
+        public IObservable<GenericEventResponse<TEvent>> Event<TEvent>()
+            => Dispatcher.Ask<GenericEventResponse<TEvent>>(new GenericEventRequest<TEvent>()).ToObservable();
 
-        public Task<AllEventsResponse> AllEvent()
-            => Dispatcher.Ask<AllEventsResponse>(new RequestAllEvents());
+        public IObservable<AllEventsResponse> AllEvent()
+            => Dispatcher.Ask<AllEventsResponse>(new RequestAllEvents()).ToObservable();
 
         public void Send(object msg)
             => Dispatcher.Tell(msg);
