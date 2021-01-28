@@ -50,7 +50,18 @@ namespace TextAdventures.Engine.Data
                                                               return state with {GameObjects = state.GameObjects.SetItem(GlobalGameObject, obj)};
                                                           }));
 
-            Receive<UpdateData>(obs => obs.Finally());
+            Receive<UpdateData>(obs => obs.SelectMany(data => data.Event.Data.Select(obj => (obj, data)))
+                                          .Select(s =>
+                                                  {
+                                                      var (objData, info) = s;
+                                                      if (!info.State.GameObjects.TryGetValue(objData.Key, out var gameObject))
+                                                          gameObject = new GameObject(objData.Key, ImmutableDictionary<Type, ComponentObject>.Empty);
+
+                                                      return (objData, info, gameObject);
+                                                  })
+                                          .SelectMany(info => info.objData.Value.Select(comp => (info.info, info.gameObject, comp)))
+                                          .Select()
+                                          .SubscribeWithStatus());
 
             base.Config();
         }
