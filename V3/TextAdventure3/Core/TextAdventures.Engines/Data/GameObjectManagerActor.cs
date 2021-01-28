@@ -50,7 +50,7 @@ namespace TextAdventures.Engine.Data
                                                               return state with {GameObjects = state.GameObjects.SetItem(GlobalGameObject, obj)};
                                                           }));
 
-            Receive<UpdateData>(obs => obs.Finally());
+            Receive<UpdateData>(obs => obs);
 
             base.Config();
         }
