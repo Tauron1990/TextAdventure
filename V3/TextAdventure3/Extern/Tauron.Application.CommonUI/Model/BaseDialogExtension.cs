@@ -20,11 +20,13 @@ namespace Tauron.Application.CommonUI.Model
             return ShowDialog<TDialog, TData, TData>(actor, () => default!, parameters);
         }
 
-        public static Func<Task<TData>> ShowDialog<TDialog, TData>(this UiActor actor, Func<TData> initalData, params Parameter[] parameters)
+        public static Func<Task<TData>> ShowDialog<TDialog, TData>(this UiActor actor, Func<TData> initalData,
+            params Parameter[] parameters)
             where TDialog : IBaseDialog<TData, TData>
             => ShowDialog<TDialog, TData, TData>(actor, initalData, parameters);
 
-        public static Func<Task<TData>> ShowDialog<TDialog, TData, TViewData>(this UiActor actor, Func<TViewData> initalData, params Parameter[] parameters)
+        public static Func<Task<TData>> ShowDialog<TDialog, TData, TViewData>(this UiActor actor,
+            Func<TViewData> initalData, params Parameter[] parameters)
             where TDialog : IBaseDialog<TData, TViewData>
         {
             _dialogCoordinator ??= actor.LifetimeScope.Resolve<IDialogCoordinator>();
@@ -48,7 +50,8 @@ namespace Tauron.Application.CommonUI.Model
                    };
         }
 
-        public static DialogBuilder<TViewData> Dialog<TViewData>(this IObservable<TViewData> input, UiActor actor, params Parameter[] parameters) => new(input, parameters, actor);
+        public static DialogBuilder<TViewData> Dialog<TViewData>(this IObservable<TViewData> input, UiActor actor,
+            params Parameter[] parameters) => new(input, parameters, actor);
 
         [PublicAPI]
         public sealed class DialogBuilder<TInitialData>
@@ -66,8 +69,9 @@ namespace Tauron.Application.CommonUI.Model
 
             public IObservable<TResult> Of<TDialog, TResult>() where TDialog : IBaseDialog<TResult, TInitialData>
             {
-                return _data.SelectMany(data => ShowDialog<TDialog, TResult, TInitialData>(_actor, () => data, _parameters)())
-                            .ObserveOnSelf();
+                return _data
+                      .SelectMany(data => ShowDialog<TDialog, TResult, TInitialData>(_actor, () => data, _parameters)())
+                      .ObserveOnSelf();
             }
 
             public IObservable<TInitialData> Of<TDialog>()

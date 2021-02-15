@@ -22,7 +22,8 @@ namespace TextAdventures.Engine.CommandSystem
         public abstract CommandProcessorBase CreateProcessor();
     }
 
-    public sealed record RegisterCommandProcessor<TCommand, TComponent>(RunCommand<TCommand, TComponent> Processor) : RegisterCommandProcessorBase
+    public sealed record RegisterCommandProcessor<TCommand, TComponent>
+        (RunCommand<TCommand, TComponent> Processor) : RegisterCommandProcessorBase
         where TCommand : IGameCommand
     {
         public override Type CommandType => typeof(TCommand);
@@ -33,10 +34,10 @@ namespace TextAdventures.Engine.CommandSystem
         {
             private readonly RunCommand<TCommand, TComponent> _processor;
 
-            public override Type Component => typeof(TComponent);
-
             public ProcessorImpl(RunCommand<TCommand, TComponent> processor)
                 => _processor = processor;
+
+            public override Type Component => typeof(TComponent);
 
             public override bool CanProcess(object component) => component is TComponent;
 
@@ -78,18 +79,19 @@ namespace TextAdventures.Engine.CommandSystem
     public abstract class CommandProcessor<TCommand, TComponent> : ICommandProcessorRegistrar
         where TCommand : IGameCommand
     {
-        protected abstract void RunCommand(ICommandContext<TComponent> commandContext, TCommand command);
-
         RegisterCommandProcessorBase ICommandProcessorRegistrar.CreateRegistration()
         {
             return CommandProcessor.RegistrationFor<TCommand, TComponent>(RunCommand);
         }
+
+        protected abstract void RunCommand(ICommandContext<TComponent> commandContext, TCommand command);
     }
 
     [PublicAPI]
     public static class CommandProcessor
     {
-        public static RegisterCommandProcessorBase RegistrationFor<TCommand, TComponent>(RunCommand<TCommand, TComponent> processor)
+        public static RegisterCommandProcessorBase RegistrationFor<TCommand, TComponent>(
+            RunCommand<TCommand, TComponent> processor)
             where TCommand : IGameCommand
             => new RegisterCommandProcessor<TCommand, TComponent>(processor);
 

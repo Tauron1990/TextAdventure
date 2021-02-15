@@ -14,10 +14,12 @@ namespace Tauron.Application.Logging
     [PublicAPI]
     public static class LoggingExtensions
     {
-        public static LoggerConfiguration ConfigDefaultLogging(this LoggerConfiguration loggerConfiguration, string applicationName, bool noFile = false)
+        public static LoggerConfiguration ConfigDefaultLogging(this LoggerConfiguration loggerConfiguration,
+            string applicationName, bool noFile = false)
         {
             if (!noFile)
-                loggerConfiguration.WriteTo.File(new CompactJsonFormatter(), "Logs\\Log.log", fileSizeLimitBytes: 5_242_880, retainedFileCountLimit: 5);
+                loggerConfiguration.WriteTo.File(new CompactJsonFormatter(), "Logs\\Log.log",
+                    fileSizeLimitBytes: 5_242_880, retainedFileCountLimit: 5);
 
             return loggerConfiguration
                   .MinimumLevel.Debug()
@@ -30,7 +32,8 @@ namespace Tauron.Application.Logging
                   .Enrich.WithEventTypeEnricher();
         }
 
-        public static LoggerConfiguration WithEventTypeEnricher(this LoggerEnrichmentConfiguration config) => config.With<EventTypeEnricher>();
+        public static LoggerConfiguration WithEventTypeEnricher(this LoggerEnrichmentConfiguration config)
+            => config.With<EventTypeEnricher>();
 
         public static ContainerBuilder AddTauronLogging(this ContainerBuilder collection)
         {

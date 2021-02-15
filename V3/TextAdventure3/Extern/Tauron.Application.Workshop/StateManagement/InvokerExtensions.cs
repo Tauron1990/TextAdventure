@@ -8,7 +8,8 @@ namespace Tauron.Application.Workshop.StateManagement
     [PublicAPI]
     public static class InvokerExtensions
     {
-        public static IObservable<Unit> ExecuteCommands<TCommand>(this IObservable<TCommand?> observable, IActionInvoker invoker)
+        public static IObservable<Unit> ExecuteCommands<TCommand>(this IObservable<TCommand?> observable,
+            IActionInvoker invoker)
             where TCommand : IStateAction
         {
             return observable

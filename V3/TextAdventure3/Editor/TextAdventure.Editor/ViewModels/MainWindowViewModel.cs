@@ -25,7 +25,8 @@ namespace TextAdventure.Editor.ViewModels
         public MainWindowViewModel(ILifetimeScope lifetimeScope, IUIDispatcher dispatcher, IActionInvoker actionInvoker)
             : base(lifetimeScope, dispatcher, actionInvoker)
         {
-            Messages = RegisterProperty<ISnackbarMessageQueue>(nameof(Messages)).WithDefaultValue(new SnackbarMessageQueue(TimeSpan.FromSeconds(5), Application.Current.Dispatcher));
+            Messages = RegisterProperty<ISnackbarMessageQueue>(nameof(Messages))
+               .WithDefaultValue(new SnackbarMessageQueue(TimeSpan.FromSeconds(5), Application.Current.Dispatcher));
             WindowTitle = RegisterProperty<string>(nameof(WindowTitle)).WithDefaultValue("Text Adventure Editor");
             Dashboard = this.RegisterViewModel<DashboardViewModel>(nameof(Dashboard));
 
@@ -35,7 +36,8 @@ namespace TextAdventure.Editor.ViewModels
                         .ThenRegister("NewProject");
 
             OpenProject = NewCommad
-                         .ThenFlow(o => o.Select(_ => new OpenDirectoryDialogArguments {CurrentDirectory = NewProjectDialogModel.ProjectPath()})
+                         .ThenFlow(o => o.Select(_ => new OpenDirectoryDialogArguments
+                                                      {CurrentDirectory = NewProjectDialogModel.ProjectPath()})
                                          .Dialog(this).Of<GenericOpenDictionaryDialog, string?>()
                                          .NotNull().Where(Directory.Exists)
                                          .Select(s => new TryLoadProjectCommand(s, false, string.Empty))
@@ -47,20 +49,24 @@ namespace TextAdventure.Editor.ViewModels
                                           s.ProjectLoadFailed.Subscribe(lf =>
                                                                         {
                                                                             WindowTitle += "Text Adventure Editor";
-                                                                            Messages.Value.Enqueue($"Laden Fhelgeschlagen: {lf.Message}");
+                                                                            Messages.Value.Enqueue(
+                                                                                $"Laden Fhelgeschlagen: {lf.Message}");
                                                                         }).DisposeWith(this);
 
                                           s.ProjectLoaded.Subscribe(pl =>
                                                                     {
                                                                         var (project, source) = pl;
 
-                                                                        WindowTitle += $"Text Adventure Editor ({project.GameName} -- {project.GameVersion})";
-                                                                        Messages.Value.Enqueue($"Laden Erfolgreich: {source}");
+                                                                        WindowTitle +=
+                                                                            $"Text Adventure Editor ({project.GameName} -- {project.GameVersion})";
+                                                                        Messages.Value.Enqueue(
+                                                                            $"Laden Erfolgreich: {source}");
                                                                     }).DisposeWith(this);
 
-                                          s.ProjectSaved.Subscribe(ps => Messages.Value.Enqueue(ps.IsOk ? "Projekt geschpeichert" : $"Speichern Fehlgeschlagen: {ps.Error}")).DisposeWith(this);
-
-
+                                          s.ProjectSaved
+                                           .Subscribe(ps => Messages.Value.Enqueue(ps.IsOk
+                                                          ? "Projekt geschpeichert"
+                                                          : $"Speichern Fehlgeschlagen: {ps.Error}")).DisposeWith(this);
                                       });
 
             this.SubscribeToEvent<MainWindowCommand>(o => o.Subscribe(msg =>
@@ -74,7 +80,8 @@ namespace TextAdventure.Editor.ViewModels
                                                                                   InvokeCommand("NewProject");
                                                                                   break;
                                                                               default:
-                                                                                  throw new ArgumentOutOfRangeException();
+                                                                                  throw new
+                                                                                      ArgumentOutOfRangeException();
                                                                           }
                                                                       }));
             this.SubscribeToEvent<MainWindowMessage>(o => o.Subscribe(msg => Messages.Value.Enqueue(msg.Message)));

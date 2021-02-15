@@ -9,15 +9,16 @@ namespace TextAdventures.Builder
     {
         private readonly GameObjectBlueprint? _gameObjectBlueprint;
 
-        public Type ComponentType { get; }
-
-        public ImmutableDictionary<string, object?> DefaultValues { get; private set; } = ImmutableDictionary<string, object?>.Empty;
-
         public ComponentBlueprint(Type componentType, GameObjectBlueprint? gameObjectBlueprint)
         {
             _gameObjectBlueprint = gameObjectBlueprint;
             ComponentType = componentType;
         }
+
+        public Type ComponentType { get; }
+
+        public ImmutableDictionary<string, object?> DefaultValues { get; private set; } =
+            ImmutableDictionary<string, object?>.Empty;
 
         public static ComponentBlueprint Single<TComponent>()
             where TComponent : IComponent
@@ -33,6 +34,6 @@ namespace TextAdventures.Builder
             => _gameObjectBlueprint ?? throw new InvalidOperationException("Uncoopled Component Blueprint");
 
         public static implicit operator GameObjectBlueprint(ComponentBlueprint blueprint)
-                => blueprint.And();
+            => blueprint.And();
     }
 }

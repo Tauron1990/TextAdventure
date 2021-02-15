@@ -22,8 +22,11 @@ namespace Tauron.Host
                                                  configBuilder
                                                     .AddInMemoryCollection(new[]
                                                                            {
-                                                                               new KeyValuePair<string, string>(HostDefaults.ContentRootKey, contentRoot
-                                                                                                                                          ?? throw new ArgumentNullException(nameof(contentRoot)))
+                                                                               new KeyValuePair<string, string>(
+                                                                                   HostDefaults.ContentRootKey,
+                                                                                   contentRoot
+                                                                                ?? throw new ArgumentNullException(
+                                                                                       nameof(contentRoot)))
                                                                            });
                                              });
         }

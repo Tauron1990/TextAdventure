@@ -16,15 +16,15 @@ namespace TextAdventures.Engine.Modules.Command
 
     public sealed class CommandLayerKey
     {
-        public string Name { get; }
-
-        public int Order { get; }
-
         public CommandLayerKey(string name, int order)
         {
             Name = name;
             Order = order;
         }
+
+        public string Name { get; }
+
+        public int Order { get; }
     }
 
     public class CommandLayerComponent : ComponentBase
@@ -35,7 +35,8 @@ namespace TextAdventures.Engine.Modules.Command
             set => SetData(value);
         }
 
-        public IEnumerable<CommandData> CommandData => CommandLayer.Where(l => l.Value.Enable).OrderBy(p => p.Key.Order).Select(p => p.Value);
+        public IEnumerable<CommandData> CommandData
+            => CommandLayer.Where(l => l.Value.Enable).OrderBy(p => p.Key.Order).Select(p => p.Value);
 
         protected internal override void ApplyEvent(object @event)
         {

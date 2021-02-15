@@ -6,7 +6,6 @@ namespace TestApp
     {
         public static async Task Main()
         {
-            
         }
     }
 }

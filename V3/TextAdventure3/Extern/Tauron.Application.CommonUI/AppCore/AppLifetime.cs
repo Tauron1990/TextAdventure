@@ -43,7 +43,8 @@ namespace Tauron.Application.CommonUI.AppCore
 
                 _internalApplication.Startup += (_, _) =>
                                                 {
-                                                    DispatcherScheduler.CurrentDispatcher = DispatcherScheduler.From(scope.Resolve<IUIDispatcher>());
+                                                    DispatcherScheduler.CurrentDispatcher =
+                                                        DispatcherScheduler.From(scope.Resolve<IUIDispatcher>());
 
                                                     // ReSharper disable AccessToDisposedClosure
                                                     var splash = scope.ResolveOptional<ISplashScreen>()?.Window;
@@ -58,7 +59,8 @@ namespace Tauron.Application.CommonUI.AppCore
                                                     // ReSharper restore AccessToDisposedClosure
                                                 };
 
-                system.RegisterOnTermination(() => _internalApplication.Dispatcher.Post(() => _internalApplication.Shutdown(0)));
+                system.RegisterOnTermination(
+                    () => _internalApplication.Dispatcher.Post(() => _internalApplication.Shutdown(0)));
 
                 _shutdownWaiter.SetResult(_internalApplication.Run());
             }

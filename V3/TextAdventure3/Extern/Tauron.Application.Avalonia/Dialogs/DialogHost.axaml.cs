@@ -13,14 +13,18 @@ namespace Tauron.Application.Avalonia.Dialogs
     [PublicAPI]
     public class DialogHost : TemplatedControl
     {
-        public static readonly StyledProperty<object> DialogProperty = AvaloniaProperty.Register<DialogHost, object>("Dialog", defaultBindingMode: BindingMode.TwoWay);
-        public static readonly StyledProperty<object> MainProperty = AvaloniaProperty.Register<DialogHost, object>("Main", defaultBindingMode: BindingMode.TwoWay);
+        public static readonly StyledProperty<object> DialogProperty =
+            AvaloniaProperty.Register<DialogHost, object>("Dialog", defaultBindingMode: BindingMode.TwoWay);
+
+        public static readonly StyledProperty<object> MainProperty =
+            AvaloniaProperty.Register<DialogHost, object>("Main", defaultBindingMode: BindingMode.TwoWay);
 
         public DialogHost()
         {
             InitializeComponent();
 
-            var coordinator = (IDialogCoordinatorUIEvents) ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
+            var coordinator =
+                (IDialogCoordinatorUIEvents) ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
 
             coordinator.HideDialogEvent += () =>
                                            {

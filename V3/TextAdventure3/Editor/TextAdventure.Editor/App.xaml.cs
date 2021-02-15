@@ -3,7 +3,7 @@
 namespace TextAdventure.Editor
 {
     /// <summary>
-    /// Interaction logic for App.xaml
+    ///     Interaction logic for App.xaml
     /// </summary>
     public partial class App : Application
     {
@@ -12,6 +12,8 @@ namespace TextAdventure.Editor
             InitializeComponent();
         }
 
-        private void App_OnStartup(object sender, StartupEventArgs e) { }
+        private void App_OnStartup(object sender, StartupEventArgs e)
+        {
+        }
     }
 }

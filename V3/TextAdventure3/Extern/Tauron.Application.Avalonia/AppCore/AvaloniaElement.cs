@@ -20,7 +20,8 @@ namespace Tauron.Application.Avalonia.AppCore
             set => _element.DataContext = value;
         }
 
-        public IObservable<object> DataContextChanged => _element.GetPropertyChangedObservable(StyledElement.DataContextProperty);
+        public IObservable<object> DataContextChanged
+            => _element.GetPropertyChangedObservable(StyledElement.DataContextProperty);
 
         public virtual IObservable<Unit> Loaded
             => _element

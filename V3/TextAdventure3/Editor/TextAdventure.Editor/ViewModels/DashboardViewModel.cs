@@ -3,7 +3,6 @@ using System.Reactive.Linq;
 using Autofac;
 using JetBrains.Annotations;
 using Tauron;
-using Tauron.Akka;
 using Tauron.Application.CommonUI;
 using Tauron.Application.CommonUI.AppCore;
 using Tauron.Application.CommonUI.Model;
@@ -25,61 +24,65 @@ namespace TextAdventure.Editor.ViewModels
             #region Common Card
 
             CommonCardData = new CommonCard
-                (
-                 isCommonDataInEdit: RegisterProperty<bool>(nameof(CommonCard.IsCommonDataInEdit)).WithDefaultValue(false),
+            (
+                isCommonDataInEdit: RegisterProperty<bool>(nameof(CommonCard.IsCommonDataInEdit))
+                   .WithDefaultValue(false),
+                gameName: RegisterProperty<string>(nameof(CommonCard.GameName))
+                         .WithDefaultValue(string.Empty)
+                         .WithValidator(o => o.Select(s => string.IsNullOrWhiteSpace(s)
+                                                          ? new Error("Name darf nicht Leer Sein", "Name")
+                                                          : null)),
+                gameVersion: RegisterProperty<string>(nameof(CommonCard.GameVersion))
+                            .WithDefaultValue(string.Empty)
+                            .WithValidator(o => o.Select(s =>
+                                                         {
+                                                             if (string.IsNullOrWhiteSpace(s))
+                                                                 return new Error("Version darf nicht Leer Sein",
+                                                                     "Version");
 
-                 gameName: RegisterProperty<string>(nameof(CommonCard.GameName))
-                          .WithDefaultValue(string.Empty)
-                          .WithValidator(o => o.Select(s => string.IsNullOrWhiteSpace(s) ? new Error("Name darf nicht Leer Sein", "Name") : null)),
-
-                 gameVersion: RegisterProperty<string>(nameof(CommonCard.GameVersion))
-                             .WithDefaultValue(string.Empty)
-                             .WithValidator(o => o.Select(s =>
-                                                          {
-                                                              if (string.IsNullOrWhiteSpace(s))
-                                                                  return new Error("Version darf nicht Leer Sein", "Version");
-
-                                                              return Version.TryParse(s, out _) ? null : new Error("Version Format: 0.0.0.0 oder 0.0", "Version");
-                                                          })),
-
-                 editCommonCommand: NewCommad
-                                   .WithCanExecute(IsValid)
-                                   .WithExecute(() => CommonCardData!.IsCommonDataInEdit += true)
-                                   .ThenRegister(nameof(CommonCard.EditCommonCommand)),
-
-                 editCommonBackCommand: NewCommad
-                                       .WithExecute(() =>
-                                                    {
-                                                        CommonCardData!.GameName += CurrentProject.Value.GameName;
-                                                        CommonCardData.GameVersion += CurrentProject.Value.GameVersion.ToString();
-                                                        CommonCardData.IsCommonDataInEdit += false;
-                                                    }).ThenRegister(nameof(CommonCard.EditCommonBackCommand)),
-
-                 applyCommonEditCommand: NewCommad
-                                        .WithCanExecute(from nameValid in Property(() => CommonCardData!.GameName).IsValid
-                                                        from versionValid in Property(() => CommonCardData!.GameVersion).IsValid
-                                                        select nameValid && versionValid)
-                                        .ThenFlow(o => o.Select(_ => new ChangeGameNameCommand(CommonCardData!.GameName.Value, CommonCardData.GameVersion.Value))
-                                                        .ToActionInvoker(ActionInvoker))
-                                        .ThenRegister(nameof(CommonCard.ApplyCommonEditCommand)),
-
-                 newCommand: NewCommad
-                            .WithExecute(() => Context.System.EventStream.Publish(MainWindowCommand.New()))
-                            .ThenRegister(nameof(CommonCard.NewCommand)),
-
-                 openCommand: NewCommad
-                             .WithExecute(() => Context.System.EventStream.Publish(MainWindowCommand.Open()))
-                             .ThenRegister(nameof(CommonCard.OpenCommand))
-                );
+                                                             return Version.TryParse(s, out _)
+                                                                 ? null
+                                                                 : new Error("Version Format: 0.0.0.0 oder 0.0",
+                                                                     "Version");
+                                                         })),
+                editCommonCommand: NewCommad
+                                  .WithCanExecute(IsValid)
+                                  .WithExecute(() => CommonCardData!.IsCommonDataInEdit += true)
+                                  .ThenRegister(nameof(CommonCard.EditCommonCommand)),
+                editCommonBackCommand: NewCommad
+                                      .WithExecute(() =>
+                                                   {
+                                                       CommonCardData!.GameName += CurrentProject.Value.GameName;
+                                                       CommonCardData.GameVersion +=
+                                                           CurrentProject.Value.GameVersion.ToString();
+                                                       CommonCardData.IsCommonDataInEdit += false;
+                                                   }).ThenRegister(nameof(CommonCard.EditCommonBackCommand)),
+                applyCommonEditCommand: NewCommad
+                                       .WithCanExecute(
+                                            from nameValid in Property(() => CommonCardData!.GameName).IsValid
+                                            from versionValid in Property(() => CommonCardData!.GameVersion).IsValid
+                                            select nameValid && versionValid)
+                                       .ThenFlow(o => o.Select(_ => new ChangeGameNameCommand(
+                                                                   CommonCardData!.GameName.Value,
+                                                                   CommonCardData.GameVersion.Value))
+                                                       .ToActionInvoker(ActionInvoker))
+                                       .ThenRegister(nameof(CommonCard.ApplyCommonEditCommand)),
+                newCommand: NewCommad
+                           .WithExecute(() => Context.System.EventStream.Publish(MainWindowCommand.New()))
+                           .ThenRegister(nameof(CommonCard.NewCommand)),
+                openCommand: NewCommad
+                            .WithExecute(() => Context.System.EventStream.Publish(MainWindowCommand.Open()))
+                            .ThenRegister(nameof(CommonCard.OpenCommand))
+            );
 
             #endregion
 
             #region EntitiesData
 
             EntitiesCardData = new EntitiesCard(
-                                                NewCommad
-                                                   .ThenRegister(nameof(EntitiesCard.EditCommand))
-                                               );
+                NewCommad
+                   .ThenRegister(nameof(EntitiesCard.EditCommand))
+            );
 
             #endregion
 
@@ -103,7 +106,8 @@ namespace TextAdventure.Editor.ViewModels
                                              {
                                                  var (_, newName, _) = c;
                                                  CommonCardData.GameName += newName;
-                                                 CommonCardData.GameVersion += CurrentProject.Value.GameVersion.ToString();
+                                                 CommonCardData.GameVersion +=
+                                                     CurrentProject.Value.GameVersion.ToString();
                                              })
                                   .DisposeWith(this);
                              });
@@ -112,10 +116,9 @@ namespace TextAdventure.Editor.ViewModels
                                      {
                                          CommonCardData.GameName += d.GameName;
                                          CommonCardData.GameVersion += d.GameVersion.ToString();
-
                                      }).DisposeWith(this);
         }
-        
+
         private CommonCard CommonCardData { get; }
 
         private EntitiesCard EntitiesCardData { get; }
@@ -128,6 +131,20 @@ namespace TextAdventure.Editor.ViewModels
 
         private sealed class CommonCard
         {
+            public CommonCard(UIPropertyBase? applyCommonEditCommand, UIPropertyBase? editCommonBackCommand,
+                UIPropertyBase? editCommonCommand, UIProperty<bool> isCommonDataInEdit, UIProperty<string> gameName,
+                UIProperty<string> gameVersion, UIPropertyBase? openCommand, UIPropertyBase? newCommand)
+            {
+                ApplyCommonEditCommand = applyCommonEditCommand;
+                EditCommonBackCommand = editCommonBackCommand;
+                EditCommonCommand = editCommonCommand;
+                IsCommonDataInEdit = isCommonDataInEdit;
+                GameName = gameName;
+                GameVersion = gameVersion;
+                OpenCommand = openCommand;
+                NewCommand = newCommand;
+            }
+
             public UIPropertyBase? OpenCommand { get; }
 
             public UIPropertyBase? NewCommand { get; }
@@ -143,18 +160,6 @@ namespace TextAdventure.Editor.ViewModels
             public UIProperty<string> GameName { get; set; }
 
             public UIProperty<string> GameVersion { get; set; }
-
-            public CommonCard(UIPropertyBase? applyCommonEditCommand, UIPropertyBase? editCommonBackCommand, UIPropertyBase? editCommonCommand, UIProperty<bool> isCommonDataInEdit, UIProperty<string> gameName, UIProperty<string> gameVersion, UIPropertyBase? openCommand, UIPropertyBase? newCommand)
-            {
-                ApplyCommonEditCommand = applyCommonEditCommand;
-                EditCommonBackCommand = editCommonBackCommand;
-                EditCommonCommand = editCommonCommand;
-                IsCommonDataInEdit = isCommonDataInEdit;
-                GameName = gameName;
-                GameVersion = gameVersion;
-                OpenCommand = openCommand;
-                NewCommand = newCommand;
-            }
         }
     }
 }

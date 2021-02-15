@@ -23,12 +23,13 @@ namespace TextAdventures.Engine.Actors
         {
             _eventDispatcher = Context.ActorOf(Props.Create(() => new EventDispatcherActor()));
             _gameObjectManager = Context.ActorOf(Props.Create(() => new GameObjectManagerActor()));
-            _saveGameManager = Context.ActorOf(Props.Create(() => new SaveGameManagerActor(profile, _gameObjectManager)));
+            _saveGameManager =
+                Context.ActorOf(Props.Create(() => new SaveGameManagerActor(profile, _gameObjectManager)));
 
             Context.System.RegisterExtension(new GameCore.GameCoreId(
-                                                                     new EventDispatcher(_eventDispatcher),
-                                                                     new GameObjectManager(_gameObjectManager),
-                                                                     new GameMaster(Self, Context.System)));
+                new EventDispatcher(_eventDispatcher),
+                new GameObjectManager(_gameObjectManager),
+                new GameMaster(Self, Context.System)));
 
             Receive<GameEvent>(evt => _eventDispatcher.Forward(evt));
             Receive<RequestEventSource>(r => _eventDispatcher.Forward(r));
@@ -64,7 +65,9 @@ namespace TextAdventures.Engine.Actors
 
             var actorRefs = setup.GameProcesses.Select(p => Context.ActorOf(p.Value, p.Key)).ToArray();
 
-            Context.ActorOf(Props.Create(() => new LoadCoordinator(_saveGameManager, _gameObjectManager, Self, actorRefs))).Tell(setup);
+            Context.ActorOf(
+                        Props.Create(() => new LoadCoordinator(_saveGameManager, _gameObjectManager, Self, actorRefs)))
+                   .Tell(setup);
         }
 
 
@@ -91,12 +94,14 @@ namespace TextAdventures.Engine.Actors
                 StartingFinish
             }
 
-            private readonly IActorRef _master;
             private readonly IActorRef[] _childProcesses;
-            private readonly IActorRef _saveGameManager;
-            private readonly IActorRef _objectManager;
 
-            public LoadCoordinator(IActorRef saveGameManager, IActorRef objectManager, IActorRef master, IActorRef[] childProcesses)
+            private readonly IActorRef _master;
+            private readonly IActorRef _objectManager;
+            private readonly IActorRef _saveGameManager;
+
+            public LoadCoordinator(IActorRef saveGameManager, IActorRef objectManager, IActorRef master,
+                IActorRef[] childProcesses)
             {
                 _saveGameManager = saveGameManager;
                 _objectManager = objectManager;
@@ -109,74 +114,74 @@ namespace TextAdventures.Engine.Actors
             private void InitFsm()
             {
                 When(LoadStep.PreInit,
-                     evt =>
-                     {
-                         if (evt.FsmEvent is not GameSetup setup) return Stay();
+                    evt =>
+                    {
+                        if (evt.FsmEvent is not GameSetup setup) return Stay();
 
-                         foreach (var module in setup.Modules)
-                             setup = module.Enrich(setup);
+                        foreach (var module in setup.Modules)
+                            setup = module.Enrich(setup);
 
-                         if (_childProcesses.Length == 0)
-                         {
-                             Self.Tell(setup);
-                             return GoTo(LoadStep.InitObjectManager);
-                         }
+                        if (_childProcesses.Length == 0)
+                        {
+                            Self.Tell(setup);
+                            return GoTo(LoadStep.InitObjectManager);
+                        }
 
-                         var msg = new PreInitStage(Context.System.GetExtension<GameCore>());
-                         var self = Self;
+                        var msg = new PreInitStage(Context.System.GetExtension<GameCore>());
+                        var self = Self;
 
-                         Task.WhenAll(_childProcesses.Select(c => c.Ask(msg)))
-                             .ContinueWith(_ => self.Tell(setup));
+                        Task.WhenAll(_childProcesses.Select(c => c.Ask(msg)))
+                            .ContinueWith(_ => self.Tell(setup));
 
-                         return GoTo(LoadStep.InitObjectManager);
-                     });
+                        return GoTo(LoadStep.InitObjectManager);
+                    });
 
                 When(LoadStep.InitObjectManager,
-                     evt =>
-                     {
-                         if (evt.FsmEvent is not GameSetup gameSetup) return Stay();
+                    evt =>
+                    {
+                        if (evt.FsmEvent is not GameSetup gameSetup) return Stay();
 
-                         _objectManager.Tell(gameSetup);
-                         return GoTo(LoadStep.AppySaveGame);
-                     });
+                        _objectManager.Tell(gameSetup);
+                        return GoTo(LoadStep.AppySaveGame);
+                    });
 
                 When(LoadStep.AppySaveGame,
-                     evt =>
-                     {
-                         if (evt.FsmEvent is not GameSetup gameSetup) return Stay();
+                    evt =>
+                    {
+                        if (evt.FsmEvent is not GameSetup gameSetup) return Stay();
 
-                         if (string.IsNullOrEmpty(gameSetup.SaveGame)) 
-                             Self.Tell(evt.FsmEvent);
-                         else
+                        if (string.IsNullOrEmpty(gameSetup.SaveGame))
+                            Self.Tell(evt.FsmEvent);
+                        else
                             _saveGameManager.Tell(gameSetup);
 
-                         return GoTo(LoadStep.SetupMessages);
-                     });
+                        return GoTo(LoadStep.SetupMessages);
+                    });
 
                 When(LoadStep.SetupMessages,
-                     evt =>
-                     {
-                         if (evt.FsmEvent is not GameSetup gameSetup) return Stay();
+                    evt =>
+                    {
+                        if (evt.FsmEvent is not GameSetup gameSetup) return Stay();
 
-                         foreach (var message in gameSetup.GameMmasterMessages) 
-                             _master.Tell(message);
-                         Self.Tell(gameSetup);
+                        foreach (var message in gameSetup.GameMmasterMessages)
+                            _master.Tell(message);
+                        Self.Tell(gameSetup);
 
-                         return GoTo(LoadStep.StartingFinish);
-                     });
+                        return GoTo(LoadStep.StartingFinish);
+                    });
 
                 When(LoadStep.StartingFinish,
-                     evt =>
-                     {
-                         if (evt.FsmEvent is LoadingCompled)
-                         {
-                             Context.Stop(Self);
-                             return Stay();
-                         }
+                    evt =>
+                    {
+                        if (evt.FsmEvent is LoadingCompled)
+                        {
+                            Context.Stop(Self);
+                            return Stay();
+                        }
 
-                         _master.Tell("new LoadingCompled()", ActorRefs.NoSender);
-                         return Stay();
-                     });
+                        _master.Tell("new LoadingCompled()", ActorRefs.NoSender);
+                        return Stay();
+                    });
 
                 StartWith(LoadStep.PreInit, new LoadCoordinatorState());
                 Initialize();

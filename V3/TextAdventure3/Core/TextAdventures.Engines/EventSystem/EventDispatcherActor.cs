@@ -57,7 +57,9 @@ namespace TextAdventures.Engine.EventSystem
                     gameEvent = new GameEvent(message);
 
                 if (TotalDemand > 0)
+                {
                     OnNext(gameEvent);
+                }
                 else
                 {
                     _pendingEvents.Enqueue(gameEvent);
@@ -86,7 +88,8 @@ namespace TextAdventures.Engine.EventSystem
                     StartTimer();
             }
 
-            private void StartTimer() => Timers.StartSingleTimer(nameof(TrySend), TrySend.Instance, TimeSpan.FromSeconds(1));
+            private void StartTimer()
+                => Timers.StartSingleTimer(nameof(TrySend), TrySend.Instance, TimeSpan.FromSeconds(1));
 
             private sealed record TrySend
             {

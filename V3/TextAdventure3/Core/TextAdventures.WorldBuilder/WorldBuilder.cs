@@ -3,5 +3,7 @@
 namespace TextAdventures.Builder
 {
     [PublicAPI]
-    public class WorldBuilder { }
+    public class WorldBuilder
+    {
+    }
 }

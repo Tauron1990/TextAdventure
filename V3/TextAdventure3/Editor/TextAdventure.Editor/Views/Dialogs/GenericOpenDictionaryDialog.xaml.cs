@@ -7,7 +7,7 @@ using Tauron.Application.Wpf.Dialogs;
 namespace TextAdventure.Editor.Views.Dialogs
 {
     /// <summary>
-    /// Interaktionslogik für GenericOpenDictionaryDialog.xaml
+    ///     Interaktionslogik für GenericOpenDictionaryDialog.xaml
     /// </summary>
     public partial class GenericOpenDictionaryDialog : IBaseDialog<string?, OpenDirectoryDialogArguments>
     {
@@ -26,6 +26,7 @@ namespace TextAdventure.Editor.Views.Dialogs
 
         private void FileSystemControl_OnCancel(object sender, RoutedEventArgs e) => _source?.SetResult(null);
 
-        private void OpenDirectoryControl_OnDirectorySelected(object sender, RoutedEventArgs e) => _source?.SetResult(Selector.CurrentDirectory);
+        private void OpenDirectoryControl_OnDirectorySelected(object sender, RoutedEventArgs e)
+            => _source?.SetResult(Selector.CurrentDirectory);
     }
 }

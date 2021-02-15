@@ -14,7 +14,8 @@ namespace Tauron.Host
     [PublicAPI]
     public static class WpfHostExtensions
     {
-        public static IApplicationBuilder UseAvalonia<TMainWindow>(this IApplicationBuilder hostBuilder, Action<AvaloniaConfiguration>? config = null)
+        public static IApplicationBuilder UseAvalonia<TMainWindow>(this IApplicationBuilder hostBuilder,
+            Action<AvaloniaConfiguration>? config = null)
             where TMainWindow : class, IMainWindow
         {
             hostBuilder.ConfigureAutoFac(sc =>
@@ -30,14 +31,16 @@ namespace Tauron.Host
             return hostBuilder;
         }
 
-        public static IApplicationBuilder UseAvalonia<TMainWindow, TApp>(this IApplicationBuilder builder, Func<AppBuilder, AppBuilder> config)
+        public static IApplicationBuilder UseAvalonia<TMainWindow, TApp>(this IApplicationBuilder builder,
+            Func<AppBuilder, AppBuilder> config)
             where TMainWindow : class, IMainWindow
             where TApp : Avalonia.Application, new()
         {
             return UseAvalonia<TMainWindow>(builder, c => c.WithApp<TApp>(config));
         }
 
-        public static IRegistrationBuilder<SimpleSplashScreen<TWindow>, ConcreteReflectionActivatorData, SingleRegistrationStyle>
+        public static IRegistrationBuilder<SimpleSplashScreen<TWindow>, ConcreteReflectionActivatorData,
+                SingleRegistrationStyle>
             AddSplash<TWindow>(this ContainerBuilder collection) where TWindow : Window, IWindow, new()
             => collection.RegisterType<SimpleSplashScreen<TWindow>>().As<ISplashScreen>();
     }

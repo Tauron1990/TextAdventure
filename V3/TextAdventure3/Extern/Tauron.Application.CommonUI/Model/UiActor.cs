@@ -17,7 +17,6 @@ using Tauron.Application.CommonUI.AppCore;
 using Tauron.Application.CommonUI.Commands;
 using Tauron.Application.CommonUI.Helper;
 using Tauron.Application.CommonUI.ModelMessages;
-using Tauron.ObservableExt;
 using Tauron.Operations;
 
 namespace Tauron.Application.CommonUI.Model
@@ -73,261 +72,27 @@ namespace Tauron.Application.CommonUI.Model
             }
 
             return message switch
-                   {
-                       CommandExecuteEvent commandExecuteEvent => Run(commandExecuteEvent, CommandExecute),
-                       ControlSetEvent controlSetEvent         => Run(controlSetEvent, msg => SetControl(msg.Name, msg.Element)),
-                       MakeEventHook makeEventHook             => Run(makeEventHook, msg => Context.Sender.Tell(Context.GetOrCreateEventActor(msg.Name + "-EventActor"))),
-                       ExecuteEventEvent executeEventEvent     => Run(executeEventEvent, ExecuteEvent),
-                       GetValueRequest getValueRequest         => Run(getValueRequest, GetPropertyValue),
-                       SetValue setValue                       => Run(setValue, SetPropertyValue),
-                       TrackPropertyEvent trackPropertyEvent   => Run(trackPropertyEvent, t => TrackProperty(t, Sender)),
-                       PropertyTermination propertyTermination => Run(propertyTermination, PropertyTerminationHandler),
-                       UnloadEvent unloadEvent                 => Run(unloadEvent, ControlUnload),
-                       InitParentViewModel initParentViewModel => Run(initParentViewModel, InitParentViewModel),
-                       ReviveActor reviveActor                 => Run(reviveActor, RestartActor),
-                       _                                       => base.Receive(message)
-                   };
+            {
+                CommandExecuteEvent commandExecuteEvent => Run(commandExecuteEvent, CommandExecute),
+                ControlSetEvent controlSetEvent => Run(controlSetEvent, msg => SetControl(msg.Name, msg.Element)),
+                MakeEventHook makeEventHook => Run(makeEventHook,
+                    msg => Context.Sender.Tell(Context.GetOrCreateEventActor(msg.Name + "-EventActor"))),
+                ExecuteEventEvent executeEventEvent => Run(executeEventEvent, ExecuteEvent),
+                GetValueRequest getValueRequest => Run(getValueRequest, GetPropertyValue),
+                SetValue setValue => Run(setValue, SetPropertyValue),
+                TrackPropertyEvent trackPropertyEvent => Run(trackPropertyEvent, t => TrackProperty(t, Sender)),
+                PropertyTermination propertyTermination => Run(propertyTermination, PropertyTerminationHandler),
+                UnloadEvent unloadEvent => Run(unloadEvent, ControlUnload),
+                InitParentViewModel initParentViewModel => Run(initParentViewModel, InitParentViewModel),
+                ReviveActor reviveActor => Run(reviveActor, RestartActor),
+                _ => base.Receive(message)
+            };
         }
 
         #region ControlEvents
 
-        protected virtual void SetControl(string name, IUIElement element) { }
-
-        #endregion
-
-        #region Dispatcher
-
-        public IUIDispatcher Dispatcher { get; }
-
-        protected Task UICall(Action<IUntypedActorContext> executor)
+        protected virtual void SetControl(string name, IUIElement element)
         {
-            var context = Context;
-            return Dispatcher.InvokeAsync(() => executor(context));
-        }
-
-        protected Task UICall(Action executor) => Dispatcher.InvokeAsync(executor);
-
-        protected IObservable<T> UICall<T>(Func<Task<T>> executor) => Dispatcher.InvokeAsync(executor);
-
-        protected IObservable<T> UICall<T>(Func<IUntypedActorContext, Task<T>> executor)
-        {
-            var context = Context;
-            return Dispatcher.InvokeAsync(() => executor(context));
-        }
-
-        #endregion
-
-        #region Commands
-
-        private void CommandExecute(CommandExecuteEvent obj)
-        {
-            var (name, parameter) = obj;
-            if (_commandRegistrations.TryGetValue(name, out var registration))
-            {
-                Log.Info("Execute Command {Commanf}", name);
-                registration.Command(parameter);
-            }
-            else
-                Log.Error("Command not Found {Name}", name);
-        }
-
-        protected void InvokeCommand(string name)
-        {
-            if (!_commandRegistrations.TryGetValue(name, out var cr))
-                return;
-
-            if (cr.CanExecute())
-                cr.Command(null);
-        }
-
-        protected CommandRegistrationBuilder NewCommad
-            => new(
-                (key, command, canExecute) =>
-                {
-                    var actorCommand = new ActorCommand(key, Context.Self, canExecute, Dispatcher).DisposeWith(this);
-                    var prop = new UIProperty<ICommand>(key).ForceSet(actorCommand);
-                    prop.LockSet();
-                    var data = new PropertyData(prop);
-
-                    _propertys.Add(key, data);
-
-                    PropertyValueChanged(data);
-
-                    _commandRegistrations.Add(key, new CommandRegistration(command, () => actorCommand.CanExecute(null)));
-
-                    return prop;
-                }, this);
-
-        #endregion
-
-        #region Lifecycle
-
-        private void RestartActor(ReviveActor actor)
-        {
-            foreach (var (name, data) in actor.Data)
-            foreach (var actorRef in data.Subscriptors)
-                TrackProperty(new TrackPropertyEvent(name), actorRef);
-        }
-
-        protected override void PreRestart(Exception reason, object message)
-        {
-            foreach (var registration in _commandRegistrations)
-            {
-                _propertys[registration.Key]
-                   .PropertyBase
-                   .ObjectValue
-                   .AsInstanceOf<ActorCommand>()
-                   .Deactivate();
-            }
-
-            Self.Tell(new ReviveActor(_propertys.ToArray()));
-
-            base.PreRestart(reason, message);
-        }
-
-        protected override void PostStop()
-        {
-            Log.Info("UiActor Terminated {ActorType}", GetType());
-            _commandRegistrations.Clear();
-            _eventRegistrations.Clear();
-            _propertys.Clear();
-
-            base.PostStop();
-        }
-
-        private Action<UiActor>? _terminationCallback;
-
-        internal void RegisterTerminationCallback(Action<UiActor> callback)
-        {
-            if (_terminationCallback == null)
-                _terminationCallback = callback;
-            else
-                _terminationCallback += callback;
-        }
-
-        protected void ShowWindow<TWindow>()
-            where TWindow : IWindow
-        {
-            Dispatcher.Post(() => LifetimeScope.Resolve<TWindow>().Show());
-        }
-
-        protected virtual void Initialize(InitEvent evt) { }
-
-        protected virtual Task InitializeAsync(InitEvent evt)
-        {
-            Initialize(evt);
-            return Task.CompletedTask;
-        }
-
-        protected virtual void ControlUnload(UnloadEvent obj) { }
-
-        protected virtual void InitParentViewModel(InitParentViewModel obj)
-        {
-            ViewModelSuperviser.Get(Context.System)
-                               .Create(obj.Model);
-        }
-
-        #endregion
-
-        #region Events
-
-        private void ExecuteEvent(ExecuteEventEvent obj)
-        {
-            var (eventData, name) = obj;
-            if (_eventRegistrations.TryGetValue(name, out var reg))
-            {
-                Log.Info("Execute Event {Name}", name);
-                reg.ForEach(e => e.Execute(eventData));
-            }
-            else
-                Log.Warning("Event Not found {Name}", name);
-        }
-
-        protected EventRegistrationBuilder RegisterEvent(string name)
-        {
-            return new(name, (s, del) => _eventRegistrations.Add(s, new InvokeHelper(del)));
-        }
-
-        #endregion
-
-        #region Propertys
-
-        protected internal FluentPropertyRegistration<TData> RegisterProperty<TData>(string name)
-        {
-            ThrowIsSeald();
-            if (_propertys.ContainsKey(name))
-                throw new InvalidOperationException("Property is Regitrated");
-
-            return new FluentPropertyRegistration<TData>(name, this).WithDefaultValue(default!);
-        }
-
-        private void GetPropertyValue(GetValueRequest obj)
-        {
-            Context.Sender.Tell(_propertys.TryGetValue(obj.Name, out var propertyData)
-                                    ? new GetValueResponse(obj.Name, propertyData.PropertyBase.ObjectValue)
-                                    : new GetValueResponse(obj.Name, null));
-        }
-
-        private void SetPropertyValue(SetValue obj)
-        {
-            if (!_propertys.TryGetValue(obj.Name, out var propertyData))
-                return;
-
-            var (_, value) = obj;
-
-            if (Equals(propertyData.PropertyBase.ObjectValue, value)) return;
-
-            propertyData.SetValue(value!);
-        }
-
-        private void PropertyValueChanged(PropertyData propertyData)
-        {
-            foreach (var actorRef in propertyData.Subscriptors)
-            {
-                actorRef.Tell(new PropertyChangedEvent(propertyData.PropertyBase.Name, propertyData.PropertyBase.ObjectValue));
-                _onPropertyChanged.OnNext(propertyData.PropertyBase.Name);
-            }
-        }
-
-        private void TrackProperty(TrackPropertyEvent obj, IActorRef sender)
-        {
-            Log.Info("Track Property {Name}", obj.Name);
-
-            if (!_propertys.TryGetValue(obj.Name, out var prop)) return;
-
-            prop.Subscriptors.Add(sender);
-            Context.WatchWith(sender, new PropertyTermination(Context.Sender, obj.Name));
-
-            if (prop.PropertyBase.ObjectValue == null) return;
-
-            sender.Tell(new PropertyChangedEvent(obj.Name, prop.PropertyBase.ObjectValue));
-            sender.Tell(new ValidatingEvent(prop.Error, obj.Name));
-        }
-
-        private void PropertyTerminationHandler(PropertyTermination obj)
-        {
-            if (!_propertys.TryGetValue(obj.Name, out var prop)) return;
-            prop.Subscriptors.Remove(obj.ActorRef);
-        }
-
-        internal void RegisterProperty(UIPropertyBase prop)
-        {
-            var data = new PropertyData(prop);
-            data.PropertyBase.PropertyValueChanged.Subscribe(_ => PropertyValueChanged(data)).DisposeWith(this);
-            data.PropertyBase.Validator.Subscribe(err =>
-                                                  {
-                                                      data.Error = err;
-                                                      data.Subscriptors.ForEach(r => r.Tell(new ValidatingEvent(err, prop.Name)));
-                                                  }).DisposeWith(this);
-
-            _propertys.Add(prop.Name, data);
-        }
-
-        public IActorProperty<TData> Property<TData>(Expression<Func<UIProperty<TData>>> propName)
-        {
-            var prop = (UIProperty<TData>)_propertys[Reflex.PropertyName(propName)].PropertyBase;
-
-            return new ActorProperty<TData>(Self, prop);
         }
 
         #endregion
@@ -368,7 +133,7 @@ namespace Tauron.Application.CommonUI.Model
                 _method = del;
                 var method = del.Method;
 
-                _methodType = (MethodType)method.GetParameters().Length;
+                _methodType = (MethodType) method.GetParameters().Length;
                 if (_methodType != MethodType.One) return;
                 if (method.GetParameters()[0].ParameterType != typeof(EventData)) _methodType = MethodType.EventArgs;
             }
@@ -378,9 +143,9 @@ namespace Tauron.Application.CommonUI.Model
                 var args = _methodType switch
                 {
                     MethodType.Zero => Array.Empty<object>(),
-                    MethodType.One => new object[] { parameter! },
-                    MethodType.Two => new[] { parameter?.Sender, parameter?.EventArgs },
-                    MethodType.EventArgs => new[] { parameter?.EventArgs },
+                    MethodType.One => new object[] {parameter!},
+                    MethodType.Two => new[] {parameter?.Sender, parameter?.EventArgs},
+                    MethodType.EventArgs => new[] {parameter?.EventArgs},
                     _ => Array.Empty<object>()
                 };
 
@@ -429,13 +194,11 @@ namespace Tauron.Application.CommonUI.Model
                 if (canExecute == null)
                     _canExecute.OnNext(true);
                 else
-                {
                     _disposable.Disposable = canExecute.Subscribe(b =>
-                    {
-                        _canExecute.OnNext(b);
-                        _dispatcher.Post(RaiseCanExecuteChanged);
-                    });
-                }
+                                                                  {
+                                                                      _canExecute.OnNext(b);
+                                                                      _dispatcher.Post(RaiseCanExecuteChanged);
+                                                                  });
             }
 
             public void Dispose()
@@ -488,6 +251,252 @@ namespace Tauron.Application.CommonUI.Model
                 set => _actor.Tell(new SetValue(_prop.Name, value));
             }
         }
+
+        #region Dispatcher
+
+        public IUIDispatcher Dispatcher { get; }
+
+        protected Task UICall(Action<IUntypedActorContext> executor)
+        {
+            var context = Context;
+            return Dispatcher.InvokeAsync(() => executor(context));
+        }
+
+        protected Task UICall(Action executor) => Dispatcher.InvokeAsync(executor);
+
+        protected IObservable<T> UICall<T>(Func<Task<T>> executor) => Dispatcher.InvokeAsync(executor);
+
+        protected IObservable<T> UICall<T>(Func<IUntypedActorContext, Task<T>> executor)
+        {
+            var context = Context;
+            return Dispatcher.InvokeAsync(() => executor(context));
+        }
+
+        #endregion
+
+        #region Commands
+
+        private void CommandExecute(CommandExecuteEvent obj)
+        {
+            var (name, parameter) = obj;
+            if (_commandRegistrations.TryGetValue(name, out var registration))
+            {
+                Log.Info("Execute Command {Commanf}", name);
+                registration.Command(parameter);
+            }
+            else
+            {
+                Log.Error("Command not Found {Name}", name);
+            }
+        }
+
+        protected void InvokeCommand(string name)
+        {
+            if (!_commandRegistrations.TryGetValue(name, out var cr))
+                return;
+
+            if (cr.CanExecute())
+                cr.Command(null);
+        }
+
+        protected CommandRegistrationBuilder NewCommad
+            => new(
+                (key, command, canExecute) =>
+                {
+                    var actorCommand = new ActorCommand(key, Context.Self, canExecute, Dispatcher).DisposeWith(this);
+                    var prop = new UIProperty<ICommand>(key).ForceSet(actorCommand);
+                    prop.LockSet();
+                    var data = new PropertyData(prop);
+
+                    _propertys.Add(key, data);
+
+                    PropertyValueChanged(data);
+
+                    _commandRegistrations.Add(key,
+                        new CommandRegistration(command, () => actorCommand.CanExecute(null)));
+
+                    return prop;
+                }, this);
+
+        #endregion
+
+        #region Lifecycle
+
+        private void RestartActor(ReviveActor actor)
+        {
+            foreach (var (name, data) in actor.Data)
+            foreach (var actorRef in data.Subscriptors)
+                TrackProperty(new TrackPropertyEvent(name), actorRef);
+        }
+
+        protected override void PreRestart(Exception reason, object message)
+        {
+            foreach (var registration in _commandRegistrations)
+                _propertys[registration.Key]
+                   .PropertyBase
+                   .ObjectValue
+                   .AsInstanceOf<ActorCommand>()
+                   .Deactivate();
+
+            Self.Tell(new ReviveActor(_propertys.ToArray()));
+
+            base.PreRestart(reason, message);
+        }
+
+        protected override void PostStop()
+        {
+            Log.Info("UiActor Terminated {ActorType}", GetType());
+            _commandRegistrations.Clear();
+            _eventRegistrations.Clear();
+            _propertys.Clear();
+
+            base.PostStop();
+        }
+
+        private Action<UiActor>? _terminationCallback;
+
+        internal void RegisterTerminationCallback(Action<UiActor> callback)
+        {
+            if (_terminationCallback == null)
+                _terminationCallback = callback;
+            else
+                _terminationCallback += callback;
+        }
+
+        protected void ShowWindow<TWindow>()
+            where TWindow : IWindow
+        {
+            Dispatcher.Post(() => LifetimeScope.Resolve<TWindow>().Show());
+        }
+
+        protected virtual void Initialize(InitEvent evt)
+        {
+        }
+
+        protected virtual Task InitializeAsync(InitEvent evt)
+        {
+            Initialize(evt);
+            return Task.CompletedTask;
+        }
+
+        protected virtual void ControlUnload(UnloadEvent obj)
+        {
+        }
+
+        protected virtual void InitParentViewModel(InitParentViewModel obj)
+        {
+            ViewModelSuperviser.Get(Context.System)
+                               .Create(obj.Model);
+        }
+
+        #endregion
+
+        #region Events
+
+        private void ExecuteEvent(ExecuteEventEvent obj)
+        {
+            var (eventData, name) = obj;
+            if (_eventRegistrations.TryGetValue(name, out var reg))
+            {
+                Log.Info("Execute Event {Name}", name);
+                reg.ForEach(e => e.Execute(eventData));
+            }
+            else
+            {
+                Log.Warning("Event Not found {Name}", name);
+            }
+        }
+
+        protected EventRegistrationBuilder RegisterEvent(string name)
+        {
+            return new(name, (s, del) => _eventRegistrations.Add(s, new InvokeHelper(del)));
+        }
+
+        #endregion
+
+        #region Propertys
+
+        protected internal FluentPropertyRegistration<TData> RegisterProperty<TData>(string name)
+        {
+            ThrowIsSeald();
+            if (_propertys.ContainsKey(name))
+                throw new InvalidOperationException("Property is Regitrated");
+
+            return new FluentPropertyRegistration<TData>(name, this).WithDefaultValue(default!);
+        }
+
+        private void GetPropertyValue(GetValueRequest obj)
+        {
+            Context.Sender.Tell(_propertys.TryGetValue(obj.Name, out var propertyData)
+                ? new GetValueResponse(obj.Name, propertyData.PropertyBase.ObjectValue)
+                : new GetValueResponse(obj.Name, null));
+        }
+
+        private void SetPropertyValue(SetValue obj)
+        {
+            if (!_propertys.TryGetValue(obj.Name, out var propertyData))
+                return;
+
+            var (_, value) = obj;
+
+            if (Equals(propertyData.PropertyBase.ObjectValue, value)) return;
+
+            propertyData.SetValue(value!);
+        }
+
+        private void PropertyValueChanged(PropertyData propertyData)
+        {
+            foreach (var actorRef in propertyData.Subscriptors)
+            {
+                actorRef.Tell(new PropertyChangedEvent(propertyData.PropertyBase.Name,
+                    propertyData.PropertyBase.ObjectValue));
+                _onPropertyChanged.OnNext(propertyData.PropertyBase.Name);
+            }
+        }
+
+        private void TrackProperty(TrackPropertyEvent obj, IActorRef sender)
+        {
+            Log.Info("Track Property {Name}", obj.Name);
+
+            if (!_propertys.TryGetValue(obj.Name, out var prop)) return;
+
+            prop.Subscriptors.Add(sender);
+            Context.WatchWith(sender, new PropertyTermination(Context.Sender, obj.Name));
+
+            if (prop.PropertyBase.ObjectValue == null) return;
+
+            sender.Tell(new PropertyChangedEvent(obj.Name, prop.PropertyBase.ObjectValue));
+            sender.Tell(new ValidatingEvent(prop.Error, obj.Name));
+        }
+
+        private void PropertyTerminationHandler(PropertyTermination obj)
+        {
+            if (!_propertys.TryGetValue(obj.Name, out var prop)) return;
+            prop.Subscriptors.Remove(obj.ActorRef);
+        }
+
+        internal void RegisterProperty(UIPropertyBase prop)
+        {
+            var data = new PropertyData(prop);
+            data.PropertyBase.PropertyValueChanged.Subscribe(_ => PropertyValueChanged(data)).DisposeWith(this);
+            data.PropertyBase.Validator.Subscribe(err =>
+                                                  {
+                                                      data.Error = err;
+                                                      data.Subscriptors.ForEach(
+                                                          r => r.Tell(new ValidatingEvent(err, prop.Name)));
+                                                  }).DisposeWith(this);
+
+            _propertys.Add(prop.Name, data);
+        }
+
+        public IActorProperty<TData> Property<TData>(Expression<Func<UIProperty<TData>>> propName)
+        {
+            var prop = (UIProperty<TData>) _propertys[Reflex.PropertyName(propName)].PropertyBase;
+
+            return new ActorProperty<TData>(Self, prop);
+        }
+
+        #endregion
     }
 
     public interface IActorProperty<TData> : IObservable<TData>

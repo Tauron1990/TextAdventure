@@ -26,7 +26,6 @@ namespace Tauron.Akka
             Task.Factory.StartNew(() =>
                                   {
                                       foreach (var action in _toRun.GetConsumingEnumerable())
-                                      {
                                           try
                                           {
                                               action.Item1();
@@ -36,7 +35,6 @@ namespace Tauron.Akka
                                               Log.Error(e, "Error On Shedule Task");
                                               action.Item2.Dispose();
                                           }
-                                      }
 
                                       _toRun.Dispose();
                                   }, TaskCreationOptions.LongRunning);
@@ -57,12 +55,14 @@ namespace Tauron.Akka
             _toRun.CompleteAdding();
         }
 
-        protected override void InternalScheduleTellOnce(TimeSpan delay, ICanTell receiver, object message, IActorRef sender, ICancelable cancelable)
+        protected override void InternalScheduleTellOnce(TimeSpan delay, ICanTell receiver, object message,
+            IActorRef sender, ICancelable cancelable)
         {
             AddGeneric(() => receiver.Tell(message, sender), delay, Timeout.InfiniteTimeSpan, cancelable);
         }
 
-        protected override void InternalScheduleTellRepeatedly(TimeSpan initialDelay, TimeSpan interval, ICanTell receiver, object message, IActorRef sender, ICancelable cancelable)
+        protected override void InternalScheduleTellRepeatedly(TimeSpan initialDelay, TimeSpan interval,
+            ICanTell receiver, object message, IActorRef sender, ICancelable cancelable)
         {
             AddGeneric(() => receiver.Tell(message, sender), initialDelay, interval, cancelable);
         }
@@ -77,12 +77,14 @@ namespace Tauron.Akka
             AddGeneric(action.Run, delay, Timeout.InfiniteTimeSpan, cancelable);
         }
 
-        protected override void InternalScheduleRepeatedly(TimeSpan initialDelay, TimeSpan interval, Action action, ICancelable cancelable)
+        protected override void InternalScheduleRepeatedly(TimeSpan initialDelay, TimeSpan interval, Action action,
+            ICancelable cancelable)
         {
             AddGeneric(action, initialDelay, interval, cancelable);
         }
 
-        protected override void InternalScheduleRepeatedly(TimeSpan initialDelay, TimeSpan interval, IRunnable action, ICancelable cancelable)
+        protected override void InternalScheduleRepeatedly(TimeSpan initialDelay, TimeSpan interval, IRunnable action,
+            ICancelable cancelable)
         {
             AddGeneric(action.Run, initialDelay, interval, cancelable);
         }
@@ -103,8 +105,11 @@ namespace Tauron.Akka
                                                         if (_toRun.IsAddingCompleted) return;
                                                         _toRun.Add((runner, dispoise));
                                                     }
-                                                    catch (ObjectDisposedException) { }
-                                                }, delay, interval, cancelable, id, key => _registrations.TryRemove(key, out _));
+                                                    catch (ObjectDisposedException)
+                                                    {
+                                                    }
+                                                }, delay, interval, cancelable, id,
+                key => _registrations.TryRemove(key, out _));
             dispoise.Set(registration);
 
             _registrations[id] = registration;
@@ -134,7 +139,8 @@ namespace Tauron.Akka
             private readonly Action _runner;
             private readonly Timer _timer;
 
-            public Registration(Action runner, TimeSpan delay, TimeSpan interval, ICancelable? cancelable, string id, Action<string> remove)
+            public Registration(Action runner, TimeSpan delay, TimeSpan interval, ICancelable? cancelable, string id,
+                Action<string> remove)
             {
                 _runner = runner;
                 _cancelable = cancelable;

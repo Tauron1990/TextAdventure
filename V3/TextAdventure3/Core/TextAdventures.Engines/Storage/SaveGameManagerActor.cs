@@ -15,9 +15,7 @@ namespace TextAdventures.Engine.Storage
 {
     public sealed class SaveGameManagerActor : GameProcess<SaveGameManagerActor.SgmState>
     {
-        public sealed record SgmState(IActorRef ObjectManager, GameProfile Profile);
-
-        public static IPreparedFeature Prefab(GameProfile profile, IActorRef objectManager) 
+        public static IPreparedFeature Prefab(GameProfile profile, IActorRef objectManager)
             => Feature.Create(() => new SaveGameManagerActor(), () => new SgmState(objectManager, profile));
 
         protected override void Config()
@@ -35,18 +33,19 @@ namespace TextAdventures.Engine.Storage
 
             ImmutableDictionary<string, object?> DeserializeComponent(ComponentData data)
                 => data.Propertys.ToImmutableDictionary(d => d.Key,
-                                                        d => JsonConvert.DeserializeObject(d.Value.Data, d.Value.Type));
+                    d => JsonConvert.DeserializeObject(d.Value.Data, d.Value.Type));
 
-            ImmutableDictionary<Type, ImmutableDictionary<string, object?>> DeserializeObject(ObjectData data) 
+            ImmutableDictionary<Type, ImmutableDictionary<string, object?>> DeserializeObject(ObjectData data)
                 => data.Components.ToImmutableDictionary(d => d.ComponentType, DeserializeComponent);
 
             if (!profile.Saves.TryGetValue(gameSetup.SaveGame, out var path)) return Observable.Return(gameSetup);
-            
+
             var list = JsonConvert.DeserializeObject<ObjectList>(File.ReadAllText(path));
 
-            return objectManager.Ask<UpdateData>(new UpdateData(list.Objects.ToImmutableDictionary(o => o.Key, o => DeserializeObject(o.Value))))
-                                .ToObservable().Select(_ => gameSetup);
-
+            return objectManager
+                  .Ask<UpdateData>(
+                       new UpdateData(list.Objects.ToImmutableDictionary(o => o.Key, o => DeserializeObject(o.Value))))
+                  .ToObservable().Select(_ => gameSetup);
         }
 
         private static void DataFilled(FillData obj)
@@ -63,7 +62,8 @@ namespace TextAdventures.Engine.Storage
                 => new(components.Select(p => SerializeComponent(p.Key, p.Value))
                                  .ToImmutableList());
 
-            ObjectList SerializeList(ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> list)
+            ObjectList SerializeList(
+                ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> list)
                 => new(list.Select(p => (p.Key, SerializeObject(p.Value)))
                            .ToImmutableDictionary(p => p.Key, p => p.Item2));
 
@@ -80,10 +80,13 @@ namespace TextAdventures.Engine.Storage
             profile.Save();
 
             string saveGamePath = profile.Saves[obj.Name];
-            objectManager.Tell(new FillData(saveGamePath, ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>>.Empty));
+            objectManager.Tell(new FillData(saveGamePath,
+                ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>>.Empty));
 
             return incomming.State with {Profile = profile};
         }
+
+        public sealed record SgmState(IActorRef ObjectManager, GameProfile Profile);
     }
 
     public sealed record ObjectList(ImmutableDictionary<string, ObjectData> Objects);
@@ -94,7 +97,9 @@ namespace TextAdventures.Engine.Storage
 
     public sealed record ObjectProperty(Type Type, string Data);
 
-    internal sealed record FillData(string TargetPath, ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
+    internal sealed record FillData(string TargetPath,
+        ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
 
-    internal sealed record UpdateData(ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
+    internal sealed record UpdateData(
+        ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
 }

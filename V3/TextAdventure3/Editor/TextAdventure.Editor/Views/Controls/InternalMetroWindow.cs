@@ -13,7 +13,8 @@ namespace TextAdventure.Editor.Views.Controls
 {
     public sealed class InternalMaterialWindowLogic : ControlLogicBase<InternalMaterialWindow>
     {
-        public InternalMaterialWindowLogic([NotNull] InternalMaterialWindow userControl, [NotNull] IViewModel model) : base(userControl, model)
+        public InternalMaterialWindowLogic([NotNull] InternalMaterialWindow userControl, [NotNull] IViewModel model) :
+            base(userControl, model)
         {
             userControl.SizeToContent = SizeToContent.Manual;
             userControl.ShowInTaskbar = true;
@@ -38,6 +39,15 @@ namespace TextAdventure.Editor.Views.Controls
             _controlLogic = new InternalMaterialWindowLogic(this, viewModel);
         }
 
+        IUIObject? IUIObject.GetPerent() => _element.GetPerent();
+        public object Object => this;
+
+        IObservable<object> IUIElement.DataContextChanged => _element.DataContextChanged;
+
+        IObservable<Unit> IUIElement.Loaded => _element.Loaded;
+
+        IObservable<Unit> IUIElement.Unloaded => _element.Unloaded;
+
         public void Register(string key, IControlBindable bindable, IUIObject affectedPart)
         {
             _controlLogic.Register(key, bindable, affectedPart);
@@ -54,14 +64,6 @@ namespace TextAdventure.Editor.Views.Controls
             remove => _controlLogic.ControlUnload -= value;
         }
 
-        IUIObject? IUIObject.GetPerent() => _element.GetPerent();
-        public object Object => this;
-
-        IObservable<object> IUIElement.DataContextChanged => _element.DataContextChanged;
-
-        IObservable<Unit> IUIElement.Loaded => _element.Loaded;
-
-        IObservable<Unit> IUIElement.Unloaded => _element.Unloaded;
         IWindow IWindowProvider.Window => _element;
     }
 }

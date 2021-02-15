@@ -12,7 +12,8 @@ namespace Tauron.Application.ActorWorkflow
     public abstract class LambdaWorkflowActor<TContext> : WorkflowActorBase<LambdaStep<TContext>, TContext>
         where TContext : IWorkflowContext
     {
-        protected void WhenStep(StepId id, Action<LambdaStepConfiguration<TContext>> config, Action<StepConfiguration<LambdaStep<TContext>, TContext>>? con = null)
+        protected void WhenStep(StepId id, Action<LambdaStepConfiguration<TContext>> config,
+            Action<StepConfiguration<LambdaStep<TContext>, TContext>>? con = null)
         {
             var stepConfig = new LambdaStepConfiguration<TContext>();
             config.Invoke(stepConfig);
@@ -256,7 +257,9 @@ namespace Tauron.Application.ActorWorkflow
             return new StepConfiguration<TStep, TContext>(rev);
         }
 
-        private sealed class TimeoutMarker { }
+        private sealed class TimeoutMarker
+        {
+        }
 
         private sealed class LoopElement
         {

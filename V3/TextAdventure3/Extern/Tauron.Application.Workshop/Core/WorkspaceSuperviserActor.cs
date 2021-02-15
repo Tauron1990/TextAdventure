@@ -17,14 +17,16 @@ namespace Tauron.Application.Workshop.Core
 
             Receive<WatchIntrest>(obs => obs.SubscribeWithStatus(wi =>
                                                                  {
-                                                                     ImmutableInterlocked.AddOrUpdate(ref _intrest, 
-                                                                                                      wi.Target, _ => wi.OnRemove,
-                                                                                                      (_, action) => action.Combine(wi.OnRemove) ?? wi.OnRemove);
+                                                                     ImmutableInterlocked.AddOrUpdate(ref _intrest,
+                                                                         wi.Target, _ => wi.OnRemove,
+                                                                         (_, action) => action.Combine(wi.OnRemove) ??
+                                                                             wi.OnRemove);
                                                                      Context.Watch(wi.Target);
                                                                  }));
             Receive<Terminated>(obs => obs.SubscribeWithStatus(t =>
                                                                {
-                                                                   if (!_intrest.TryGetValue(t.ActorRef, out var action)) return;
+                                                                   if (!_intrest.TryGetValue(t.ActorRef, out var action)
+                                                                   ) return;
 
                                                                    action();
                                                                    _intrest = _intrest.Remove(t.ActorRef);
@@ -54,9 +56,9 @@ namespace Tauron.Application.Workshop.Core
 
         protected override SupervisorStrategy SupervisorStrategy() => new OneForOneStrategy(
             Decider.From(Directive.Resume,
-                         Directive.Stop.When<ActorInitializationException>(),
-                         Directive.Stop.When<ActorKilledException>(),
-                         Directive.Stop.When<DeathPactException>()));
+                Directive.Stop.When<ActorInitializationException>(),
+                Directive.Stop.When<ActorKilledException>(),
+                Directive.Stop.When<DeathPactException>()));
 
         internal abstract class SuperviseActorBase
         {

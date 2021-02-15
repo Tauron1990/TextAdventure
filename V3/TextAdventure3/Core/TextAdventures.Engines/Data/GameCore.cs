@@ -5,7 +5,8 @@ using TextAdventures.Engine.EventSystem;
 namespace TextAdventures.Engine.Data
 {
     [PublicAPI]
-    public sealed record GameCore(EventDispatcher EventDispatcher, GameObjectManager ObjectManager, GameMaster GameMaster) : IExtension
+    public sealed record GameCore(EventDispatcher EventDispatcher, GameObjectManager ObjectManager,
+        GameMaster GameMaster) : IExtension
     {
         public static GameCore Get(ActorSystem system)
             => system.GetExtension<GameCore>();
@@ -23,8 +24,8 @@ namespace TextAdventures.Engine.Data
                 _gameMaster = gameMaster;
             }
 
-            public override GameCore CreateExtension(ExtendedActorSystem system) => new(_eventDispatcher, _objectManager, _gameMaster);
-
+            public override GameCore CreateExtension(ExtendedActorSystem system)
+                => new(_eventDispatcher, _objectManager, _gameMaster);
         }
     }
 }

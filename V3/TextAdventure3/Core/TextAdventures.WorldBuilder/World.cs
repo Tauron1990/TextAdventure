@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Immutable;
-using Akka.Actor;
 using JetBrains.Annotations;
 using Tauron.Features;
 using TextAdventures.Engine.Modules;
@@ -11,9 +10,9 @@ namespace TextAdventures.Builder
     public sealed class World
     {
         private Action<Exception>? _error;
+        private ImmutableList<object> _gameMasterMessages;
         private ImmutableList<GameObjectBlueprint> _gameObjectBlueprints;
         private ImmutableDictionary<string, IPreparedFeature> _gameProcesses;
-        private ImmutableList<object> _gameMasterMessages;
 
         public World()
         {
@@ -26,7 +25,8 @@ namespace TextAdventures.Builder
         public ImmutableList<IModule> Modules { get; private set; }
 
         public GameSetup CreateSetup()
-            => new(_gameObjectBlueprints, _gameMasterMessages, _gameProcesses, _error ?? (_ => { }), string.Empty, Modules);
+            => new(_gameObjectBlueprints, _gameMasterMessages, _gameProcesses, _error ?? (_ => { }), string.Empty,
+                Modules);
 
         public World WithGlobalComponent(ComponentBlueprint blueprint)
             => WithGameMasterMessages(blueprint);

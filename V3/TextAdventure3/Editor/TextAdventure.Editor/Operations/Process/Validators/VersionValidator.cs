@@ -12,7 +12,7 @@ namespace TextAdventure.Editor.Operations.Process.Validators
             RuleFor(c => c.Version).NotEmpty()
                                    .Custom((s, context) =>
                                            {
-                                               if(!Version.TryParse(s, out _))
+                                               if (!Version.TryParse(s, out _))
                                                    context.AddFailure("Spiel Version is im Falschen Format");
                                            });
         }

@@ -16,7 +16,8 @@ namespace Tauron.Application.CommonUI.Model
     {
         private readonly Dictionary<Type, Action<IOperationResult>> _compledActions = new();
 
-        protected StateUIActor(ILifetimeScope lifetimeScope, IUIDispatcher dispatcher, IActionInvoker actionInvoker) : base(lifetimeScope, dispatcher)
+        protected StateUIActor(ILifetimeScope lifetimeScope, IUIDispatcher dispatcher, IActionInvoker actionInvoker) :
+            base(lifetimeScope, dispatcher)
         {
             ActionInvoker = actionInvoker;
             Receive<IOperationResult>(obs => obs.SubscribeWithStatus(InternalOnOperationCompled));
@@ -39,9 +40,12 @@ namespace Tauron.Application.CommonUI.Model
             OnOperationCompled(result);
         }
 
-        protected virtual void OnOperationCompled(IOperationResult result) { }
+        protected virtual void OnOperationCompled(IOperationResult result)
+        {
+        }
 
-        public TState GetState<TState>(string key = "") where TState : class => ActionInvoker.GetState<TState>(key) ?? throw new InvalidOperationException("No such State Found");
+        public TState GetState<TState>(string key = "") where TState : class => ActionInvoker.GetState<TState>(key) ??
+            throw new InvalidOperationException("No such State Found");
 
         public void ConfigurateState<TState>(Action<TState> toConfig)
             where TState : class
@@ -64,7 +68,8 @@ namespace Tauron.Application.CommonUI.Model
 
         public UIStateConfiguration<TState> WhenStateChanges<TState>(string? name = null)
             where TState : class
-            => new(ActionInvoker.GetState<TState>(name ?? string.Empty) ?? throw new ArgumentException("No such State Found"), this);
+            => new(ActionInvoker.GetState<TState>(name ?? string.Empty) ??
+                   throw new ArgumentException("No such State Found"), this);
 
         public void DispatchAction(IStateAction action, bool? sendBack = true)
         {
@@ -83,7 +88,8 @@ namespace Tauron.Application.CommonUI.Model
                 _actor = actor;
             }
 
-            public UIStateEventConfiguration<TEvent> FromEvent<TEvent>(Func<TState, IEventSource<TEvent>> source, Action<UIStateEventConfiguration<TEvent>>? configAction = null)
+            public UIStateEventConfiguration<TEvent> FromEvent<TEvent>(Func<TState, IEventSource<TEvent>> source,
+                Action<UIStateEventConfiguration<TEvent>>? configAction = null)
             {
                 var config = new UIStateEventConfiguration<TEvent>(source(_state), _actor);
                 configAction?.Invoke(config);
@@ -103,7 +109,8 @@ namespace Tauron.Application.CommonUI.Model
                 _actor = actor;
             }
 
-            public FluentPropertyRegistration<TData> ToProperty<TData>(string name, Func<TEvent, TData> transform, Func<TEvent, bool>? condition = null)
+            public FluentPropertyRegistration<TData> ToProperty<TData>(string name, Func<TEvent, TData> transform,
+                Func<TEvent, bool>? condition = null)
             {
                 var propertyConfig = _actor.RegisterProperty<TData>(name);
                 var property = propertyConfig.Property;
@@ -141,12 +148,14 @@ namespace Tauron.Application.CommonUI.Model
             return ToStateAction(builder, _ => new TStateAction());
         }
 
-        public static CommandRegistrationBuilder ToStateAction(this CommandRegistrationBuilder builder, Func<IStateAction?> action)
+        public static CommandRegistrationBuilder ToStateAction(this CommandRegistrationBuilder builder,
+            Func<IStateAction?> action)
         {
             return ToStateAction(builder, _ => action());
         }
 
-        public static CommandRegistrationBuilder ToStateAction<TParameter>(this CommandRegistrationBuilder builder, Func<TParameter, IStateAction?> action)
+        public static CommandRegistrationBuilder ToStateAction<TParameter>(this CommandRegistrationBuilder builder,
+            Func<TParameter, IStateAction?> action)
         {
             return ToStateAction(builder, o =>
                                           {
@@ -157,7 +166,8 @@ namespace Tauron.Application.CommonUI.Model
                                           });
         }
 
-        public static CommandRegistrationBuilder ToStateAction(this CommandRegistrationBuilder builder, Func<object?, IStateAction?> action)
+        public static CommandRegistrationBuilder ToStateAction(this CommandRegistrationBuilder builder,
+            Func<object?, IStateAction?> action)
         {
             var invoker = TryCast(builder);
 

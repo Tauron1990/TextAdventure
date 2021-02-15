@@ -29,7 +29,7 @@ namespace TextAdventure.Editor.Operations
 
         public IEventSource<ProjectSaveEvent> ProjectSaved { get; }
 
-        public IObservable<GameProject> RawProject 
+        public IObservable<GameProject> RawProject
             => Query(EmptyQuery.Instance)
               .ToObservable()
               .NotNull()

@@ -16,14 +16,16 @@ namespace TextAdventure.Editor.Data
 
         public ProjectWorkspace()
         {
-            Register<IOSource, IOData>(() => new IOSource(_semaphore, () => _currentProject, data => _currentProject = data));
-            Register<CommonDataSource, CommonData>(() => new CommonDataSource(_semaphore, () => _currentProject, data => _currentProject = data));
+            Register<IOSource, IOData>(() => new IOSource(_semaphore, () => _currentProject,
+                                           data => _currentProject = data));
+            Register<CommonDataSource, CommonData>(() => new CommonDataSource(_semaphore, () => _currentProject,
+                                                       data => _currentProject = data));
         }
 
         private abstract class SyncSource<TData> : IExtendedDataSource<TData>
         {
-            private readonly SemaphoreSlim _semaphore;
             private readonly Func<IOData> _provider;
+            private readonly SemaphoreSlim _semaphore;
             private readonly Action<IOData> _updater;
 
             protected SyncSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater)
@@ -39,7 +41,8 @@ namespace TextAdventure.Editor.Data
                 return await GetDataImpl(query, _provider());
             }
 
-            public async Task SetData(IQuery query, TData data) => _updater(await SetDataImpl(query, data, _provider()));
+            public async Task SetData(IQuery query, TData data)
+                => _updater(await SetDataImpl(query, data, _provider()));
 
             public async Task OnCompled(IQuery query)
             {
@@ -51,7 +54,6 @@ namespace TextAdventure.Editor.Data
                 {
                     _semaphore.Release();
                 }
-
             }
 
             protected abstract Task<TData> GetDataImpl(IQuery query, IOData project);
@@ -63,24 +65,33 @@ namespace TextAdventure.Editor.Data
 
         private sealed class IOSource : SyncSource<IOData>
         {
-            public IOSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater) : base(semaphore, provider, updater) { }
-            protected override Task<IOData> SetDataImpl(IQuery query, IOData data, IOData project) => Task.FromResult(data);
+            public IOSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater) : base(semaphore,
+                provider, updater)
+            {
+            }
+
+            protected override Task<IOData> SetDataImpl(IQuery query, IOData data, IOData project)
+                => Task.FromResult(data);
 
             protected override Task<IOData> GetDataImpl(IQuery query, IOData project) => Task.FromResult(project);
         }
+
         private sealed class CommonDataSource : SyncSource<CommonData>
         {
-            public CommonDataSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater) 
-                : base(semaphore, provider, updater) { }
+            public CommonDataSource(SemaphoreSlim semaphore, Func<IOData> provider, Action<IOData> updater)
+                : base(semaphore, provider, updater)
+            {
+            }
+
             protected override Task<CommonData> GetDataImpl(IQuery query, IOData project)
                 => Task.FromResult(new CommonData(project.Project.GameName, project.Project.GameVersion));
 
-            protected override Task<IOData> SetDataImpl(IQuery query, CommonData data, IOData project) 
+            protected override Task<IOData> SetDataImpl(IQuery query, CommonData data, IOData project)
                 => Task.FromResult(project with
                                    {
                                        Project = project.Project with
                                                  {
-                                                     GameName = data.Name, 
+                                                     GameName = data.Name,
                                                      GameVersion = data.Version
                                                  }
                                    });

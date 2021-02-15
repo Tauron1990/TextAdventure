@@ -17,14 +17,19 @@ namespace Tauron.Application.Wpf.Dialogs
     public class DialogHost : Control
     {
         public static readonly DependencyProperty DialogProperty = DependencyProperty.Register(
-            "Dialog", typeof(object), typeof(DialogHost), new PropertyMetadata(default, (o, args) => ((DialogHost) o).DialogContent?.SetValue(ContentControl.ContentProperty, args.NewValue)));
+            "Dialog", typeof(object), typeof(DialogHost),
+            new PropertyMetadata(default,
+                (o, args) => ((DialogHost) o).DialogContent?.SetValue(ContentControl.ContentProperty, args.NewValue)));
 
         public static readonly DependencyProperty MainProperty = DependencyProperty.Register(
-            "Main", typeof(object), typeof(DialogHost), new PropertyMetadata(default, (o, args) => ((DialogHost) o).MainContent?.SetValue(ContentControl.ContentProperty, args.NewValue)));
+            "Main", typeof(object), typeof(DialogHost),
+            new PropertyMetadata(default,
+                (o, args) => ((DialogHost) o).MainContent?.SetValue(ContentControl.ContentProperty, args.NewValue)));
 
         static DialogHost()
         {
-            DefaultStyleKeyProperty.OverrideMetadata(typeof(DialogHost), new FrameworkPropertyMetadata(typeof(DialogHost)));
+            DefaultStyleKeyProperty.OverrideMetadata(typeof(DialogHost),
+                new FrameworkPropertyMetadata(typeof(DialogHost)));
         }
 
         public DialogHost()
@@ -32,7 +37,8 @@ namespace Tauron.Application.Wpf.Dialogs
             if (!ActorApplication.IsStarted)
                 return;
 
-            var coordinator = (IDialogCoordinatorUIEvents) ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
+            var coordinator =
+                (IDialogCoordinatorUIEvents) ActorApplication.Application.Continer.Resolve<IDialogCoordinator>();
 
             coordinator.HideDialogEvent += () =>
                                            {

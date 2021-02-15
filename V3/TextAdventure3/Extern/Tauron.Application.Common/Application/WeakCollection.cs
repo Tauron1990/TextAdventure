@@ -141,7 +141,10 @@ namespace Tauron.Application
 
         protected override void ClearItems()
         {
-            lock (this) base.ClearItems();
+            lock (this)
+            {
+                base.ClearItems();
+            }
         }
 
         protected override void InsertItem(int index, TType item)
@@ -155,12 +158,18 @@ namespace Tauron.Application
 
         protected override void RemoveItem(int index)
         {
-            lock (this) base.RemoveItem(index);
+            lock (this)
+            {
+                base.RemoveItem(index);
+            }
         }
 
         protected override void SetItem(int index, TType item)
         {
-            lock (this) base.SetItem(index, item);
+            lock (this)
+            {
+                base.SetItem(index, item);
+            }
         }
 
         private void CleanUpMethod()

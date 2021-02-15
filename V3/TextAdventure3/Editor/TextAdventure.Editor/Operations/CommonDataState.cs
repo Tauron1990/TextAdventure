@@ -10,11 +10,9 @@ namespace TextAdventure.Editor.Operations
     [State]
     public sealed class CommonDataState : StateBase<CommonData>
     {
-        public IEventSource<NameVersionChangedEvent> NameChanged { get; }
-
         public CommonDataState(ExtendedMutatingEngine<MutatingContext<CommonData>> engine) : base(engine)
-        {
-            NameChanged = engine.EventSource<CommonData, NameVersionChangedEvent>();
-        }
+            => NameChanged = engine.EventSource<CommonData, NameVersionChangedEvent>();
+
+        public IEventSource<NameVersionChangedEvent> NameChanged { get; }
     }
 }

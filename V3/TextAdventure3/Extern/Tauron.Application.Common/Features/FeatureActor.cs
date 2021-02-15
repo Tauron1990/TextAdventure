@@ -20,15 +20,7 @@ namespace Tauron.Features
 
         TState CurrentState { get; }
 
-        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler);
-        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<TState>> handler);
-        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler, Func<Exception, bool> errorHandler);
-        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IDisposable> handler);
-
-        void TellSelf(object msg);
-
         ILoggingAdapter Log { get; }
-        IObservable<TEvent> Receive<TEvent>();
 
         IActorRef Self { get; }
 
@@ -39,6 +31,17 @@ namespace Tauron.Features
         IUntypedActorContext Context { get; }
 
         SupervisorStrategy? SupervisorStrategy { get; set; }
+
+        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler);
+        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<TState>> handler);
+
+        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler,
+            Func<Exception, bool> errorHandler);
+
+        void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IDisposable> handler);
+
+        void TellSelf(object msg);
+        IObservable<TEvent> Receive<TEvent>();
     }
 
     public sealed record StatePair<TEvent, TState>(TEvent Event, TState State, ITimerScheduler Timers)
@@ -51,6 +54,7 @@ namespace Tauron.Features
     public abstract class FeatureActorBase<TFeatured, TState> : ObservableActor, IFeatureActor<TState>
         where TFeatured : FeatureActorBase<TFeatured, TState>, new()
     {
+        private readonly HashSet<string> _featureIds = new();
         private BehaviorSubject<TState>? _currentState;
 
         private BehaviorSubject<TState> CurrentState
@@ -64,6 +68,39 @@ namespace Tauron.Features
             }
         }
 
+        public ITimerScheduler Timers { get; set; } = null!;
+
+        TState IFeatureActor<TState>.CurrentState => CurrentState.Value;
+
+        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler)
+            => Receive<TEvent>(
+                obs => handler(obs.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers))));
+
+        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<TState>> handler)
+        {
+            IDisposable CreateHandler(IObservable<TEvent> observable)
+                => handler(observable.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers)))
+                   .SubscribeWithStatus(CurrentState.OnNext);
+
+            Receive<TEvent>(obs => CreateHandler(obs));
+        }
+
+        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler,
+            Func<Exception, bool> errorHandler)
+            => Receive<TEvent>(
+                obs => handler(obs.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers))),
+                errorHandler);
+
+        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IDisposable> handler)
+            => Receive<TEvent>(
+                obs => handler(obs.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers))));
+
+        IUntypedActorContext IFeatureActor<TState>.Context => Context;
+        SupervisorStrategy? IFeatureActor<TState>.SupervisorStrategy { get; set; }
+
+        public IDisposable Subscribe(IObserver<TState> observer)
+            => CurrentState.Subscribe(observer);
+
         protected static Props Create(Func<TState> initialState, Action<ActorBuilder<TState>> builder)
             => Props.Create(typeof(ActorFactory), builder, initialState);
 
@@ -73,33 +110,9 @@ namespace Tauron.Features
         protected static Props Create(TState initialState, Action<ActorBuilder<TState>> builder)
             => Create(() => initialState, builder);
 
-        TState IFeatureActor<TState>.CurrentState => CurrentState.Value;
-        
-        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler)
-            => Receive<TEvent>(obs => handler(obs.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers))));
-
-        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<TState>> handler)
-        {
-            IDisposable CreateHandler(IObservable<TEvent> observable) 
-                => handler(observable.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers)))
-               .SubscribeWithStatus(CurrentState.OnNext);
-
-            Receive<TEvent>(obs => CreateHandler(obs));
-        }
-
-        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IObservable<Unit>> handler, Func<Exception, bool> errorHandler)
-            => Receive<TEvent>(obs => handler(obs.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers))), errorHandler);
-
-        public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TState>>, IDisposable> handler)
-            => Receive<TEvent>(obs => handler(obs.Select(evt => new StatePair<TEvent, TState>(evt, CurrentState.Value, Timers))));
-
-        IUntypedActorContext IFeatureActor<TState>.Context => Context;
-        SupervisorStrategy? IFeatureActor<TState>.SupervisorStrategy { get; set; }
-
         private void InitialState(TState initial)
             => _currentState = new BehaviorSubject<TState>(initial);
 
-        private readonly HashSet<string> _featureIds = new();
         private void RegisterFeature(IFeature<TState> feature)
         {
             if (feature.Identify().Any(id => !_featureIds.Add(id)))
@@ -108,10 +121,8 @@ namespace Tauron.Features
             feature.Init(this);
         }
 
-        public IDisposable Subscribe(IObserver<TState> observer)
-            => CurrentState.Subscribe(observer);
-
-        protected override SupervisorStrategy SupervisorStrategy() => ((IFeatureActor<TState>)this).SupervisorStrategy ?? base.SupervisorStrategy();
+        protected override SupervisorStrategy SupervisorStrategy()
+            => ((IFeatureActor<TState>) this).SupervisorStrategy ?? base.SupervisorStrategy();
 
         private sealed class ActorFactory : IIndirectActorProducer
         {
@@ -132,7 +143,9 @@ namespace Tauron.Features
                 return fut;
             }
 
-            public void Release(ActorBase actor) { }
+            public void Release(ActorBase actor)
+            {
+            }
 
             public Type ActorType { get; } = typeof(TFeatured);
         }
@@ -140,7 +153,8 @@ namespace Tauron.Features
         [PublicAPI]
         public static class Make
         {
-            public static Action<ActorBuilder<TState>> Feature(Action<IFeatureActor<TState>> initializer, params string[] ids) 
+            public static Action<ActorBuilder<TState>> Feature(Action<IFeatureActor<TState>> initializer,
+                params string[] ids)
                 => b => b.WithFeature(new DelegatingFeature(initializer, ids));
         }
 
@@ -153,8 +167,8 @@ namespace Tauron.Features
 
         private class DelegatingFeature : IFeature<TState>
         {
-            private readonly Action<IFeatureActor<TState>> _initializer;
             private readonly IEnumerable<string> _ids;
+            private readonly Action<IFeatureActor<TState>> _initializer;
 
             public DelegatingFeature(Action<IFeatureActor<TState>> initializer, IEnumerable<string> ids)
             {
@@ -166,8 +180,6 @@ namespace Tauron.Features
 
             public void Init(IFeatureActor<TState> actor) => _initializer(actor);
         }
-
-        public ITimerScheduler Timers { get; set; } = null!;
     }
 
     public sealed record EmptyState
@@ -190,21 +202,23 @@ namespace Tauron.Features
 
         public ActorBuilder<TState> WithFeatures(IEnumerable<IFeature<TState>> features)
         {
-            foreach (var feature in features) 
+            foreach (var feature in features)
                 _registrar(feature);
             return this;
         }
 
-        public ActorBuilder<TState> WithFeature<TNewState>(IFeature<TNewState> feature, Func<TState, TNewState> convert, Func<TState, TNewState, TState> convertBack)
+        public ActorBuilder<TState> WithFeature<TNewState>(IFeature<TNewState> feature, Func<TState, TNewState> convert,
+            Func<TState, TNewState, TState> convertBack)
             => WithFeature(new ConvertingFeature<TNewState, TState>(feature, convert, convertBack));
 
         internal class ConvertingFeature<TTarget, TOriginal> : IFeature<TOriginal>
         {
-            private readonly IFeature<TTarget> _feature;
             private readonly Func<TOriginal, TTarget> _convert;
             private readonly Func<TOriginal, TTarget, TOriginal> _convertBack;
+            private readonly IFeature<TTarget> _feature;
 
-            public ConvertingFeature(IFeature<TTarget> feature, Func<TOriginal, TTarget> convert, Func<TOriginal, TTarget, TOriginal> convertBack)
+            public ConvertingFeature(IFeature<TTarget> feature, Func<TOriginal, TTarget> convert,
+                Func<TOriginal, TTarget, TOriginal> convertBack)
             {
                 _feature = feature;
                 _convert = convert;
@@ -213,24 +227,25 @@ namespace Tauron.Features
 
             public IEnumerable<string> Identify() => _feature.Identify();
 
-            public virtual void Init(IFeatureActor<TOriginal> actor) 
-                => _feature.Init(new StateDelegator<TTarget,TOriginal>(actor, _convert, _convertBack));
+            public virtual void Init(IFeatureActor<TOriginal> actor)
+                => _feature.Init(new StateDelegator<TTarget, TOriginal>(actor, _convert, _convertBack));
         }
 
         private sealed class StateDelegator<TTarget, TOriginal> : IFeatureActor<TTarget>
         {
-            private readonly IFeatureActor<TOriginal> _original;
             private readonly Func<TOriginal, TTarget> _convert;
             private readonly Func<TOriginal, TTarget, TOriginal> _convertBack;
+            private readonly IFeatureActor<TOriginal> _original;
 
-            public StateDelegator(IFeatureActor<TOriginal> original, Func<TOriginal, TTarget> convert, Func<TOriginal, TTarget, TOriginal> convertBack)
+            public StateDelegator(IFeatureActor<TOriginal> original, Func<TOriginal, TTarget> convert,
+                Func<TOriginal, TTarget, TOriginal> convertBack)
             {
                 _original = original;
                 _convert = convert;
                 _convertBack = convertBack;
             }
-            
-            public IObservable<TEvent> Receive<TEvent>() 
+
+            public IObservable<TEvent> Receive<TEvent>()
                 => _original.Receive<TEvent>();
 
             public IActorRef Self
@@ -266,15 +281,15 @@ namespace Tauron.Features
                 => _original.Receive<TEvent>(obs => handler(obs.Select(d => d.Convert(_convert))));
 
             public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TTarget>>, IObservable<TTarget>> handler)
-                => _original.Receive<TEvent>(obs => handler(obs.Select(d => d.Convert(_convert))).Select(s => _convertBack(_original.CurrentState, s)));
+                => _original.Receive<TEvent>(obs => handler(obs.Select(d => d.Convert(_convert)))
+                                                .Select(s => _convertBack(_original.CurrentState, s)));
 
-            public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TTarget>>, IObservable<Unit>> handler, Func<Exception, bool> errorHandler)
+            public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TTarget>>, IObservable<Unit>> handler,
+                Func<Exception, bool> errorHandler)
                 => _original.Receive<TEvent>(obs => handler(obs.Select(d => d.Convert(_convert))), errorHandler);
 
             public void Receive<TEvent>(Func<IObservable<StatePair<TEvent, TTarget>>, IDisposable> handler)
                 => _original.Receive<TEvent>(obs => handler(obs.Select(d => d.Convert(_convert))));
-
         }
     }
-
 }

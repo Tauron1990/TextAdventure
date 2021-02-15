@@ -1,11 +1,10 @@
-﻿using System.Windows;
-using Tauron.Application.CommonUI;
+﻿using Tauron.Application.CommonUI;
 using TextAdventure.Editor.ViewModels;
 
 namespace TextAdventure.Editor.Views
 {
     /// <summary>
-    /// Interaktionslogik für DashboardView.xaml
+    ///     Interaktionslogik für DashboardView.xaml
     /// </summary>
     public partial class DashboardView
     {

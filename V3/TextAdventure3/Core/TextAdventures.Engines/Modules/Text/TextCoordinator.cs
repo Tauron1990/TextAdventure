@@ -8,10 +8,9 @@ using TextAdventures.Engine.Systems;
 
 namespace TextAdventures.Engine.Modules.Text
 {
-    public sealed class TextCoordinator : CoordinatorProcess<EmptyState>, IConsumeEvent<UpdateTextLayerEvent, EmptyState>
+    public sealed class TextCoordinator : CoordinatorProcess<EmptyState>,
+        IConsumeEvent<UpdateTextLayerEvent, EmptyState>
     {
-        public static IPreparedFeature Prefab() => Feature.Create(() => new TextCoordinator());
-
         public IObservable<EmptyState> Process(IObservable<StatePair<UpdateTextLayerEvent, EmptyState>> obs)
         {
             return obs
@@ -25,6 +24,8 @@ namespace TextAdventures.Engine.Modules.Text
                               return state;
                           });
         }
+
+        public static IPreparedFeature Prefab() => Feature.Create(() => new TextCoordinator());
 
         protected override void LoadingCompled(StatePair<LoadingCompled, EmptyState> message)
         {

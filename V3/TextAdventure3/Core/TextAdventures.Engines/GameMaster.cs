@@ -11,13 +11,14 @@ namespace TextAdventures.Engine
     public sealed class GameMaster
     {
         private readonly IActorRef _master;
-        public ActorSystem System { get; }
 
         internal GameMaster(IActorRef master, ActorSystem system)
         {
             _master = master;
             System = system;
         }
+
+        public ActorSystem System { get; }
 
         public void SendEvent(object evt)
             => _master.Tell(new GameEvent(evt));

@@ -11,9 +11,8 @@ namespace TextAdventures.Engine.Actors
     [PublicAPI]
     public abstract class GameProcess<TState> : ActorFeatureBase<TState>
     {
-        public GameCore Game { get; private set; }
-
         protected GameProcess() => Game = Context.System.GetExtension<GameCore>();
+        public GameCore Game { get; private set; }
 
         protected override void Config()
         {
@@ -28,10 +27,13 @@ namespace TextAdventures.Engine.Actors
 
             Receive<LoadingCompled>(obs => obs.Subscribe(LoadingCompled));
         }
-        
-        protected virtual void PreInit(PreInitStage msg, TState state) { }
 
-        protected virtual void LoadingCompled(StatePair<LoadingCompled, TState> message) { }
-        
+        protected virtual void PreInit(PreInitStage msg, TState state)
+        {
+        }
+
+        protected virtual void LoadingCompled(StatePair<LoadingCompled, TState> message)
+        {
+        }
     }
 }

@@ -20,7 +20,8 @@ namespace Tauron.Operations
     [PublicAPI]
     public sealed record OperationResult(bool Ok, Error[]? Errors, object? Outcome) : IOperationResult
     {
-        [JsonIgnore] public string? Error => Errors == null ? null : string.Join(", ", Errors.Select(e => e.Info ?? e.Code));
+        [JsonIgnore]
+        public string? Error => Errors == null ? null : string.Join(", ", Errors.Select(e => e.Info ?? e.Code));
 
         public static IOperationResult Success(object? result = null) => new OperationResult(true, null, result);
 
@@ -29,7 +30,8 @@ namespace Tauron.Operations
             return new OperationResult(false, new[] {error}, outcome);
         }
 
-        public static IOperationResult Failure(IEnumerable<Error> errors, object? outcome = null) => new OperationResult(false, errors.ToArray(), outcome);
+        public static IOperationResult Failure(IEnumerable<Error> errors, object? outcome = null)
+            => new OperationResult(false, errors.ToArray(), outcome);
 
         public static IOperationResult Failure(params Error[] errors) => new OperationResult(false, errors, null);
 

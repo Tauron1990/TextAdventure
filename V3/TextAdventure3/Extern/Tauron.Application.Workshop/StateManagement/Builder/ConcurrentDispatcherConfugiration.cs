@@ -5,9 +5,11 @@ using Tauron.Application.Workshop.StateManagement.Dispatcher;
 
 namespace Tauron.Application.Workshop.StateManagement.Builder
 {
-    public sealed class ConcurrentDispatcherConfugiration : DispatcherPoolConfigurationBase<IConcurrentDispatcherConfugiration>, IConcurrentDispatcherConfugiration
+    public sealed class ConcurrentDispatcherConfugiration :
+        DispatcherPoolConfigurationBase<IConcurrentDispatcherConfugiration>, IConcurrentDispatcherConfugiration
     {
-        public override IStateDispatcherConfigurator Create() => new ActualDispatcher(Instances, Resizer, SupervisorStrategy, Dispatcher, Custom);
+        public override IStateDispatcherConfigurator Create()
+            => new ActualDispatcher(Instances, Resizer, SupervisorStrategy, Dispatcher, Custom);
 
         private sealed class ActualDispatcher : IStateDispatcherConfigurator
         {
@@ -17,7 +19,8 @@ namespace Tauron.Application.Workshop.StateManagement.Builder
             private readonly Resizer? _resizer;
             private readonly SupervisorStrategy _supervisorStrategy;
 
-            public ActualDispatcher(int instances, Resizer? resizer, SupervisorStrategy supervisorStrategy, string? dispatcher, Func<Props, Props>? custom)
+            public ActualDispatcher(int instances, Resizer? resizer, SupervisorStrategy supervisorStrategy,
+                string? dispatcher, Func<Props, Props>? custom)
             {
                 _instances = instances;
                 _resizer = resizer;

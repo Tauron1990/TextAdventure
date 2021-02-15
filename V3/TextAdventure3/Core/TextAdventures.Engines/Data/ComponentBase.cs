@@ -16,7 +16,8 @@ namespace TextAdventures.Engine.Data
         {
             if (name == null) throw new ArgumentNullException(nameof(name));
 
-            if ((Cache.TryGetValue(name, out var data) || DefaultValues.TryGetValue(name, out data)) && data is TType casted)
+            if ((Cache.TryGetValue(name, out var data) || DefaultValues.TryGetValue(name, out data)) &&
+                data is TType casted)
                 return casted;
 
             return defaultValue;
@@ -29,6 +30,8 @@ namespace TextAdventures.Engine.Data
             Cache = Equals(value, null) ? Cache.SetItem(name, null) : Cache.SetItem(name, value!);
         }
 
-        protected internal virtual void ApplyEvent(object @event) { }
+        protected internal virtual void ApplyEvent(object @event)
+        {
+        }
     }
 }

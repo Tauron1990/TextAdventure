@@ -45,14 +45,18 @@ namespace Tauron.Host
             var builder = new Builder();
             builder.UseContentRoot(Directory.GetCurrentDirectory());
             builder
-               .ConfigureAkka(_ => ConfigurationFactory.ParseString(" akka { loggers =[\"Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog\"] \n  scheduler { implementation = \"Tauron.Akka.TimerScheduler, Tauron.Application.Common\" } }"))
+               .ConfigureAkka(_ => ConfigurationFactory.ParseString(
+                                  " akka { loggers =[\"Akka.Logger.Serilog.SerilogLogger, Akka.Logger.Serilog\"] \n  scheduler { implementation = \"Tauron.Akka.TimerScheduler, Tauron.Application.Common\" } }"))
                .ConfigureAutoFac(cb => cb.RegisterModule<CommonModule>())
                .Configuration(cb => { cb.AddEnvironmentVariables("DOTNET_"); })
                .ConfigureAppConfiguration((hostingContext, config) =>
                                           {
                                               IHostEnvironment hostEnvironment = hostingContext.HostEnvironment;
-                                              var value = hostingContext.Configuration.GetValue("hostBuilder:reloadConfigOnChange", true);
-                                              config.AddJsonFile("appsettings." + hostEnvironment.EnvironmentName + ".json", true, value);
+                                              var value = hostingContext.Configuration.GetValue(
+                                                  "hostBuilder:reloadConfigOnChange", true);
+                                              config.AddJsonFile(
+                                                  "appsettings." + hostEnvironment.EnvironmentName + ".json", true,
+                                                  value);
                                               config.AddEnvironmentVariables();
                                               if (args != null)
                                                   config.AddCommandLine(args);
@@ -105,7 +109,8 @@ namespace Tauron.Host
                 return this;
             }
 
-            public IApplicationBuilder ConfigureAppConfiguration(Action<HostBuilderContext, IConfigurationBuilder> config)
+            public IApplicationBuilder ConfigureAppConfiguration(
+                Action<HostBuilderContext, IConfigurationBuilder> config)
             {
                 _appConfigs.Add(config);
                 return this;
@@ -132,7 +137,8 @@ namespace Tauron.Host
                 config = BuildAppConfiguration(hostingEnwiroment, config, context);
                 context.Configuration = config;
                 var akkaConfig = CreateAkkaConfig(context);
-                var system = ActorSystem.Create(GetActorSystemName(context.Configuration, context.HostEnvironment), akkaConfig);
+                var system = ActorSystem.Create(GetActorSystemName(context.Configuration, context.HostEnvironment),
+                    akkaConfig);
 
                 var continer = CreateServiceProvider(hostingEnwiroment, context, config, system);
 
@@ -147,8 +153,8 @@ namespace Tauron.Host
             {
                 var name = config["actorsystem"];
                 return !string.IsNullOrWhiteSpace(name)
-                           ? name
-                           : environment.ApplicationName.Replace('.', '-');
+                    ? name
+                    : environment.ApplicationName.Replace('.', '-');
             }
 
             private void ConfigureLogging(HostBuilderContext context)
@@ -175,8 +181,11 @@ namespace Tauron.Host
                 var hostingEnvironment = new HostEnviroment
                                          {
                                              ApplicationName = hostConfiguration[HostDefaults.ApplicationKey],
-                                             EnvironmentName = hostConfiguration[HostDefaults.EnvironmentKey] ?? Environments.Production,
-                                             ContentRootPath = ResolveContentRootPath(hostConfiguration[HostDefaults.ContentRootKey], AppContext.BaseDirectory)
+                                             EnvironmentName = hostConfiguration[HostDefaults.EnvironmentKey] ??
+                                                               Environments.Production,
+                                             ContentRootPath = ResolveContentRootPath(
+                                                 hostConfiguration[HostDefaults.ContentRootKey],
+                                                 AppContext.BaseDirectory)
                                          };
                 if (string.IsNullOrEmpty(hostingEnvironment.ApplicationName))
                     hostingEnvironment.ApplicationName = Assembly.GetEntryAssembly()?.GetName().Name ?? string.Empty;
@@ -184,7 +193,8 @@ namespace Tauron.Host
                 return hostingEnvironment;
             }
 
-            private IConfiguration BuildAppConfiguration(IHostEnvironment hostEnvironment, IConfiguration hostConfiguration, HostBuilderContext hostBuilderContext)
+            private IConfiguration BuildAppConfiguration(IHostEnvironment hostEnvironment,
+                IConfiguration hostConfiguration, HostBuilderContext hostBuilderContext)
             {
                 IConfigurationBuilder configurationBuilder = new ConfigurationBuilder()
                                                             .SetBasePath(hostEnvironment.ContentRootPath)
@@ -194,14 +204,16 @@ namespace Tauron.Host
                 return configurationBuilder.Build();
             }
 
-            private static HostBuilderContext CreateHostBuilderContext(IHostEnvironment environment, IConfiguration configuration) => new(new Dictionary<object, object>(), configuration, environment);
+            private static HostBuilderContext CreateHostBuilderContext(IHostEnvironment environment,
+                IConfiguration configuration) => new(new Dictionary<object, object>(), configuration, environment);
 
             private Config CreateAkkaConfig(HostBuilderContext context)
             {
                 return _akkaConfig.Aggregate(Config.Empty, (current, func) => current.WithFallback(func(context)));
             }
 
-            private IContainer CreateServiceProvider(IHostEnvironment hostEnvironment, HostBuilderContext hostBuilderContext, IConfiguration appConfiguration, ActorSystem actorSystem)
+            private IContainer CreateServiceProvider(IHostEnvironment hostEnvironment,
+                HostBuilderContext hostBuilderContext, IConfiguration appConfiguration, ActorSystem actorSystem)
             {
                 var containerBuilder = new ContainerBuilder();
 
@@ -209,7 +221,8 @@ namespace Tauron.Host
                 containerBuilder.RegisterInstance(hostEnvironment);
                 containerBuilder.RegisterInstance(hostBuilderContext);
                 containerBuilder.RegisterInstance(appConfiguration);
-                containerBuilder.RegisterType<ApplicationLifetime>().As<IHostApplicationLifetime, IApplicationLifetime>().SingleInstance();
+                containerBuilder.RegisterType<ApplicationLifetime>()
+                                .As<IHostApplicationLifetime, IApplicationLifetime>().SingleInstance();
                 containerBuilder.RegisterType<CommonLifetime>().As<IHostLifetime>().SingleInstance();
 
                 foreach (var action in _containerBuilder)
@@ -221,7 +234,9 @@ namespace Tauron.Host
             private static string ResolveContentRootPath(string contentRootPath, string basePath)
             {
                 if (string.IsNullOrEmpty(contentRootPath)) return basePath;
-                return Path.IsPathRooted(contentRootPath) ? contentRootPath : Path.Combine(Path.GetFullPath(basePath), contentRootPath);
+                return Path.IsPathRooted(contentRootPath)
+                    ? contentRootPath
+                    : Path.Combine(Path.GetFullPath(basePath), contentRootPath);
             }
         }
     }

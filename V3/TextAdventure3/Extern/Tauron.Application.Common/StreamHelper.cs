@@ -6,7 +6,8 @@ using JetBrains.Annotations;
 namespace Tauron
 {
     [PublicAPI]
-    public sealed record CopyFromArguments(long TotalLength = -1, int BufferSize = 4096, ProgressChange? ProgressChangeCallback = null, WaitHandle? StopEvent = null)
+    public sealed record CopyFromArguments(long TotalLength = -1, int BufferSize = 4096,
+        ProgressChange? ProgressChangeCallback = null, WaitHandle? StopEvent = null)
     {
         public TimeSpan ProgressChangeCallbackInterval { get; init; } = TimeSpan.FromSeconds(0.2);
     }
@@ -39,11 +40,14 @@ namespace Tauron
             Argument.NotNull(source, nameof(source));
             Argument.NotNull(arguments, nameof(arguments));
             // ReSharper disable NotResolvedInText
-            Argument.Check(arguments.BufferSize < 128, () => throw new ArgumentOutOfRangeException("arguments.BufferSize",
-                                                                                                   arguments.BufferSize, "BufferSize has to be greater or equal than 128."));
-            Argument.Check(arguments.ProgressChangeCallbackInterval.TotalSeconds < 0, () => throw new ArgumentOutOfRangeException("arguments.ProgressChangeCallbackInterval",
-                                                                                                                                  arguments.ProgressChangeCallbackInterval,
-                                                                                                                                  "ProgressChangeCallbackInterval has to be greater or equal than 0."));
+            Argument.Check(arguments.BufferSize < 128, () => throw new ArgumentOutOfRangeException(
+                                                           "arguments.BufferSize",
+                                                           arguments.BufferSize,
+                                                           "BufferSize has to be greater or equal than 128."));
+            Argument.Check(arguments.ProgressChangeCallbackInterval.TotalSeconds < 0,
+                () => throw new ArgumentOutOfRangeException("arguments.ProgressChangeCallbackInterval",
+                    arguments.ProgressChangeCallbackInterval,
+                    "ProgressChangeCallbackInterval has to be greater or equal than 0."));
             // ReSharper restore NotResolvedInText
 
             long length = 0;
@@ -57,7 +61,8 @@ namespace Tauron
                                                          byte[] buffer = new byte[bufferSize];
 
                                                          // ReSharper disable AccessToModifiedClosure
-                                                         while ((count = sourceParm.Read(buffer, 0, bufferSize)) != 0 && runningFlag)
+                                                         while ((count = sourceParm.Read(buffer, 0, bufferSize)) != 0 &&
+                                                                runningFlag)
                                                          {
                                                              targetParm.Write(buffer, 0, count);
                                                              var newLength = length + count;
@@ -82,9 +87,11 @@ namespace Tauron
 
                 Thread.Sleep((int) (arguments.ProgressChangeCallbackInterval.TotalMilliseconds / 10));
 
-                if (arguments.ProgressChangeCallback == null || DateTime.Now - lastCallback <= arguments.ProgressChangeCallbackInterval) continue;
+                if (arguments.ProgressChangeCallback == null ||
+                    DateTime.Now - lastCallback <= arguments.ProgressChangeCallbackInterval) continue;
 
-                var currentLength = Interlocked.Read(ref length); //Since length is 64 bit, reading is not an atomic operation.
+                var currentLength =
+                    Interlocked.Read(ref length); //Since length is 64 bit, reading is not an atomic operation.
 
                 if (currentLength == lastLength) continue;
 

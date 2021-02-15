@@ -15,15 +15,15 @@ namespace TextAdventures.Engine.Modules.Text
 
     public sealed class TextLayerKey
     {
-        public string Name { get; }
-
-        public int Order { get; }
-
         public TextLayerKey(string name, int order)
         {
             Name = name;
             Order = order;
         }
+
+        public string Name { get; }
+
+        public int Order { get; }
     }
 
     public class TextLayerComponent : ComponentBase

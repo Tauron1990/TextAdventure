@@ -42,7 +42,8 @@ namespace Tauron.Temp
             CheckNull();
             return _tempDics.GetOrAdd(name, s =>
                                             {
-                                                var dic = new TempDic(Path.Combine(FullPath, s), this, _nameGenerator, true);
+                                                var dic = new TempDic(Path.Combine(FullPath, s), this, _nameGenerator,
+                                                    true);
                                                 dic.TrackDispose(() => _tempDics.TryRemove(s, out _));
                                                 return dic;
                                             });
@@ -71,7 +72,6 @@ namespace Tauron.Temp
             void TryDispose(IEnumerable<ITempInfo> toDispose)
             {
                 foreach (var entry in toDispose)
-                {
                     try
                     {
                         entry.Dispose();
@@ -83,7 +83,6 @@ namespace Tauron.Temp
                         else
                             throw;
                     }
-                }
             }
 
             try

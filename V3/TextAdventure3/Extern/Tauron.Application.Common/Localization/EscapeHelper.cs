@@ -62,7 +62,6 @@ namespace Tauron.Localization
                 var temp = string.Empty;
 
                 foreach (var @char in toDecode)
-                {
                     if (flag2)
                     {
                         sequence += @char;
@@ -89,7 +88,9 @@ namespace Tauron.Localization
                             flag = false;
                         }
                         else
+                        {
                             temp += @char;
+                        }
                     }
                     else
                     {
@@ -99,7 +100,6 @@ namespace Tauron.Localization
                             builder.Append(@char);
                         else temp += @char;
                     }
-                }
 
                 return builder.ToString();
             }

@@ -11,9 +11,6 @@ namespace TextAdventure.Editor.ViewModels.Helper
 {
     public abstract class WorkViewModel : StateUIActor
     {
-        private static GameProject CreateDummy()
-            => GameProject.Create("Kein Projekt", new Version(0, 0));
-
         protected WorkViewModel(ILifetimeScope lifetimeScope, IUIDispatcher dispatcher, IActionInvoker actionInvoker)
             : base(lifetimeScope, dispatcher, actionInvoker)
         {
@@ -38,5 +35,8 @@ namespace TextAdventure.Editor.ViewModels.Helper
         public UIProperty<GameProject> CurrentProject { get; set; }
 
         public UIProperty<bool> IsValid { get; set; }
+
+        private static GameProject CreateDummy()
+            => GameProject.Create("Kein Projekt", new Version(0, 0));
     }
 }

@@ -15,24 +15,35 @@ namespace TextAdventure.Editor.Operations.Process
     [BelogsToState(typeof(CommonDataState))]
     public static class CommonDataProcessor
     {
-        private static IValidator<ChangeGameNameCommand> ChangeNameValidator { get; } = new ChangeGameNameCommandValidator();
+        private static IValidator<ChangeGameNameCommand> ChangeNameValidator { get; } =
+            new ChangeGameNameCommandValidator();
 
         [Reducer]
-        public static IObservable<MutatingContext<CommonData>> ChangeName(IObservable<MutatingContext<CommonData>> input, ChangeGameNameCommand command)
+        public static IObservable<MutatingContext<CommonData>> ChangeName(
+            IObservable<MutatingContext<CommonData>> input, ChangeGameNameCommand command)
         {
             return input.Select(data => (data, ChangeNameValidator.Validate(command)))
                         .ConditionalSelect()
                         .ToResult<MutatingContext<CommonData>>(b =>
                                                                {
                                                                    b.When(d => !d.Item2.IsValid,
-                                                                          observable => observable
-                                                                             .Select(d => d.data
-                                                                                           .WithChange(new NameVersionChangedEvent(false, d.Item2.Errors.First().ErrorMessage, new Version(0, 0)))));
+                                                                       observable => observable
+                                                                          .Select(d => d.data
+                                                                              .WithChange(
+                                                                                   new NameVersionChangedEvent(
+                                                                                       false,
+                                                                                       d.Item2.Errors.First()
+                                                                                          .ErrorMessage,
+                                                                                       new Version(0, 0)))));
 
                                                                    b.When(d => d.Item2.IsValid,
-                                                                          observable => observable
-                                                                             .Select(d => d.data
-                                                                                           .WithChange(new NameVersionChangedEvent(true, command.Name, Version.Parse(command.Version)))));
+                                                                       observable => observable
+                                                                          .Select(d => d.data
+                                                                              .WithChange(
+                                                                                   new NameVersionChangedEvent(true,
+                                                                                       command.Name,
+                                                                                       Version.Parse(
+                                                                                           command.Version)))));
                                                                });
         }
     }
