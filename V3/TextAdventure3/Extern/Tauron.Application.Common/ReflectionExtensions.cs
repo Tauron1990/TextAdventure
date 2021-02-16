@@ -77,7 +77,7 @@ namespace Tauron
                 // Yes, does this constructor take some parameters?
                 var paramsInfo = constructor.GetParameters();
 
-                // CreateEventActor a single param of type object[].
+                // Create a single param of type object[].
                 var param = Expression.Parameter(typeof(object[]), "args");
 
                 if (paramsInfo.Length > 0)
@@ -85,7 +85,7 @@ namespace Tauron
                     // Make a NewExpression that calls the constructor with the args we just created.
                     var newExpression = Expression.New(constructor, CreateArgumentExpressions(paramsInfo, param));
 
-                    // CreateEventActor a lambda with the NewExpression as body and our param object[] as arg.
+                    // Create a lambda with the NewExpression as body and our param object[] as arg.
                     var lambda = Expression.Lambda(typeof(Func<object[], object>), newExpression, param);
 
                     // Compile it
@@ -101,7 +101,7 @@ namespace Tauron
                     // Make a NewExpression that calls the constructor with the args we just created.
                     var newExpression = Expression.New(constructor);
 
-                    // CreateEventActor a lambda with the NewExpression as body and our param object[] as arg.
+                    // Create a lambda with the NewExpression as body and our param object[] as arg.
                     var lambda = Expression.Lambda(typeof(Func<object[], object>), newExpression, param);
 
                     // Compile it
@@ -279,10 +279,7 @@ namespace Tauron
             return constructor == null ? null : GetCreator(constructor);
         }
 
-        public object? FastCreateInstance(Type target, params object[] parm)
-        {
-            return GetCreator(target, parm.Select(o => o.GetType()).ToArray())?.Invoke(parm);
-        }
+        public object? FastCreateInstance(Type target, params object[] parm) => GetCreator(target, parm.Select(o => o.GetType()).ToArray())?.Invoke(parm);
     }
 
     [PublicAPI]

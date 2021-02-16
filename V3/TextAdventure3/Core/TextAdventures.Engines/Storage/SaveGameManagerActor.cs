@@ -97,9 +97,7 @@ namespace TextAdventures.Engine.Storage
 
     public sealed record ObjectProperty(Type Type, string Data);
 
-    internal sealed record FillData(string TargetPath,
-        ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
+    internal sealed record FillData(string TargetPath, ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
 
-    internal sealed record UpdateData(
-        ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
+    internal sealed record UpdateData(ImmutableDictionary<string, ImmutableDictionary<Type, ImmutableDictionary<string, object?>>> Data);
 }

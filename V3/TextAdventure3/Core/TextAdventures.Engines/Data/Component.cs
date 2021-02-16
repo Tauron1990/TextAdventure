@@ -12,9 +12,9 @@ namespace TextAdventures.Engine.Data
 
     public sealed class ComponentObject
     {
-        public ComponentObject(object component)
+        public ComponentObject(object? component)
         {
-            Component = component;
+            Component = component ?? throw new ArgumentNullException(nameof(component));
             ComponentType = component.GetType();
         }
 
