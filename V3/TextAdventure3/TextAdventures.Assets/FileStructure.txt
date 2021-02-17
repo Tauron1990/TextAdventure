@@ -1,0 +1,10 @@
+﻿Assets/
+	Plugins/
+		Plugin1/
+			Files
+		Plugin2/
+			Files
+	Data/
+		Game.dll
+		World.xml
+		Files
