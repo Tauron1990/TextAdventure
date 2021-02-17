@@ -17,6 +17,8 @@ namespace TextAdventures.Engine.EventSystem
     {
         public static IPreparedFeature Prefab() => Feature.Create(() => new EventDispatcherActor());
 
+        private EventDispatcherActor() { }
+
         protected override void Config()
         {
             base.Config();

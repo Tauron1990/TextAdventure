@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Linq;
 using System.Reflection;
@@ -73,13 +74,79 @@ namespace TextAdventures.Engine.Systems
             }
         }
 
+        protected IObservable<TEvent> EmitEvents<TEvent>(IObservable<TEvent> events)
+            where TEvent : notnull
+            => events.Do(e => Game.EventDispatcher.Send(e));
+
+        protected IObservable<TEvent> EmitEvents<TEvent>(ComponentBase component, IObservable<TEvent> events)
+            where TEvent : notnull
+            => events.Do(e =>
+                         {
+                             component.ApplyEvent(e);
+                             Game.EventDispatcher.Send(e);
+                         });
+
+        protected IObservable<TData> EmitEvents<TData, TEvent>(IObservable<TData> events, Func<TData, TEvent> selector)
+            where TEvent : notnull
+            => events.Do(e => Game.EventDispatcher.Send(selector(e)));
+
+        protected IObservable<TData> EmitEvents<TData, TEvent>(ComponentBase component, IObservable<TData> events, Func<TData, TEvent> selector)
+            where TEvent : notnull
+            => events.Do(data =>
+                         {
+                             var evt = selector(data);
+                             component.ApplyEvent(evt);
+                             Game.EventDispatcher.Send(evt);
+                         });
+        
+        protected IObservable<TData> EmitEvents<TData, TEvent>(IObservable<TData> events, Func<TData, TEvent> selector, Func<TData, ComponentBase?> componentSelector)
+            where TEvent : notnull
+            => events.Do(data =>
+                         {
+                             var evt = selector(data);
+                             componentSelector(data)?.ApplyEvent(evt);
+                             Game.EventDispatcher.Send(evt);
+                         });
+
+        protected IObservable<TData> EmitEvents<TData, TEvent>(IObservable<TData> events, Func<TData, IEnumerable<TEvent>> selector)
+            where TEvent : notnull
+            => events.Do(evts =>
+                         {
+                             foreach (var evt in selector(evts)) 
+                                 Game.EventDispatcher.Send(evt);
+                         });
+
+        protected IObservable<TData> EmitEvents<TData, TEvent>(ComponentBase component, IObservable<TData> events, Func<TData, IEnumerable<TEvent>> selector)
+            where TEvent : notnull
+            => events.Do(data =>
+                         {
+                             var evts = selector(data);
+                             foreach (var evt in evts)
+                             {
+                                 component.ApplyEvent(evt);
+                                 Game.EventDispatcher.Send(evt);
+                             }
+                         });
+
+        protected IObservable<TData> EmitEvents<TData, TEvent>(IObservable<TData> events, Func<TData, IEnumerable<TEvent>> selector, Func<TData, ComponentBase?> componentSelector)
+            where TEvent : notnull
+            => events.Do(data =>
+                         {
+                             var evts = selector(data);
+                             foreach (var evt in evts)
+                             {
+                                 componentSelector(data)?.ApplyEvent(evt);
+                                 Game.EventDispatcher.Send(evt);
+                             }
+                         });
+
         protected void SendCommand(IGameCommand command)
             => Game.ObjectManager.Dispatch(command);
 
         [UsedImplicitly]
         private void ReceiveConsume<T>(IConsumeEvent<T, TState> self, ActorMaterializer materializer)
         {
-            Receive<T>(self.Process);
+            Receive<T>(b => self.Process(b).ObserveOnSelf());
 
             Game.EventDispatcher.Event<T>()
                 .ObserveOnSelf()

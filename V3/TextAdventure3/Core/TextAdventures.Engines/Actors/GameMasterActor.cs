@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Threading.Tasks;
 using Akka.Actor;
+using Tauron;
+using Tauron.Features;
 using TextAdventures.Builder;
 using TextAdventures.Engine.CommandSystem;
 using TextAdventures.Engine.Data;
@@ -10,77 +13,64 @@ using TextAdventures.Engine.Storage;
 
 namespace TextAdventures.Engine.Actors
 {
-    internal sealed class GameMasterActor : GameProcess
+    internal sealed class GameMasterActor : GameProcess<GameMasterActor.GmState>
     {
+        public sealed record GmState(bool IsRunning, Action<Exception> ErrorHandler);
+
+        public static IPreparedFeature Create(GameProfile profile)
+            => Feature.Create(() => new GameMasterActor(profile), () => new GmState(false, _ => {}));
+
         private readonly IActorRef _eventDispatcher;
         private readonly IActorRef _gameObjectManager;
         private readonly IActorRef _saveGameManager;
 
-        private Action<Exception> _errorHandler = _ => { };
-        private bool _isRunning;
-
-        public GameMasterActor(GameProfile profile)
+        private GameMasterActor(GameProfile profile)
         {
-            _eventDispatcher = Context.ActorOf(Props.Create(() => new EventDispatcherActor()));
-            _gameObjectManager = Context.ActorOf(Props.Create(() => new GameObjectManagerActor()));
-            _saveGameManager =
-                Context.ActorOf(Props.Create(() => new SaveGameManagerActor(profile, _gameObjectManager)));
+            _eventDispatcher = Context.ActorOf("EventDispatcher", EventDispatcherActor.Prefab());
+            _gameObjectManager = Context.ActorOf("GameObjectManager", GameObjectManagerActor.Prefab());
+            _saveGameManager = Context.ActorOf("SaveGameManagerActor", SaveGameManagerActor.Prefab(profile, _gameObjectManager));
+        }
 
+        protected override void Config()
+        {
             Context.System.RegisterExtension(new GameCore.GameCoreId(
                 new EventDispatcher(_eventDispatcher),
                 new GameObjectManager(_gameObjectManager),
                 new GameMaster(Self, Context.System)));
 
-            Receive<GameEvent>(evt => _eventDispatcher.Forward(evt));
-            Receive<RequestEventSource>(r => _eventDispatcher.Forward(r));
+            Receive<GameEvent>(obs => obs.Select(o => o.Event).ForwardToActor(_eventDispatcher));
+            Receive<RequestEventSource>(obs => obs.Select(o => o.Event).ForwardToActor(_eventDispatcher));
 
-            Receive<ComponentBlueprint>(b => _gameObjectManager.Tell(b));
-            Receive<GameObjectBlueprint>(p => _gameObjectManager.Forward(p));
-            Receive<IGameCommand>(c => _gameObjectManager.Forward(c));
-            Receive<RegisterCommandProcessorBase>(r => _gameObjectManager.Forward(r));
+            Receive<ComponentBlueprint>(obs => obs.Select(p => p.Event).ForwardToActor(_gameObjectManager));
+            Receive<GameObjectBlueprint>(obs => obs.Select(p => p.Event).ForwardToActor(_gameObjectManager));
+            Receive<IGameCommand>(obs => obs.Select(p => p.Event).ForwardToActor(_gameObjectManager));
+            Receive<RegisterCommandProcessorBase>(obs => obs.Select(p => p.Event).ForwardToActor(_gameObjectManager));
 
-            Receive<MakeSaveGame>(s => _saveGameManager.Forward(s));
+            Receive<MakeSaveGame>(obs => obs.Select(p => p.Event).ForwardToActor(_saveGameManager));
+            
 
-            Receive<string>(CompledLoading);
-            Receive<GameSetup>(SetupGame);
-        }
-
-        private void CompledLoading(string obj)
-        {
-            if (_isRunning) return;
-
-            _isRunning = true;
-
-            foreach (var child in Context.GetChildren())
-                child.Tell(new LoadingCompled());
-
-            _eventDispatcher.Tell(new LoadingCompled());
-        }
-
-        private void SetupGame(GameSetup setup)
-        {
-            if (_isRunning) return;
-
-            _errorHandler = setup.Error;
-
-            var actorRefs = setup.GameProcesses.Select(p => Context.ActorOf(p.Value, p.Key)).ToArray();
-
-            Context.ActorOf(
-                        Props.Create(() => new LoadCoordinator(_saveGameManager, _gameObjectManager, Self, actorRefs)))
-                   .Tell(setup);
-        }
-
-
-        protected override SupervisorStrategy SupervisorStrategy()
-        {
+            Receive<string>(obs => 
+                                obs.Where(p => !p.State.IsRunning)
+                                   .Do(_ =>
+                                       {
+                                           foreach (var child in Context.GetChildren()) 
+                                               child.Tell(new LoadingCompled());
+                                       })
+                                   .Select(p => p.State with{IsRunning = true}));
+            Receive<GameSetup>(obs =>
+                                   obs.Select(p => (p.State, p.Event, Processes:p.Event.GameProcesses.Select(gp => Context.ActorOf(gp.Key, gp.Value)).ToArray()))
+                                      .Do(p => Context.ActorOf(Props.Create(() => new LoadCoordinator(_saveGameManager, _gameObjectManager, Self, p.Processes))).Tell(p.Event))
+                                      .Select(p => p.State with{ErrorHandler = p.Event.Error}));
+            
             var system = Context.System;
-            return new OneForOneStrategy(e =>
+            SupervisorStrategy = new OneForOneStrategy(e =>
                                          {
-                                             _errorHandler(e);
+                                             CurrentState.ErrorHandler(e);
                                              system.Terminate();
 
                                              return Directive.Stop;
                                          });
+            base.Config();
         }
 
         private sealed class LoadCoordinator : FSM<LoadCoordinator.LoadStep, LoadCoordinator.LoadCoordinatorState>

@@ -7,7 +7,7 @@ namespace TextAdventures.Engine.Modules.Command
         public override void Enrich(World world)
         {
             world.WithGlobalComponent(ComponentBlueprint.Single<CommandLayerComponent>())
-                 .WithProcess<CommandCoordinator>("Command_Module_Coordinator");
+                 .WithProcess("Command_Module_Coordinator", CommandCoordinator.Prefab());
         }
     }
 }

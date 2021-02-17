@@ -1,5 +1,6 @@
 ﻿using Akka.Actor;
 using JetBrains.Annotations;
+using Tauron.Features;
 using TextAdventures.Builder;
 using TextAdventures.Engine.Actors;
 using TextAdventures.Engine.Modules;
@@ -25,9 +26,7 @@ namespace TextAdventures.Engine
 
             var system = ActorSystem.Create(gameName);
 
-            var gameMaster =
-                system.ActorOf(Props.Create(() => new GameMasterActor(GameProfile.GetDefault(gameName, profileName))),
-                    "GameMaster");
+            var gameMaster = system.ActorOf("GameMaster", GameMasterActor.Create(GameProfile.GetDefault(gameName, profileName)));
             gameMaster.Tell(world.CreateSetup() with {SaveGame = saveName});
 
             return new GameMaster(gameMaster, system);

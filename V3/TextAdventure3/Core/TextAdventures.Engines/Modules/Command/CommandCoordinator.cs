@@ -1,37 +1,43 @@
 ﻿using System;
 using System.Collections.Immutable;
 using System.Linq;
-using System.Threading.Tasks;
+using System.Reactive.Linq;
+using Tauron.Features;
 using TextAdventures.Engine.Actors;
+using TextAdventures.Engine.Systems;
 
 namespace TextAdventures.Engine.Modules.Command
 {
-    public sealed class CommandCoordinator : CoordinatorProcess, IConsumeEvent<UpdateCommandLayerEvent>
+    public sealed class CommandCoordinator : CoordinatorProcess<EmptyState>, IConsumeEvent<UpdateCommandLayerEvent, EmptyState>
     {
-        private readonly Task<CommandLayerComponent> _textData;
+        public static IPreparedFeature Prefab()
+            => Feature.Create(() => new CommandCoordinator());
 
-        public CommandCoordinator()
-            => _textData = GetGlobalComponent<CommandLayerComponent>();
+        //    .SelectMany(p => p.Data.Select(data => (data, p.CommandData)))
+        //.Select(p => (Event: new CommandLayerEvent(p.data.Key, p.data.Value), p.CommandData))
 
-        private CommandLayerComponent CommandData => _textData.Result;
+        public IObservable<EmptyState> Process(IObservable<StatePair<UpdateCommandLayerEvent, EmptyState>> obs)
+            => EmitEvents(obs.SelectMany(async p => (p.Event.Data, CommandData: await GetGlobalComponent<CommandLayerComponent>())),
+                   dat => dat.Data.Select(pair => new CommandLayerEvent(pair.Key, pair.Value)),
+                   dat => dat.CommandData)
+              .Do(_ => SentUpdate())
+              .Select(_ => EmptyState.Inst);
 
-        public void Process(UpdateCommandLayerEvent evt)
+        protected override void LoadingCompled(StatePair<LoadingCompled, EmptyState> obj)
         {
-            EmitEvents(CommandData,
-                evt.Data.Select(d => new CommandLayerEvent(d.Key, d.Value)).Cast<object>().ToArray());
             SentUpdate();
+            base.LoadingCompled(obj);
         }
-
-        protected override void LoadingCompled(LoadingCompled obj)
-            => SentUpdate();
 
         private void SentUpdate()
-        {
-            var data = CommandData.CommandData.GroupBy(d => d.Category)
-                                  .ToImmutableDictionary(g => g.Key,
-                                       g => ImmutableList<Type>.Empty.AddRange(g.Select(d => d.TargetType)));
-
-            EmitEvents(new CommandEvent(data));
-        }
+            => EmitEvents(
+                GetGlobalComponent<CommandLayerComponent>()
+                   .SelectMany(i => i.CommandData)
+                   .GroupBy(d => d.Category)
+                   .Aggregate(ImmutableDictionary<string, ImmutableList<Type>>.Empty,
+                        (dictionary, observable) =>
+                            dictionary.Add(observable.Key,
+                                ImmutableList<Type>.Empty.AddRange(observable.Select(cd => cd.TargetType).ToEnumerable())))
+            );
     }
 }

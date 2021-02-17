@@ -22,6 +22,7 @@ namespace TextAdventures.Engine.Data
                 () => new GomState(ImmutableDictionary<Type, CommandProcessorBase>.Empty,
                     ImmutableDictionary<string, GameObject>.Empty));
 
+        private GameObjectManagerActor() { }
 
         protected override void Config()
         {
@@ -119,17 +120,35 @@ namespace TextAdventures.Engine.Data
 
 
             Receive<FillData>(obs => obs
-                                    .Select(p => (p.Event, Data:p.State.GameObjects
-                                                                 .ToImmutableDictionary(
-                                                                      c => c.Key,
-                                                                      c => c.Value.Components
-                                                                            .ToImmutableDictionary(
-                                                                                 cc => cc.Key,
-                                                                                 cc => cc.Value.Component is ComponentBase componentBase 
-                                                                                     ? componentBase.Cache : ImmutableDictionary<string, object?>.Empty))))
-                                    .Select(p => p.Event with{ Data = p.Data })
-                                        .ToSender());
+                                    .Select(p => (p.Event, Data: p.State.GameObjects
+                                                                  .ToImmutableDictionary(
+                                                                       c => c.Key,
+                                                                       c => c.Value.Components
+                                                                             .ToImmutableDictionary(
+                                                                                  cc => cc.Key,
+                                                                                  cc => cc.Value.Component is ComponentBase componentBase
+                                                                                      ? componentBase.Cache
+                                                                                      : ImmutableDictionary<string, object?>.Empty))))
+                                    .Select(p => p.Event with {Data = p.Data})
+                                    .ToSender());
 
+            Receive<GameSetup>(obs => obs
+                                     .SelectMany(p => Observable.Return(p)
+                                                                .SelectMany(statePair => statePair.Event.GameObjectBlueprints)
+                                                                .Aggregate(p.State, (state, blueprint) =>
+                                                                                    {
+                                                                                        var components = blueprint.ComponentBlueprints
+                                                                                                           .Select(cb => (cb.ComponentType, Component:CreateComponent(cb)))
+                                                                                                           .ToImmutableDictionary(pair => pair.ComponentType, pair => pair.Component);
+
+                                                                                        return state with
+                                                                                               {
+                                                                                                   GameObjects = state.GameObjects
+                                                                                                                      .Add(blueprint.Name, new GameObject(blueprint.Name, components))
+                                                                                               };
+                                                                                    })
+                                                                .Error(p.Event.Error)
+                                                                .Finally(() => Sender.Tell(p.Event))));
             base.Config();
         }
 
@@ -139,12 +158,16 @@ namespace TextAdventures.Engine.Data
                 ImmutableDictionary<string, GameObject> gameObjects)
             {
                 if (string.IsNullOrWhiteSpace(command.Target))
+                {
                     foreach (var gameObject in gameObjects.Select(p => p.Value)
                                                           .Where(gameObject => gameObject.HasComponent(targetType)))
                         yield return (gameObject, gameObject.GetComponent(targetType));
+                }
                 else if (gameObjects.TryGetValue(command.Target, out var gameObject) &&
                          gameObject.HasComponent(targetType))
+                {
                     yield return (gameObject, gameObject.GetComponent(targetType));
+                }
             }
 
             return commandObservable.SelectMany(statePair =>
@@ -159,30 +182,6 @@ namespace TextAdventures.Engine.Data
                                     .ToUnit(processor => processor.processorBase.Run(Game, processor.component.componet, processor.component.obj, processor.Event))
                                     .SubscribeWithStatus();
         }
-
-
-        //private void SetupGame(GameSetup setup)
-        //{
-        //    try
-        //    {
-        //        foreach (var blueprint in setup.GameObjectBlueprints)
-        //        {
-        //            var dic = blueprint.ComponentBlueprints
-        //                               .Select(p => (p.ComponentType, CreateComponent(p)))
-        //                               .ToImmutableDictionary(p => p.ComponentType, p => p.Item2);
-
-        //            _gameObjects.Add(blueprint.Name, new GameObject(blueprint.Name, dic));
-        //        }
-        //    }
-        //    catch (Exception e)
-        //    {
-        //        setup.Error(e);
-        //    }
-        //    finally
-        //    {
-        //        Sender.Tell(setup);
-        //    }
-        //}
 
         private static ComponentObject CreateComponent(ComponentBlueprint blueprint)
         {

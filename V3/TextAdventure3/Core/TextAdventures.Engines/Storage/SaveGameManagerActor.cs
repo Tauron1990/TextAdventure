@@ -18,6 +18,8 @@ namespace TextAdventures.Engine.Storage
         public static IPreparedFeature Prefab(GameProfile profile, IActorRef objectManager)
             => Feature.Create(() => new SaveGameManagerActor(), () => new SgmState(objectManager, profile));
 
+        private SaveGameManagerActor() { }
+
         protected override void Config()
         {
             base.Config();

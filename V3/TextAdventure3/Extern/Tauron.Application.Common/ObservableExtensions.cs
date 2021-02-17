@@ -49,8 +49,7 @@ namespace Tauron
                                      });
         }
 
-        public static IDisposable MultiSubscribe<TType>(this IObservable<TType> obs,
-            Action<IObservable<TType>, Action<IDisposable>> subs)
+        public static IDisposable MultiSubscribe<TType>(this IObservable<TType> obs, Action<IObservable<TType>, Action<IDisposable>> subs)
         {
             var dispo = new CompositeDisposable();
 
@@ -58,6 +57,8 @@ namespace Tauron
 
             return dispo;
         }
+
+        public static IObservable<TData> Error<TData>(this IObservable<TData> observable, Action<Exception> error) => observable.Do(_ => { }, error);
 
         public static IObservable<TValue> Lookup<TKey, TValue>(this IDictionary<TKey, TValue> dictionary, TKey key)
             => Observable.Defer(() => dictionary.TryGetValue(key, out var value)

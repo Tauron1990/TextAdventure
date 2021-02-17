@@ -14,18 +14,7 @@ namespace TextAdventures.Engine.Modules.Command
 
     public record UpdateCommandLayerEvent(ImmutableDictionary<CommandLayerKey, CommandData> Data);
 
-    public sealed class CommandLayerKey
-    {
-        public CommandLayerKey(string name, int order)
-        {
-            Name = name;
-            Order = order;
-        }
-
-        public string Name { get; }
-
-        public int Order { get; }
-    }
+    public sealed record CommandLayerKey(string Name, int Order);
 
     public class CommandLayerComponent : ComponentBase
     {

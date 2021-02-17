@@ -53,6 +53,7 @@ namespace Tauron.Features
             => _actor.Receive(handler);
 
         public void TellSelf(object msg) => _actor.TellSelf(msg);
+        public IObservable<TEvent> Receive<TEvent>() => _actor.Receive<TEvent>();
 
         public ILoggingAdapter Log => _actor.Log;
 

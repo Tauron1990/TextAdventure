@@ -8,8 +8,7 @@ using TextAdventures.Engine.Systems;
 
 namespace TextAdventures.Engine.Modules.Text
 {
-    public sealed class TextCoordinator : CoordinatorProcess<EmptyState>,
-        IConsumeEvent<UpdateTextLayerEvent, EmptyState>
+    public sealed class TextCoordinator : CoordinatorProcess<EmptyState>, IConsumeEvent<UpdateTextLayerEvent, EmptyState>
     {
         public IObservable<EmptyState> Process(IObservable<StatePair<UpdateTextLayerEvent, EmptyState>> obs)
         {
