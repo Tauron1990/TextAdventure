@@ -7,8 +7,7 @@ using Newtonsoft.Json;
 namespace TextAdventures.Engine.Storage
 {
     [PublicAPI]
-    public sealed record GameProfile(ImmutableDictionary<string, string> Saves, string Name,
-        ImmutableDictionary<string, string> Meta, string RootPath)
+    public sealed record GameProfile(ImmutableDictionary<string, string> Saves, string Name, ImmutableDictionary<string, string> Meta, string RootPath)
     {
         private const string ProfileExtension = ".profile";
         private const string SaveExtension = ".sav";

@@ -11,8 +11,14 @@ using Adventure.Ui.Internal;
 using Adventure.Ui.WpfCommands;
 using Akka.Actor;
 using JetBrains.Annotations;
+using Tauron;
+using Tauron.Application;
+using Tauron.Features;
 using TextAdventures.Builder;
 using TextAdventures.Engine;
+using TextAdventures.Engine.Actors;
+using TextAdventures.Engine.Storage;
+using TextAdventures.Engine.Systems;
 
 namespace Adventure.Ui
 {
@@ -25,6 +31,8 @@ namespace Adventure.Ui
 
         public SaveLoad()
         {
+            GameProfile
+
             InitializeComponent();
             _model = new SaveLoadModel((s1, s2, b) => NewGame?.Invoke(s1, s2, b), Dispatcher.CurrentDispatcher);
             DataContext = _model;
@@ -43,7 +51,7 @@ namespace Adventure.Ui
         [PublicAPI]
         public void Prepare(World world)
         {
-            world.Add(Props.Create<SaveLoadSubscriber>(new Action<GameLoaded>(GameLoaded)), "Save_Load_Subscriber");
+            world.Add(Props.Create<SaveLoadSubscriber>(new Action<LoadingCompled>(GameLoaded)), "Save_Load_Subscriber");
         }
 
         private void GameLoaded(GameLoaded gl)
@@ -63,9 +71,10 @@ namespace Adventure.Ui
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
-        private sealed class SaveLoadSubscriber : DomainEventSubscriber,
-                                                  ISubscribeTo<GameInfo, GameInfoId, GameLoaded>
+        private sealed class SaveLoadSubscriber : CoordinatorProcess<EmptyState>
         {
+            public sealed record SlsState(Action<LoadingCompled> gameLoaded);
+
             private readonly Action<GameLoaded> _gameLoaded;
 
             public SaveLoadSubscriber(Action<GameLoaded> gameLoaded) => _gameLoaded = gameLoaded;

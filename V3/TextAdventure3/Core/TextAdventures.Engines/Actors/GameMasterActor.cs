@@ -53,8 +53,10 @@ namespace TextAdventures.Engine.Actors
                                 obs.Where(p => !p.State.IsRunning)
                                    .Do(_ =>
                                        {
+                                           var msg = new LoadingCompled(GameCore.Get(Context.System));
+
                                            foreach (var child in Context.GetChildren()) 
-                                               child.Tell(new LoadingCompled());
+                                               child.Tell(msg);
                                        })
                                    .Select(p => p.State with{IsRunning = true}));
             Receive<GameSetup>(obs =>
@@ -181,7 +183,7 @@ namespace TextAdventures.Engine.Actors
         }
     }
 
-    public sealed record LoadingCompled;
+    public sealed record LoadingCompled(GameCore GameCore);
 
     public sealed record PreInitStage(GameCore Game);
 }
