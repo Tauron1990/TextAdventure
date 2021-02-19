@@ -9,7 +9,6 @@ using System.Windows.Input;
 using System.Windows.Threading;
 using Adventure.Ui.Internal;
 using Adventure.Ui.WpfCommands;
-using Akka.Actor;
 using JetBrains.Annotations;
 using Tauron;
 using Tauron.Application;
@@ -18,7 +17,6 @@ using TextAdventures.Builder;
 using TextAdventures.Engine;
 using TextAdventures.Engine.Actors;
 using TextAdventures.Engine.Storage;
-using TextAdventures.Engine.Systems;
 
 namespace Adventure.Ui
 {
@@ -31,8 +29,6 @@ namespace Adventure.Ui
 
         public SaveLoad()
         {
-            GameProfile
-
             InitializeComponent();
             _model = new SaveLoadModel((s1, s2, b) => NewGame?.Invoke(s1, s2, b), Dispatcher.CurrentDispatcher);
             DataContext = _model;
@@ -41,7 +37,7 @@ namespace Adventure.Ui
         [PublicAPI]
         public void Init(string saveGameLocations)
         {
-            _model.SaveGmeLocation = saveGameLocations;
+            _model.GameName = saveGameLocations;
             saveGameLocations.CreateDirectoryIfNotExis();
         }
 
@@ -49,40 +45,40 @@ namespace Adventure.Ui
         public event Action<string, string?, bool>? NewGame;
 
         [PublicAPI]
-        public void Prepare(World world)
-        {
-            world.Add(Props.Create<SaveLoadSubscriber>(new Action<LoadingCompled>(GameLoaded)), "Save_Load_Subscriber");
-        }
+        public void Prepare(World world) => world.WithProcess("Save_Load_Subscriber", SaveLoadSubscriber.Create(GameLoaded));
 
-        private void GameLoaded(GameLoaded gl)
+        private void GameLoaded(LoadingCompled gl)
         {
-            gl.Master
-              .WhenTerminated
-              .ContinueWith(t =>
-                            {
-                                _model.IsGameRunning = false;
-                                _model.GameMaster = null;
-                                _model.Profile = null;
-                            });
+            var ((_, _, gameMaster), gameProfile) = gl;
 
-            _model.GameMaster = gl.Master;
+            gameMaster
+               .WhenTerminated
+               .ContinueWith(_ =>
+                             {
+                                 _model.IsGameRunning = false;
+                                 _model.GameMaster = null;
+                                 _model.Profile = null;
+                             });
+
+            _model.GameMaster = gameMaster;
             _model.IsGameRunning = true;
-            _model.Profile = gl.Info;
+            _model.Profile = gameProfile;
         }
 
         [UsedImplicitly(ImplicitUseKindFlags.InstantiatedWithFixedConstructorSignature)]
-        private sealed class SaveLoadSubscriber : CoordinatorProcess<EmptyState>
+        private sealed class SaveLoadSubscriber : GameProcess<SaveLoadSubscriber.SlsState>
         {
-            public sealed record SlsState(Action<LoadingCompled> gameLoaded);
+            public sealed record SlsState(Action<LoadingCompled> GameLoaded);
 
-            private readonly Action<GameLoaded> _gameLoaded;
+            public static IPreparedFeature Create(Action<LoadingCompled> gameLoaded)
+                => Feature.Create(() => new SaveLoadSubscriber(), () => new SlsState(gameLoaded));
 
-            public SaveLoadSubscriber(Action<GameLoaded> gameLoaded) => _gameLoaded = gameLoaded;
 
-            public bool Handle(IDomainEvent<GameInfo, GameInfoId, GameLoaded> domainEvent)
+            protected override void LoadingCompled(StatePair<LoadingCompled, SlsState> message)
             {
-                _gameLoaded(domainEvent.AggregateEvent);
-                return true;
+                base.LoadingCompled(message);
+
+                CurrentState.GameLoaded(message.Event);
             }
         }
     }
@@ -99,9 +95,8 @@ namespace Adventure.Ui
         private NameInfo _isNewNameOk;
         private NameInfo _isSaveGameNameOk;
         private string _newNameText = string.Empty;
-        private SaveProfile? _profile;
-        private string? _saveGameName;
-        private string _saveGmeLocation = Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments);
+        private GameProfile? _profile;
+        private string _gameName;
 
         public GameMaster? GameMaster
         {
@@ -115,7 +110,7 @@ namespace Adventure.Ui
             }
         }
 
-        public SaveProfile? Profile
+        public GameProfile? Profile
         {
             get => _profile;
             set
@@ -139,14 +134,14 @@ namespace Adventure.Ui
 
         public ICommand NewName { get; }
 
-        public ObservableCollection<SaveProfile> Profiles { get; } = new();
+        public ObservableCollection<GameProfile> Profiles { get; } = new();
 
-        public string SaveGmeLocation
+        public string GameName
         {
-            get => _saveGmeLocation;
+            get => _gameName;
             set
             {
-                _saveGmeLocation = value;
+                _gameName = value;
                 UpdateSaveGames();
             }
         }
@@ -176,18 +171,6 @@ namespace Adventure.Ui
 
         public ICommand GenericLoadGame { get; }
 
-        public string SaveGameName
-        {
-            get => _saveGameName;
-            set
-            {
-                if (value == _saveGameName) return;
-                _saveGameName = value;
-                OnPropertyChanged();
-                IsSaveGameNameOk = ValidateSaveGameInfo();
-            }
-        }
-
         public NameInfo IsSaveGameNameOk
         {
             get => _isSaveGameNameOk;
@@ -201,12 +184,13 @@ namespace Adventure.Ui
 
         public ICommand GenericSvaeGame { get; }
 
-        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher)
+        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher, string gameName)
         {
+            _gameName = gameName;
             _starter = starter;
             _dispatcher = dispatcher;
             NewName = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
-            GenericLoadGame = new SimpleCommand(ExcuteLoad);
+            GenericLoadGame = new SimpleCommand(CanLoad, ExcuteLoad);
             GenericSvaeGame = new SimpleCommand(_ => IsGameRunning && IsSaveGameNameOk != NameInfo.Error, ExcuteSave);
         }
 
@@ -214,8 +198,8 @@ namespace Adventure.Ui
         {
             if (string.IsNullOrWhiteSpace(NewNameText) || NewNameText.Contains('.') || NewNameText.Any(InvalidChars.Contains))
                 return NameInfo.Error;
-
-            _blockedNames ??= new List<string>(SaveProfile.GetProfiles(SaveGmeLocation).Select(sp => sp.Name));
+            
+            _blockedNames ??= new List<string>(GameProfile.GetProfiles(GameName).Select(sp => sp.Name));
 
             return _blockedNames.Contains(NewNameText) ? NameInfo.Warning : NameInfo.Ok;
         }
@@ -241,7 +225,7 @@ namespace Adventure.Ui
             Task.Run(() =>
                      {
                          _dispatcher.Invoke(Profiles.Clear);
-                         var profiles = SaveProfile.GetProfiles(SaveGmeLocation);
+                         var profiles = SaveProfile.GetProfiles(GameName);
 
                          _dispatcher.BeginInvoke(new Action(() =>
                                                             {
@@ -249,6 +233,13 @@ namespace Adventure.Ui
                                                                     Profiles.Add(profile);
                                                             }));
                      });
+        }
+
+
+
+        private bool CanLoad(object? arg)
+        {
+
         }
 
         private void ExcuteLoad(object? target)

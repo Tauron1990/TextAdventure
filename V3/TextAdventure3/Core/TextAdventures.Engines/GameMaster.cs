@@ -1,4 +1,5 @@
-﻿using Akka.Actor;
+﻿using System.Threading.Tasks;
+using Akka.Actor;
 using JetBrains.Annotations;
 using TextAdventures.Builder;
 using TextAdventures.Engine.CommandSystem;
@@ -19,6 +20,8 @@ namespace TextAdventures.Engine
         }
 
         public ActorSystem System { get; }
+
+        public Task WhenTerminated => System.WhenTerminated;
 
         public void SendEvent(object evt)
             => _master.Tell(new GameEvent(evt));

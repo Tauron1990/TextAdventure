@@ -15,10 +15,10 @@ namespace TextAdventures.Engine.Actors
 {
     internal sealed class GameMasterActor : GameProcess<GameMasterActor.GmState>
     {
-        public sealed record GmState(bool IsRunning, Action<Exception> ErrorHandler);
+        public sealed record GmState(bool IsRunning, Action<Exception> ErrorHandler, GameProfile Profile);
 
         public static IPreparedFeature Create(GameProfile profile)
-            => Feature.Create(() => new GameMasterActor(profile), () => new GmState(false, _ => {}));
+            => Feature.Create(() => new GameMasterActor(profile), () => new GmState(false, _ => {}, profile));
 
         private readonly IActorRef _eventDispatcher;
         private readonly IActorRef _gameObjectManager;
@@ -53,7 +53,7 @@ namespace TextAdventures.Engine.Actors
                                 obs.Where(p => !p.State.IsRunning)
                                    .Do(_ =>
                                        {
-                                           var msg = new LoadingCompled(GameCore.Get(Context.System));
+                                           var msg = new LoadingCompled(GameCore.Get(Context.System), CurrentState.Profile);
 
                                            foreach (var child in Context.GetChildren()) 
                                                child.Tell(msg);
@@ -183,7 +183,7 @@ namespace TextAdventures.Engine.Actors
         }
     }
 
-    public sealed record LoadingCompled(GameCore GameCore);
+    public sealed record LoadingCompled(GameCore GameCore, GameProfile GameProfile);
 
     public sealed record PreInitStage(GameCore Game);
 }

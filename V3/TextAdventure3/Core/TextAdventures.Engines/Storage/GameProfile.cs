@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Collections.Immutable;
 using System.IO;
 using JetBrains.Annotations;
@@ -9,6 +10,8 @@ namespace TextAdventures.Engine.Storage
     [PublicAPI]
     public sealed record GameProfile(ImmutableDictionary<string, string> Saves, string Name, ImmutableDictionary<string, string> Meta, string RootPath)
     {
+        public static readonly string SaveGameLocationBase = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments), "Tauron_Games");
+
         private const string ProfileExtension = ".profile";
         private const string SaveExtension = ".sav";
 
@@ -35,10 +38,28 @@ namespace TextAdventures.Engine.Storage
             if (string.IsNullOrWhiteSpace(name))
                 name = "default";
 
-            string fullPath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData),
-                "Tauron", "Games", gameName, name + ProfileExtension);
+            string fullPath = Path.Combine(SaveGameLocationBase, gameName, name + ProfileExtension);
 
             return Read(fullPath);
+        }
+
+        public static IEnumerable<GameProfile> GetProfiles(string gameName)
+        {
+            foreach (var profile in Directory.EnumerateFiles(Path.Combine(SaveGameLocationBase, gameName), "*." + ProfileExtension))
+            {
+                GameProfile data;
+
+                try
+                {
+                    data = JsonConvert.DeserializeObject<GameProfile>(File.ReadAllText(profile));
+                }
+                catch (Exception e)
+                {
+                    data = new GameProfile(ImmutableDictionary<string, string>.Empty, $"Error: {e.Message}", ImmutableDictionary<string, string>.Empty, "");
+                }
+
+                yield return data;
+            }
         }
     }
 }

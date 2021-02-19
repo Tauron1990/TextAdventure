@@ -28,8 +28,7 @@
                     <Setter.Value>
                         <Style TargetType="MenuItem">
                             <Setter Property="Header" Value="{Binding Name}" />
-                            <Setter Property="Command"
-                                    Value="{Binding DataContext.GenericLoadGame, ElementName=RootMenu}" />
+                            <Setter Property="Command" Value="{Binding DataContext.GenericLoadGame, ElementName=RootMenu}" />
                             <Setter Property="CommandParameter" Value="{Binding}" />
                         </Style>
                     </Setter.Value>
