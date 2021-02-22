@@ -35,11 +35,7 @@ namespace Adventure.Ui
         }
 
         [PublicAPI]
-        public void Init(string saveGameLocations)
-        {
-            _model.GameName = saveGameLocations;
-            saveGameLocations.CreateDirectoryIfNotExis();
-        }
+        public void Init(string gameName) => _model.GameName = gameName;
 
         [PublicAPI]
         public event Action<string, string?, bool>? NewGame;
@@ -184,9 +180,9 @@ namespace Adventure.Ui
 
         public ICommand GenericSvaeGame { get; }
 
-        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher, string gameName)
+        public SaveLoadModel(Action<string, string?, bool> starter, Dispatcher dispatcher)
         {
-            _gameName = gameName;
+            _gameName = string.Empty;
             _starter = starter;
             _dispatcher = dispatcher;
             NewName = new SimpleCommand(() => IsNewNameOk != NameInfo.Error, NewGame);
@@ -211,11 +207,7 @@ namespace Adventure.Ui
 
             _blockedNames = null;
             if (IsGameRunning && GameMaster != null)
-            {
-                GameMaster
-                   .Stop()
-                   .ContinueWith(_ => _starter(name, null, true));
-            }
+                GameMaster.Stop().ContinueWith(_ => _starter(name, null, true));
             else
                 _starter(name, null, true);
         }
@@ -225,7 +217,7 @@ namespace Adventure.Ui
             Task.Run(() =>
                      {
                          _dispatcher.Invoke(Profiles.Clear);
-                         var profiles = SaveProfile.GetProfiles(GameName);
+                         var profiles = GameProfile.GetProfiles(GameName);
 
                          _dispatcher.BeginInvoke(new Action(() =>
                                                             {
@@ -237,9 +229,12 @@ namespace Adventure.Ui
 
 
 
-        private bool CanLoad(object? arg)
+        private static bool CanLoad(object? target)
         {
+            if (target is GameProfile profile)
+                return !string.IsNullOrWhiteSpace(profile.RootPath);
 
+            return true;
         }
 
         private void ExcuteLoad(object? target)
@@ -260,9 +255,9 @@ namespace Adventure.Ui
             switch (target)
             {
                 case SaveInfo info:
-                    ExecuteAction(() => _starter(info.Profile.Name, info.Name, false));
+                    ExecuteAction(() => _starter(info.ProfileName, info.Name, false));
                     break;
-                case SaveProfile profile:
+                case GameProfile profile:
                     ExecuteAction(() => _starter(profile.Name, null, false));
                     break;
             }

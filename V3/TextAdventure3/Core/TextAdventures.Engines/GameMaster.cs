@@ -37,5 +37,8 @@ namespace TextAdventures.Engine
 
         public void MakeSaveGame(string name)
             => _master.Tell(new MakeSaveGame(name));
+
+        public Task Stop()
+            => System.Terminate();
     }
 }
